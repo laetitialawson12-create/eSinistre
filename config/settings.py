@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'gestion_sinistres',
 ]
 
 MIDDLEWARE = [
@@ -74,12 +75,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'fidelia_esinistre',       # Le nom de ta base externe
-        'USER': 'root', # L'utilisateur ayant les droits d'écriture
-        'PASSWORD': '',    # Son mot de passe
-        'HOST': '127.0.0.1',           # L'adresse IP publique ou le sous-domaine de ta BD externe
-        'PORT': '3306',                    # Le port (généralement 3306 pour MySQL)
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -106,9 +103,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Lome'
 
 USE_I18N = True
 
@@ -119,3 +116,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+LOGIN_URL = '/sinistres/login/'
+LOGIN_REDIRECT_URL = '/sinistres/accueil/'
+LOGOUT_REDIRECT_URL = '/sinistres/login/'
