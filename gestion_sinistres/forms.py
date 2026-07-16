@@ -1,59 +1,58 @@
 from django import forms
-from django.forms import inlineformset_factory
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sinistre, PieceJointe
-
+from .models import Sinistre
 
 def jours_ouvres_entre(date_debut, date_fin):
-    """Compte le nombre de jours ouvrés (lundi-vendredi) entre deux dates, bornes exclues."""
     jours = 0
     date_courante = date_debut
     while date_courante < date_fin:
         date_courante += timedelta(days=1)
-        if date_courante.weekday() < 5:  # 0=lundi ... 4=vendredi
+        if date_courante.weekday() < 5:
             jours += 1
     return jours
 
-
 class SinistreForm(forms.ModelForm):
+    # Champ de fichier simple, sans contrainte de widget complexe
+    fichiers_justificatifs = forms.FileField(
+        widget=forms.FileInput(attrs={'class': 'form-control'}),
+        required=False,
+        label="Pièces justificatives"
+    )
+
     class Meta:
         model = Sinistre
         fields = [
             'region', 'ville', 'prefecture', 'quartier', 'precision', 
             'date_survenance', 'heure_approximative', 'nature', 
-            'vehicule', 'circonstances', 'lettre_derogation'
+            'vehicule', 'circonstances', 'lettre_derogation',
+            'n_police', 'nom_conducteur', 'immatriculation',
+            'fichiers_justificatifs'
         ]
         widgets = {
             'date_survenance': forms.DateTimeInput(attrs={'type': 'date', 'class': 'form-control'}),
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'circonstances': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'precision': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Décrivez les circonstances...'}),
+            'precision': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'region': forms.Select(attrs={'class': 'form-control'}),
             'ville': forms.Select(attrs={'class': 'form-control'}),
             'prefecture': forms.Select(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'nature': forms.Select(attrs={'class': 'form-control'}),
             'vehicule': forms.Select(attrs={'class': 'form-control'}),
-            'lettre_derogation': forms.FileInput(attrs={'class': 'form-control'})
-        }
-        labels = {
-            'date_survenance': 'Date du sinistre',
-            'heure_approximative': 'Heure approximative',
-            'nature': 'Nature du sinistre',
-            'precision': 'Détails des circonstances',
-            'lettre_derogation': 'Lettre de dérogation (si délai dépassé)'
+            'lettre_derogation': forms.FileInput(attrs={'class': 'form-control'}),
+            'n_police': forms.TextInput(attrs={'class': 'form-control'}),
+            'immatriculation': forms.TextInput(attrs={'class': 'form-control'}),
+            'nom_conducteur': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
-        # On récupère l'utilisateur connecté pour filtrer ses véhicules
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        # On force l'attribut multiple ici pour éviter l'erreur au démarrage
+        self.fields['fichiers_justificatifs'].widget.attrs.update({'multiple': True})
         self.fields['quartier'].required = True
         self.fields['vehicule'].required = True
-        self.fields['lettre_derogation'].required = False
-        
-        # On ne montre que les véhicules de l'utilisateur connecté
         if self.user and self.user.is_authenticated:
             self.fields['vehicule'].queryset = self.user.vehicules.all()
 
@@ -61,22 +60,10 @@ class SinistreForm(forms.ModelForm):
         cleaned_data = super().clean()
         date_survenance = cleaned_data.get("date_survenance")
         lettre = cleaned_data.get("lettre_derogation")
-
         if date_survenance:
             date_ref = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
             aujourdhui = timezone.now().date()
-
             if date_ref <= aujourdhui:
-                jours_ouvres = jours_ouvres_entre(date_ref, aujourdhui)
-                if jours_ouvres > 5 and not lettre:
-                    raise forms.ValidationError({'lettre_derogation': "Le délai de 5 jours ouvrés est dépassé. Veuillez fournir une lettre de dérogation."})
+                if jours_ouvres_entre(date_ref, aujourdhui) > 5 and not lettre:
+                    raise forms.ValidationError({'lettre_derogation': "Le délai de 5 jours est dépassé."})
         return cleaned_data
-
-PieceJointeFormSet = inlineformset_factory(
-    Sinistre,
-    PieceJointe,
-    fields=('fichier',),
-    extra=3,
-    can_delete=True,
-    widgets={'fichier': forms.FileInput(attrs={'class': 'form-control mt-2'})}
-)

@@ -1,0 +1,56 @@
+{% extends 'base_assure.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h3 class="mb-4">Suivi du sinistre {{ sinistre.numero_sinistre }}</h3>
+
+    <div class="row">
+        <div class="col-md-8 p-3 bg-white shadow-sm rounded mb-4">
+            <div class="row">
+                <div class="col-6">
+                    <p class="text-muted text-uppercase small">Statut</p>
+                    <h5>{{ sinistre.get_statut_display }}</h5>
+                </div>
+                <div class="col-6">
+                    <p class="text-muted text-uppercase small">Agent traitant</p>
+                    <h5>{{ sinistre.agent_traitant|default:"En attente d'affectation" }}</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <h4>Chronologie des étapes</h4>
+            <div class="p-3 bg-white shadow-sm rounded">
+                {% for etape in etapes %}
+                    <p><strong>{{ etape.date_etape|date:"d M Y" }}</strong> - {{ etape.titre }}<br>
+                    <small>{{ etape.description }}</small></p>
+                {% empty %}
+                    <p>Aucune étape enregistrée pour le moment.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <h4>Documents joints</h4>
+            <div class="p-3 bg-white shadow-sm rounded mb-3">
+                {% for doc in documents %}
+                    <a href="{{ doc.fichier.url }}">{{ doc.fichier.name }}</a><br>
+                {% empty %}
+                    <p>Aucun document joint.</p>
+                {% endfor %}
+            </div>
+
+            <h4>Messagerie</h4>
+            <div class="p-3 bg-white shadow-sm rounded">
+                {% for msg in messages %}
+                    <p><strong>{{ msg.auteur.username }}</strong> : {{ msg.contenu }}</p>
+                {% empty %}
+                    <p>Aucun message pour ce dossier.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

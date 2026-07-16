@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8">
@@ -8,44 +8,23 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root {
-            --fidelia-blue: #003366;
-        }
-
-        body {
-            background-color: #f4f7f9;
-            font-family: 'Segoe UI', sans-serif;
-        }
+        :root { --fidelia-blue: #003366; }
+        body { background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
 
         .sidebar {
-            width: 250px;
-            min-height: 100vh;
-            background: var(--fidelia-blue);
-            color: white;
-            position: fixed;
-            left: 0;
-            top: 0;
+            width: 250px; min-height: 100vh; background: var(--fidelia-blue);
+            color: white; position: fixed; left: 0; top: 0;
         }
-
         .sidebar a {
-            color: rgba(255, 255, 255, 0.85);
-            display: block;
-            padding: 12px 20px;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 2px 10px;
+            color: rgba(255, 255, 255, 0.85); display: block; padding: 12px 20px;
+            text-decoration: none; border-radius: 6px; margin: 2px 10px;
         }
-
-        .sidebar a:hover,
-        .sidebar a.active {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-        }
-
-        .main-content {
-            margin-left: 250px;
-            padding: 30px;
-        }
+        .sidebar a:hover, .sidebar a.active { background: rgba(255, 255, 255, 0.15); color: white; }
+        .main-content { margin-left: 250px; }
+        
+        /* Style pour l'en-tête utilisateur */
+        .header-user { background: white; padding: 20px 30px; border-bottom: 1px solid #e0e0e0; }
+        .user-badge { width: 40px; height: 40px; border-radius: 50%; background: var(--fidelia-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
     </style>
 </head>
 
@@ -53,24 +32,13 @@
     <nav class="sidebar">
         <div class="text-center py-4 border-bottom border-light border-opacity-25">
             <h5 class="mb-0">Fidélia eSinistre</h5>
-            <small class="opacity-75">{{ request.user.get_full_name|default:request.user.username}}</small>
         </div>
         <div class="py-3">
-            <a href="{% url 'accueil_assure' %}"
-                class="{% if request.resolver_match.url_name == 'accueil_assure' %}active{% endif %}"><i
-                    class="bi bi-house-door me-2"></i> Accueil</a>
-            <a href="{% url 'declarer_sinistre' %}"
-                class="{% if request.resolver_match.url_name == 'declarer_sinistre' %}active{% endif %}"><i
-                    class="bi bi-pencil-square me-2"></i> Nouvelle déclaration</a>
-            <a href="{% url 'suivi_sinistres' %}"
-                class="{% if request.resolver_match.url_name == 'suivi_sinistres' %}active{% endif %}"><i
-                    class="bi bi-list-check me-2"></i> Suivi de mes dossiers</a>
-            <a href="{% url 'documents_assure' %}"
-                class="{% if request.resolver_match.url_name == 'documents_assure' %}active{% endif %}"><i
-                    class="bi bi-folder2-open me-2"></i> Documents</a>
-            <a href="{% url 'profil_assure' %}"
-                class="{% if request.resolver_match.url_name == 'profil_assure' %}active{% endif %}"><i
-                    class="bi bi-person-circle me-2"></i> Profil</a>
+            <a href="{% url 'accueil_assure' %}" class="{% if request.resolver_match.url_name == 'accueil_assure' %}active{% endif %}"><i class="bi bi-house-door me-2"></i> Accueil</a>
+            <a href="{% url 'declarer_sinistre' %}" class="{% if request.resolver_match.url_name == 'declarer_sinistre' %}active{% endif %}"><i class="bi bi-pencil-square me-2"></i> Nouvelle déclaration</a>
+            <a href="{% url 'suivi_sinistres' %}" class="{% if request.resolver_match.url_name == 'suivi_sinistres' %}active{% endif %}"><i class="bi bi-list-check me-2"></i> Suivi de mes dossiers</a>
+            <a href="{% url 'documents_assure' %}" class="{% if request.resolver_match.url_name == 'documents_assure' %}active{% endif %}"><i class="bi bi-folder2-open me-2"></i> Documents</a>
+            <a href="{% url 'profil_assure' %}" class="{% if request.resolver_match.url_name == 'profil_assure' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Profil</a>
             <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-link" style="color: rgba(255,255,255,0.85); padding: 12px 20px;">
@@ -79,16 +47,25 @@
             </form>
         </div>
     </nav>
+
     <main class="main-content">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ messages.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-        {% block content %}{% endblock %}
+        <!-- En-tête ajouté ici -->
+        <div class="header-user d-flex align-items-center justify-content-between shadow-sm">
+            <h5 class="mb-0"><i class="bi bi-person-fill"></i> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
+            <div class="d-flex align-items-center">
+                <span class="text-muted me-3">Police : {{ request.user.assure.numero_police|default:"N/A" }}</span>
+                <div class="user-badge">{{ request.user.first_name|first|default:"U" }}{{ request.user.last_name|first|default:"I" }}</div>
+            </div>
+        </div>
+
+        <div class="p-4">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+        </div>
     </main>
 </body>
-
 </html>

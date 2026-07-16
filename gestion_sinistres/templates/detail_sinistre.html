@@ -1,39 +1,42 @@
 {% extends "base_assure.html" %}
 
-{% block title %}Détail du Sinistre{% endblock %}
-
 {% block content %}
-<style>
-    .timeline-item { position: relative; padding-left: 30px; margin-bottom: 20px; border-left: 2px solid #ddd; }
-    .timeline-marker { position: absolute; left: -7px; top: 0; width: 14px; height: 14px; border-radius: 50%; background: #28a745; border: 2px solid white; }
-    .chat-box { height: 350px; overflow-y: auto; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }
-</style>
+<div class="container-fluid mt-4">
+    <!-- Titre principal -->
+    <h3 class="mb-4">📋 Suivi du sinistre : {{ sinistre.numero_sinistre }}</h3>
 
-<div class="container-fluid">
-    <h3 class="mb-4" style="color: #003366;"><i class="bi bi-folder2-open"></i> Suivi du sinistre {{ sinistre.numero_sinistre }}</h3>
+    <!-- Cartes d'information en haut -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card p-3 shadow-sm border-0">
+                <p class="text-uppercase text-muted small fw-bold mb-1">Date déclaration</p>
+                <h5 class="fw-bold">{{ sinistre.date_declaration|date:"d/m/Y" }}</h5>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3 shadow-sm border-0">
+                <p class="text-uppercase text-muted small fw-bold mb-1">Statut actuel</p>
+                <h5 class="fw-bold text-primary">{{ sinistre.get_statut_display }}</h5>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card p-3 shadow-sm border-0">
+                <p class="text-uppercase text-muted small fw-bold mb-1">Agent traitant</p>
+                <h5 class="fw-bold">{{ sinistre.agent_traitant|default:"Non assigné" }}</h5>
+            </div>
+        </div>
+    </div>
 
     <div class="row">
+        <!-- Chronologie des évolutions -->
         <div class="col-md-8">
-            <div class="card shadow-sm border-0 mb-4 p-4">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="text-uppercase text-secondary small fw-bold">Statut</label>
-                        <p class="h5 text-primary">{{ sinistre.get_statut_display }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="text-uppercase text-secondary small fw-bold">Agent traitant</label>
-                        <p class="h5">{{ sinistre.agent_traitant.get_full_name|default:"En attente d'affectation" }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <h4 class="mb-3">Chronologie des étapes</h4>
-            <div class="bg-white p-4 rounded shadow-sm border">
-                {% for etape in historique %}
-                <div class="timeline-item">
-                    <div class="timeline-marker"></div>
-                    <p class="mb-0 fw-bold">{{ etape.statut }}</p>
-                    <small class="text-muted">{{ etape.date_changement|date:"d/m/Y H:i" }}</small>
+            <h4>Évolutions du dossier</h4>
+            <div class="bg-white p-4 rounded shadow-sm border-0 mb-4">
+                {% for etape in sinistre.etapes.all %}
+                <div class="mb-3 border-bottom pb-2">
+                    <div class="fw-bold text-primary">{{ etape.titre }}</div>
+                    <small class="text-muted">{{ etape.date_etape|date:"d/m/Y H:i" }}</small>
+                    <p class="mt-1 mb-0">{{ etape.description }}</p>
                 </div>
                 {% empty %}
                 <p class="text-muted">Aucune étape enregistrée pour le moment.</p>
@@ -41,31 +44,51 @@
             </div>
         </div>
 
+        <!-- Documents et Messagerie -->
         <div class="col-md-4">
+            <!-- Documents joints -->
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white fw-bold py-3 border-0">Documents joints</div>
+                <div class="card-header bg-white fw-bold">📁 Documents joints</div>
                 <ul class="list-group list-group-flush">
                     {% for piece in sinistre.pieces.all %}
-                    <li class="list-group-item"><i class="bi bi-file-earmark-pdf me-2"></i> {{ piece.nom_fichier }}</li>
+                    <li class="list-group-item">
+                        <a href="{{ piece.fichier.url }}" target="_blank">
+                            {{ piece.fichier.name|cut:"sinistres/documents/" }}
+                        </a>
+                    </li>
                     {% empty %}
-                    <li class="list-group-item text-muted small">Aucun document joint.</li>
+                    <li class="list-group-item text-muted">Aucun document joint.</li>
                     {% endfor %}
                 </ul>
             </div>
 
+            <!-- Messagerie -->
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white fw-bold py-3 border-0">Messagerie</div>
-                <div class="chat-box">
-                    {% for msg in messages %}
+                <div class="card-header bg-white fw-bold">💬 Messagerie</div>
+                <div class="p-3" style="height: 350px; overflow-y: auto; background: #f8f9fa;">
+                    {% for msg in sinistre.messages.all %}
                     <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
-                        <small class="text-muted d-block">{{ msg.auteur.username }} - {{ msg.date_envoi|date:"d/m H:i" }}</small>
-                        <div class="d-inline-block p-2 rounded {% if msg.auteur == request.user %}bg-primary text-white{% else %}bg-light border{% endif %}">
+                        <div class="p-2 px-3 rounded shadow-sm d-inline-block 
+                            {% if msg.auteur == request.user %}bg-primary text-white{% else %}bg-white border{% endif %}">
                             {{ msg.contenu }}
                         </div>
+                        <small class="d-block text-muted mt-1" style="font-size: 0.7rem;">
+                            {{ msg.date_envoi|date:"H:i" }}
+                        </small>
                     </div>
                     {% empty %}
-                    <p class="text-muted text-center small mt-4">Aucun message pour ce dossier.</p>
+                    <p class="text-muted text-center mt-4">Aucun message pour le moment.</p>
                     {% endfor %}
+                </div>
+                <!-- Zone de saisie -->
+                <div class="card-footer bg-white border-top-0">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" name="contenu" class="form-control" placeholder="Répondre..." required>
+                            <button class="btn btn-primary" type="submit">Envoyer</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

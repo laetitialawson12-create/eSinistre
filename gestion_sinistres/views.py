@@ -1,32 +1,31 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import SinistreForm, PieceJointeFormSet
-from .models import Sinistre, PieceJointe
-
-# --- PARCOURS ASSURÉ ---
+from .forms import SinistreForm
+from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre
 
 @login_required
 def declarer_sinistre(request):
     if request.method == 'POST':
         form = SinistreForm(request.POST, request.FILES, user=request.user)
-        formset = PieceJointeFormSet(request.POST, request.FILES)
-        
-        if form.is_valid() and formset.is_valid():
-            # Utilisation de commit=False pour injecter l'utilisateur
+        if form.is_valid():
             sinistre = form.save(commit=False)
-            sinistre.assure = request.user  # Assure le lien avec l'utilisateur
+            sinistre.assure = request.user
             sinistre.save()
             
-            formset.instance = sinistre
-            formset.save()
+            # Sauvegarde des fichiers
+            files = request.FILES.getlist('fichiers_justificatifs')
+            for f in files:
+                PieceJointe.objects.create(sinistre=sinistre, fichier=f)
             
+            # Stockage en session pour la confirmation
             request.session['temp_sinistre_id'] = sinistre.id
-            return redirect('confirmer_sinistre')
+            messages.success(request, f"Sinistre {sinistre.numero_sinistre} déclaré avec succès.")
+            return redirect('confirmer_sinistre') 
     else:
         form = SinistreForm(user=request.user)
-        formset = PieceJointeFormSet()
-    return render(request, 'declaration.html', {'form': form, 'formset': formset})
+    
+    return render(request, 'declaration.html', {'form': form})
 
 @login_required
 def confirmer_sinistre(request):
@@ -39,7 +38,6 @@ def confirmer_sinistre(request):
 @login_required
 def finaliser_envoi(request):
     if request.method == 'POST':
-        # Logique de changement de statut vers "En cours"
         if 'temp_sinistre_id' in request.session:
             del request.session['temp_sinistre_id']
         messages.success(request, 'Dossier transmis avec succès.')
@@ -48,67 +46,57 @@ def finaliser_envoi(request):
 
 @login_required
 def accueil_assure(request):
-    # Filtrage strict par utilisateur connecté
-    sinistres = Sinistre.objects.filter(assure=request.user)
+    all_sinistres = Sinistre.objects.filter(assure=request.user)
     context = {
-        'sinistres': sinistres,
-        'total_en_cours': sinistres.filter(statut='en_cours').count(),
-        'total_attente': sinistres.filter(statut='attente_complements').count(),
+        'total': all_sinistres.count(),
+        'en_cours': all_sinistres.filter(statut='EN_COURS').count(),
+        'derniers': all_sinistres.order_by('-date_declaration')[:5],
     }
     return render(request, 'accueil_assure.html', context)
 
 @login_required
-def detail_sinistre(request, sinistre_id):
-    # Sécurise l'accès : l'utilisateur ne peut voir que SON dossier
-    sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
-    return render(request, 'detail_sinistre.html', {'sinistre': sinistre})
-
-@login_required
 def suivi_sinistres(request):
-    # On récupère uniquement les sinistres de l'utilisateur connecté
     sinistres = Sinistre.objects.filter(assure=request.user).order_by('-date_declaration')
     return render(request, 'suivi_sinistres.html', {'sinistres': sinistres})
 
+@login_required
+def detail_sinistre(request, sinistre_id):
+    # Sécurisation : l'utilisateur ne peut voir que ses propres sinistres
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
+    
+    # Gestion de l'envoi de message en POST
+    if request.method == 'POST' and 'contenu' in request.POST:
+        Message.objects.create(
+            sinistre=sinistre,
+            auteur=request.user,
+            contenu=request.POST.get('contenu')
+        )
+        return redirect('detail_sinistre', sinistre_id=sinistre.id)
 
-# --- ESPACE AGENT (SQUELETTE) ---
+    # Contexte pour le rendu
+    context = {
+        'sinistre': sinistre,
+        'historique': sinistre.historique.all().order_by('date_changement'),
+        'messages': sinistre.messages.all().order_by('date_envoi'),
+        'documents': sinistre.pieces.all(),
+    }
+    return render(request, 'detail_sinistre.html', context)
+
 
 @login_required
 def tableau_bord_agent(request):
-    # Vérification simple : nécessite un groupe 'Agent' (à implémenter)
+    # Vérification simple pour l'accès agent
     if not request.user.groups.filter(name='Agent').exists():
         return redirect('accueil_assure')
     
-    sinistres_a_traiter = Sinistre.objects.filter(statut='en_cours')
+    sinistres_a_traiter = Sinistre.objects.filter(statut='EN_COURS')
     return render(request, 'agent/dashboard.html', {'sinistres': sinistres_a_traiter})
 
-
-# Ajoutez cette fonction à votre fichier views.py actuel
 @login_required
 def documents_assure(request):
-    # Récupère les pièces jointes liées aux véhicules de l'assuré connecté
-    pieces = PieceJointe.objects.filter(sinistre__vehicule__proprietaire=request.user)
-    # Récupère les sinistres ayant une lettre de dérogation pour cet assuré
-    derogations = Sinistre.objects.filter(
-        vehicule__proprietaire=request.user
-    ).exclude(lettre_derogation__isnull=True).exclude(lettre_derogation='')
-    
-    return render(request, 'documents_assure.html', {'pieces': pieces, 'derogations': derogations})
+    pieces = PieceJointe.objects.filter(sinistre__assure=request.user)
+    return render(request, 'documents_assure.html', {'pieces': pieces})
 
-# Ajoutez cette fonction à votre fichier views.py
 @login_required
 def profil_assure(request):
     return render(request, 'profil_assure.html', {'user': request.user})
-
-
-def detail_sinistre(request, sinistre_id):
-    sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
-    # On récupère l'historique trié par date
-    historique = sinistre.historique.all().order_by('date_changement')
-    # Pour les messages (si vous avez un modèle Message), sinon listez-les ici
-    messages = sinistre.messages.all().order_by('date_envoi')
-    
-    return render(request, 'detail_sinistre.html', {
-        'sinistre': sinistre,
-        'historique': historique,
-        'messages': messages,
-    })
