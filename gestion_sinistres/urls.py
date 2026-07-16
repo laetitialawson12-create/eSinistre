@@ -13,5 +13,6 @@ urlpatterns = [
     path('finaliser/', views.finaliser_envoi, name='finaliser_envoi'),
     path('suivi/', views.suivi_sinistres, name='suivi_sinistres'),
     path('documents/', views.documents_assure, name='documents_assure'),
+    path('dossier/<int:sinistre_id>/', views.detail_sinistre, name='detail_sinistre'),
     path('profil/', views.profil_assure, name='profil_assure'),
 ]

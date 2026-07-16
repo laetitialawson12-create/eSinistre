@@ -39,16 +39,19 @@ class Sinistre(models.Model):
     #STATUTS
     STATUS_CHOICES = [
         ('SOUMIS', 'Soumis'),
-        ('ATTENTE', 'En attente de validation'),
+        ('ATTENTE_COMPLEMENTS', 'En attente de compléments'),
+        ('ATTENTE_VALIDATION', 'En attente de validation'),
+        ('A_CORRIGER', 'A corriger'),
         ('EN_COURS', 'En cours'),
         ('CLOTURE', 'Clôturé'),
         ('SANS_SUITE', 'Sans suite'),
+        ('REOUVERT', 'Réouvert'),
     ]
 
 
     # Identifiants
     numero_sinistre = models.CharField(max_length=20, unique=True)
-    statut = models.CharField(max_length=15, choices=STATUS_CHOICES, default='SOUMIS')
+    statut = models.CharField(max_length=30, choices=STATUS_CHOICES, default='SOUMIS')
 
     # Informations de base 
     date_survenance = models.DateTimeField()
@@ -69,6 +72,7 @@ class Sinistre(models.Model):
 
     # Informations pour la génération du numéro
     numero_point_vente = models.CharField(max_length=10, default="001")
+    assure = models.ForeignKey('auth.User', on_delete=models.CASCADE, related_name='sinistres')
 
     # Pièces jointes
     lettre_derogation = models.FileField(upload_to='sinistres/constats/', blank=True, null=True)
@@ -98,3 +102,18 @@ class PieceJointe(models.Model):
     sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='pieces')
     fichier = models.FileField(upload_to='sinistres/documents/')
     date_ajout = models.DateTimeField(auto_now_add=True)
+
+
+class HistoriqueSinistre(models.Model):
+    sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='historique')
+    statut = models.CharField(max_length=50)
+    date_changement = models.DateTimeField(auto_now_add=True)
+    commentaires = models.TextField(blank=True)
+    auteur = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True)
+
+
+class Message(models.Model):
+    sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='messages')
+    auteur = models.ForeignKey('auth.User', on_delete=models.CASCADE)
+    contenu = models.TextField()
+    date_envoi = models.DateTimeField(auto_now_add=True)

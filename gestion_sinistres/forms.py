@@ -46,10 +46,16 @@ class SinistreForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # On récupère l'utilisateur connecté pour filtrer ses véhicules
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['quartier'].required = True
         self.fields['vehicule'].required = True
         self.fields['lettre_derogation'].required = False
+        
+        # On ne montre que les véhicules de l'utilisateur connecté
+        if self.user and self.user.is_authenticated:
+            self.fields['vehicule'].queryset = self.user.vehicules.all()
 
     def clean(self):
         cleaned_data = super().clean()
