@@ -1,0 +1,49 @@
+{% extends "base_agent.html" %}
+{% block title %}Accueil{% endblock %}
+{% block content %}
+<h4 class="mb-4">Tableau de bord</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0"><div class="card-body">
+            <h2 class="fw-bold mb-0">{{ a_instruire }}</h2>
+            <p class="text-muted mb-0">À instruire</p>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0"><div class="card-body">
+            <h2 class="fw-bold mb-0 text-warning">{{ attente_complements }}</h2>
+            <p class="text-muted mb-0">En attente de compléments</p>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0"><div class="card-body">
+            <h2 class="fw-bold mb-0 text-success">{{ valides_ce_mois }}</h2>
+            <p class="text-muted mb-0">Clôturés ce mois</p>
+        </div></div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white fw-bold">📥 Dossiers à instruire</div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead><tr><th>N° Sinistre</th><th>Date</th><th>Assuré</th><th>Nature</th><th>Statut</th><th></th></tr></thead>
+            <tbody>
+                {% for s in derniers_a_instruire %}
+                <tr>
+                    <td><strong>{{ s.numero_sinistre }}</strong></td>
+                    <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+                    <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
+                    <td>{{ s.get_nature_display }}</td>
+                    <td><span class="badge bg-primary">{{ s.get_statut_display }}</span></td>
+                    <td><a href="#" class="btn btn-sm btn-primary">Instruire</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier à instruire pour le moment.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

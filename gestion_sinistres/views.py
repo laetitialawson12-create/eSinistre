@@ -1,10 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from .forms import SinistreForm, ModifierProfilForm
-from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure
-from django.contrib.auth import login
-from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth.decorators import login_required, user_passes_test
+from .forms import SinistreForm, ModifierProfilForm, AgentCreationForm
+from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent
+from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+
+@login_required
+def redirection_login(request):
+    if hasattr(request.user, 'agent'):
+        return redirect('accueil_agent')
+    if hasattr(request.user, 'assure'):
+        return redirect('accueil_assure')
+    return redirect('login')
 
 
 @login_required
@@ -179,3 +190,140 @@ def politique_confidentialite(request):
         return redirect('accueil_assure')
 
     return render(request, 'politique_confidentialite.html')
+
+
+@login_required
+def accueil_agent(request):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistres_agence = Sinistre.objects.all()
+
+    context = {
+        'agent': agent,
+        'a_instruire': sinistres_agence.filter(statut='SOUMIS').count(),
+        'attente_complements': sinistres_agence.filter(statut='ATTENTE_COMPLEMENTS').count(),
+        'valides_ce_mois': sinistres_agence.filter(
+            statut='CLOTURE',
+            date_declaration__month=timezone.now().month,
+            date_declaration__year=timezone.now().year,
+        ).count(),
+        'derniers_a_instruire': sinistres_agence.filter(statut='SOUMIS').order_by('-date_declaration')[:5],
+    }
+    return render(request, 'accueil_agent.html', context)
+
+
+
+@login_required
+def changer_mot_de_passe_agent(request):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user)  # évite d'être déconnecté
+            agent.doit_changer_mot_de_passe = False
+            agent.compte_active = True
+            agent.save()
+            messages.success(request, "Mot de passe modifié avec succès.")
+            return redirect('accueil_agent')
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, 'changer_mot_de_passe_agent.html', {'form': form})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def creer_agent(request):
+    if request.method == 'POST':
+        form = AgentCreationForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            username = f"{data['prenom']}.{data['nom']}".lower().replace(' ', '')
+
+            user = User.objects.create_user(
+                username=username,
+                email=data['email'],
+                first_name=data['prenom'],
+                last_name=data['nom'],
+            )
+            user.set_password('0000')  # mot de passe par défaut, bypass des validateurs
+            user.save()
+
+            Agent.objects.create(
+                user=user,
+                agence=data['agence'],
+                matricule=data['matricule'],
+                telephone=data['telephone'],
+                compte_active=False,
+                doit_changer_mot_de_passe=True,
+            )
+            messages.success(request, f"Agent créé. Identifiant : {username} — Mot de passe temporaire : 0000")
+            return redirect('creer_agent')
+    else:
+        form = AgentCreationForm()
+
+    return render(request, 'creer_agent.html', {'form': form})
+
+
+@login_required
+def dossiers_a_instruire(request):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistres = Sinistre.objects.filter(
+        statut__in=['SOUMIS', 'ATTENTE_COMPLEMENTS', 'A_CORRIGER']
+    ).order_by('date_declaration')
+
+    return render(request, 'agent_a_instruire.html', {'agent': agent, 'sinistres': sinistres})
+
+
+@login_required
+def prendre_en_charge(request, sinistre_id):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    if sinistre.statut == 'SOUMIS':
+        sinistre.statut = 'EN_COURS'
+        sinistre.agent_traitant = request.user.get_full_name() or request.user.username
+        sinistre.save()
+        HistoriqueSinistre.objects.create(
+            sinistre=sinistre,
+            statut='EN_COURS',
+            commentaires="Dossier pris en charge par l'agent.",
+            auteur=request.user,
+        )
+        messages.success(request, f"Dossier {sinistre.numero_sinistre} pris en charge.")
+
+    return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
+
+@login_required
+def detail_sinistre_agent(request, sinistre_id):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    if request.method == 'POST' and 'contenu' in request.POST:
+        Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
+        return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
+    context = {
+        'agent': agent,
+        'sinistre': sinistre,
+        'historique': sinistre.historique.all().order_by('date_changement'),
+        'discussion': sinistre.messages.all().order_by('date_envoi'),
+        'documents': sinistre.pieces.all(),
+    }
+    return render(request, 'detail_sinistre_agent.html', context)

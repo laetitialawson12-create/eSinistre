@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sinistre
+from .models import Sinistre, Agent, Agence
 from django.contrib.auth.models import User
 
 
@@ -75,3 +75,18 @@ class ModifierProfilForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
+
+
+class AgentCreationForm(forms.Form):
+    matricule = forms.CharField(max_length=20, label="Matricule")
+    nom = forms.CharField(max_length=100, label="Nom")
+    prenom = forms.CharField(max_length=100, label="Prénom")
+    email = forms.EmailField(required=False, label="Email")
+    telephone = forms.CharField(max_length=20, required=False, label="Téléphone")
+    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Agence")
+
+    def clean_matricule(self):
+        matricule = self.cleaned_data['matricule']
+        if Agent.objects.filter(matricule=matricule).exists():
+            raise forms.ValidationError("Ce matricule existe déjà.")
+        return matricule

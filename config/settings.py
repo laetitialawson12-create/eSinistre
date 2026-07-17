@@ -49,6 +49,8 @@ MIDDLEWARE = [
     'gestion_sinistres.middleware.PolitiqueConfidentialiteMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'gestion_sinistres.middleware.PolitiqueConfidentialiteMiddleware',
+    'gestion_sinistres.middleware.MotDePasseTemporaireMiddleware',   # ← nouveau
 ]
 
 
@@ -122,7 +124,7 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = '/sinistres/login/'
-LOGIN_REDIRECT_URL = '/sinistres/accueil/'
+LOGIN_REDIRECT_URL = '/sinistres/redirection/'
 LOGOUT_REDIRECT_URL = '/sinistres/login/'
 
 STATICFILES_DIRS = [

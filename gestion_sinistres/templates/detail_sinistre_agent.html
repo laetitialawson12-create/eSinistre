@@ -1,0 +1,41 @@
+{% extends "base_agent.html" %}
+{% block title %}Dossier {{ sinistre.numero_sinistre }}{% endblock %}
+{% block content %}
+<h4 class="mb-3">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
+        <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
+        <p><strong>Statut :</strong> <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span></p>
+        <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+        <p><strong>Précisions :</strong> {{ sinistre.precision }}</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold">📎 Pièces jointes</div>
+    <div class="card-body">
+        {% for doc in documents %}
+            <a href="{{ doc.fichier.url }}" target="_blank">{{ doc.fichier.name }}</a><br>
+        {% empty %}
+            <span class="text-muted">Aucun document.</span>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white fw-bold">💬 Messages</div>
+    <div class="card-body">
+        {% for m in discussion %}
+            <p><strong>{{ m.auteur.get_full_name|default:m.auteur.username }}</strong> ({{ m.date_envoi|date:"d/m/Y H:i" }}) : {{ m.contenu }}</p>
+        {% empty %}
+            <p class="text-muted">Aucun message.</p>
+        {% endfor %}
+        <form method="post">
+            {% csrf_token %}
+            <textarea name="contenu" class="form-control mb-2" rows="2" placeholder="Écrire à l'assuré..."></textarea>
+            <button type="submit" class="btn btn-primary btn-sm">Envoyer</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

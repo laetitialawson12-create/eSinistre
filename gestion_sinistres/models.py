@@ -128,11 +128,32 @@ class Message(models.Model):
         return f"Message de {self.auteur.username} le {self.date_envoi.strftime('%d/%m')}"
     
 
+class Agence(models.Model):
+    nom = models.CharField(max_length=100)
+    code = models.CharField(max_length=10, unique=True)  # ex: "001"
+
+    def __str__(self):
+        return f"{self.nom} ({self.code})"
+    
+
 class Assure(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='assure')
     numero_police = models.CharField(max_length=50, unique=True)
+    agence = models.ForeignKey(Agence, on_delete=models.SET_NULL, null=True, blank=True)
     compte_active = models.BooleanField(default=False)
     politique_confidentialite_acceptee = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} - {self.numero_police}"
+
+
+class Agent(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='agent')
+    agence = models.ForeignKey(Agence, on_delete=models.SET_NULL, null=True)
+    matricule = models.CharField(max_length=20, unique=True)
+    telephone = models.CharField(max_length=20, blank=True)
+    compte_active = models.BooleanField(default=False)
+    doit_changer_mot_de_passe = models.BooleanField(default=True)   # ← nouveau
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - {self.agence}"
