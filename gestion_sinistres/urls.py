@@ -15,4 +15,6 @@ urlpatterns = [
     path('documents/', views.documents_assure, name='documents_assure'),
     path('dossier/<int:sinistre_id>/', views.detail_sinistre, name='detail_sinistre'),
     path('profil/', views.profil_assure, name='profil_assure'),
+    path('profil/modifier/', views.modifier_profil, name='modifier_profil'),
+    path('declarer/annuler/', views.annuler_declaration, name='annuler_declaration'),
 ]

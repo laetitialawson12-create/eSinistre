@@ -44,7 +44,7 @@
 
             <h4>Messagerie</h4>
             <div class="p-3 bg-white shadow-sm rounded">
-                {% for msg in messages %}
+                {% for msg in discussion %}
                     <p><strong>{{ msg.auteur.username }}</strong> : {{ msg.contenu }}</p>
                 {% empty %}
                     <p>Aucun message pour ce dossier.</p>

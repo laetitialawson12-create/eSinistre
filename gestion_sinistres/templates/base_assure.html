@@ -12,8 +12,9 @@
         body { background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
 
         .sidebar {
-            width: 250px; min-height: 100vh; background: var(--fidelia-blue);
+            width: 250px; height: 100vh; background: var(--fidelia-blue);
             color: white; position: fixed; left: 0; top: 0;
+            display: flex; flex-direction: column;
         }
         .sidebar a {
             color: rgba(255, 255, 255, 0.85); display: block; padding: 12px 20px;
@@ -39,6 +40,9 @@
             <a href="{% url 'suivi_sinistres' %}" class="{% if request.resolver_match.url_name == 'suivi_sinistres' %}active{% endif %}"><i class="bi bi-list-check me-2"></i> Suivi de mes dossiers</a>
             <a href="{% url 'documents_assure' %}" class="{% if request.resolver_match.url_name == 'documents_assure' %}active{% endif %}"><i class="bi bi-folder2-open me-2"></i> Documents</a>
             <a href="{% url 'profil_assure' %}" class="{% if request.resolver_match.url_name == 'profil_assure' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Profil</a>
+        </div>
+
+        <div class="py-3 mt-auto">
             <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-link" style="color: rgba(255,255,255,0.85); padding: 12px 20px;">

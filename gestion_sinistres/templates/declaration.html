@@ -3,22 +3,41 @@
 {% block content %}
 <div class="container mt-4">
     <h3 class="mb-4">Nouvelle Déclaration de Sinistre</h3>
-    
+
     <form method="post" enctype="multipart/form-data" class="shadow-sm p-4 bg-white rounded">
         {% csrf_token %}
-        
+
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li><strong>{{ field.label }}</strong> : {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
         <div class="row mb-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">N° de Police</label>
                 {{ form.n_police }}
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">Immatriculation</label>
                 {{ form.immatriculation }}
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">Nom du conducteur</label>
                 {{ form.nom_conducteur }}
+            </div>
+            <div class="col-md-3">
+                {{ form.vehicule.label_tag }}
+                {{ form.vehicule }}
             </div>
         </div>
 
@@ -59,7 +78,10 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary w-100">Soumettre la déclaration</button>
+        <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-primary flex-grow-1">Soumettre la déclaration</button>
+            <a href="{% url 'annuler_declaration' %}" class="btn btn-outline-secondary flex-grow-1 text-center">Annuler</a>
+        </div>
     </form>
 </div>
 
@@ -78,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const selectedDate = new Date(dateField.value);
         const today = new Date();
-        
+
         // Calcul de la différence en jours
         const diffTime = today - selectedDate;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

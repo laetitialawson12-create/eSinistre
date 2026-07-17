@@ -24,7 +24,7 @@
         <div class="row g-4">
             <div class="col-md-6">
                 <label class="text-uppercase text-secondary small fw-bold">Identifiant</label>
-                <p class="fs-6 fw-medium">{{ user.username }}</p>
+                <p class="fs-6 fw-medium">{{ user.assure.numero_police|default:"Non renseigné" }}</p>
             </div>
             <div class="col-md-6">
                 <label class="text-uppercase text-secondary small fw-bold">Email</label>
@@ -46,7 +46,7 @@
 
         <!-- Action secondaire -->
         <div class="mt-4">
-            <a href="#" class="btn btn-outline-primary btn-sm">
+            <a href="{% url 'modifier_profil' %}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-pencil-square"></i> Modifier mes informations
             </a>
         </div>

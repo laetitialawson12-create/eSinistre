@@ -2,6 +2,8 @@ from django import forms
 from django.utils import timezone
 from datetime import timedelta
 from .models import Sinistre
+from django.contrib.auth.models import User
+
 
 def jours_ouvres_entre(date_debut, date_fin):
     jours = 0
@@ -67,3 +69,9 @@ class SinistreForm(forms.ModelForm):
                 if jours_ouvres_entre(date_ref, aujourdhui) > 5 and not lettre:
                     raise forms.ValidationError({'lettre_derogation': "Le délai de 5 jours est dépassé."})
         return cleaned_data
+    
+
+class ModifierProfilForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']

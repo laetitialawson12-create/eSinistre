@@ -1,31 +1,43 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import SinistreForm
+from .forms import SinistreForm, ModifierProfilForm
 from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre
 
 @login_required
 def declarer_sinistre(request):
+    sinistre_id = request.session.get('temp_sinistre_id')
+    instance = None
+    if sinistre_id:
+        instance = Sinistre.objects.filter(id=sinistre_id, assure=request.user).first()
+
     if request.method == 'POST':
-        form = SinistreForm(request.POST, request.FILES, user=request.user)
+        form = SinistreForm(request.POST, request.FILES, user=request.user, instance=instance)
         if form.is_valid():
             sinistre = form.save(commit=False)
             sinistre.assure = request.user
             sinistre.save()
-            
+
             # Sauvegarde des fichiers
             files = request.FILES.getlist('fichiers_justificatifs')
             for f in files:
                 PieceJointe.objects.create(sinistre=sinistre, fichier=f)
-            
-            # Stockage en session pour la confirmation
+
             request.session['temp_sinistre_id'] = sinistre.id
             messages.success(request, f"Sinistre {sinistre.numero_sinistre} déclaré avec succès.")
-            return redirect('confirmer_sinistre') 
+            return redirect('confirmer_sinistre')
     else:
-        form = SinistreForm(user=request.user)
-    
+        form = SinistreForm(user=request.user, instance=instance)
+
     return render(request, 'declaration.html', {'form': form})
+
+@login_required
+def annuler_declaration(request):
+    sinistre_id = request.session.pop('temp_sinistre_id', None)
+    if sinistre_id:
+        Sinistre.objects.filter(id=sinistre_id, assure=request.user).delete()
+    return redirect('accueil_assure')
+
 
 @login_required
 def confirmer_sinistre(request):
@@ -33,7 +45,9 @@ def confirmer_sinistre(request):
     if not sinistre_id:
         return redirect('declarer_sinistre')
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
-    return render(request, 'confirmation.html', {'sinistre': sinistre})
+    pieces = sinistre.pieces.all()
+    return render(request, 'confirmation.html', {'sinistre': sinistre, 'pieces': pieces})
+
 
 @login_required
 def finaliser_envoi(request):
@@ -77,7 +91,7 @@ def detail_sinistre(request, sinistre_id):
     context = {
         'sinistre': sinistre,
         'historique': sinistre.historique.all().order_by('date_changement'),
-        'messages': sinistre.messages.all().order_by('date_envoi'),
+        'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
     }
     return render(request, 'detail_sinistre.html', context)
@@ -100,3 +114,15 @@ def documents_assure(request):
 @login_required
 def profil_assure(request):
     return render(request, 'profil_assure.html', {'user': request.user})
+
+@login_required
+def modifier_profil(request):
+    if request.method == 'POST':
+        form = ModifierProfilForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Vos informations ont été mises à jour.")
+            return redirect('profil_assure')
+    else:
+        form = ModifierProfilForm(instance=request.user)
+    return render(request, 'modifier_profil.html', {'form': form})
