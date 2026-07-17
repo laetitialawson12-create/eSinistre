@@ -1,0 +1,10 @@
+{% extends "base_agent.html" %}
+{% block title %}Demander des compléments{% endblock %}
+{% block content %}
+<h4 class="mb-4">Demander des compléments pour le sinistre {{ sinistre.numero_sinistre }}</h4>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-warning">Envoyer la demande</button>
+</form>
+{% endblock %}
