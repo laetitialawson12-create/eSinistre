@@ -124,3 +124,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = '/sinistres/login/'
 LOGIN_REDIRECT_URL = '/sinistres/accueil/'
 LOGOUT_REDIRECT_URL = '/sinistres/login/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / 'gestion_sinistres/static',
+]

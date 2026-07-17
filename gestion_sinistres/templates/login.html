@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -10,7 +11,8 @@
     <style>
         :root { --fidelia-blue: #003366; }
         body {
-            background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+            background: url("{% static 'Fidelia.jpeg' %}") no-repeat center center fixed;
+            background-size: cover;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -71,13 +73,6 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold">Mot de passe</label>
                     <input type="password" name="password" class="form-control" placeholder="Votre mot de passe" required>
-                </div>
-
-                <div class="info-box mb-3">
-                    <i class="bi bi-lock-fill"></i>
-                    Le système détecte automatiquement votre profil d'accès à partir de vos identifiants.
-                    <br>
-                    <span class="text-muted">Les comptes agents sont créés par l'administrateur. Les comptes assurés sont créés automatiquement.</span>
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color: var(--fidelia-blue);">Se connecter</button>
