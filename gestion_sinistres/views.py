@@ -2,7 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import SinistreForm, ModifierProfilForm
-from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre
+from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure
+from django.contrib.auth import login
+from django.contrib.auth.forms import SetPasswordForm
+
 
 @login_required
 def declarer_sinistre(request):
@@ -126,3 +129,53 @@ def modifier_profil(request):
     else:
         form = ModifierProfilForm(instance=request.user)
     return render(request, 'modifier_profil.html', {'form': form})
+
+
+def activation_etape1(request):
+    if request.method == 'POST':
+        numero_police = request.POST.get('numero_police', '').strip()
+        assure = Assure.objects.filter(numero_police=numero_police, compte_active=False).first()
+        if assure:
+            request.session['activation_assure_id'] = assure.id
+            return redirect('activation_etape2')
+        else:
+            messages.error(request, "Numéro de police introuvable ou compte déjà activé.")
+    return render(request, 'activation_etape1.html')
+
+
+def activation_etape2(request):
+    assure_id = request.session.get('activation_assure_id')
+    if not assure_id:
+        return redirect('activation_etape1')
+    assure = get_object_or_404(Assure, id=assure_id, compte_active=False)
+
+    if request.method == 'POST':
+        form = SetPasswordForm(assure.user, request.POST)
+        if form.is_valid():
+            form.save()
+            assure.compte_active = True
+            assure.save()
+            del request.session['activation_assure_id']
+            login(request, assure.user)
+            return redirect('politique_confidentialite')
+    else:
+        form = SetPasswordForm(assure.user)
+
+    return render(request, 'activation_etape2.html', {'form': form, 'assure': assure})
+
+
+@login_required
+def politique_confidentialite(request):
+    assure = getattr(request.user, 'assure', None)
+    if not assure:
+        return redirect('accueil_assure')
+
+    if assure.politique_confidentialite_acceptee:
+        return redirect('accueil_assure')
+
+    if request.method == 'POST':
+        assure.politique_confidentialite_acceptee = True
+        assure.save()
+        return redirect('accueil_assure')
+
+    return render(request, 'politique_confidentialite.html')

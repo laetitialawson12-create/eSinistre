@@ -17,4 +17,7 @@ urlpatterns = [
     path('profil/', views.profil_assure, name='profil_assure'),
     path('profil/modifier/', views.modifier_profil, name='modifier_profil'),
     path('declarer/annuler/', views.annuler_declaration, name='annuler_declaration'),
+    path('activer-compte/', views.activation_etape1, name='activation_etape1'),
+    path('activer-compte/mot-de-passe/', views.activation_etape2, name='activation_etape2'),
+    path('politique-confidentialite/', views.politique_confidentialite, name='politique_confidentialite'),
 ]

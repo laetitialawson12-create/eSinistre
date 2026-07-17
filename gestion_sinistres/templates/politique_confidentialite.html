@@ -1,0 +1,40 @@
+{% extends 'base_assure.html' %}
+{% block title %}Politique de confidentialité{% endblock %}
+{% block content %}
+<div class="card shadow-sm border-0 mx-auto" style="max-width: 750px;">
+    <div class="card-body p-4">
+        <div class="text-center mb-4">
+            <i class="bi bi-shield-check" style="font-size: 2.5rem; color: #003366;"></i>
+            <h4 class="fw-bold mt-2" style="color: #003366;">Politique de confidentialité</h4>
+            <p class="text-muted small">Merci de lire attentivement avant de continuer</p>
+        </div>
+
+        <div class="mb-4" style="max-height: 350px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; font-size: 0.9rem;">
+            <h6 class="fw-bold" style="color: #003366;"><i class="bi bi-database-fill-check me-1"></i> Collecte des données</h6>
+            <p>Fidélia Assurances collecte les informations que vous transmettez dans le cadre de la gestion de vos contrats et sinistres (identité, coordonnées, circonstances des sinistres déclarés, pièces justificatives).</p>
+
+            <h6 class="fw-bold mt-3" style="color: #003366;"><i class="bi bi-lock-fill me-1"></i> Utilisation des données</h6>
+            <p>Ces données sont utilisées exclusivement pour le traitement de vos déclarations de sinistre, la gestion de votre contrat, et la communication avec nos agents et services concernés.</p>
+
+            <h6 class="fw-bold mt-3" style="color: #003366;"><i class="bi bi-people-fill me-1"></i> Partage des données</h6>
+            <p>Vos données ne sont partagées qu'avec les agents et responsables de Fidélia Assurances impliqués dans le traitement de votre dossier. Elles ne sont jamais cédées à des tiers à des fins commerciales.</p>
+
+            <h6 class="fw-bold mt-3" style="color: #003366;"><i class="bi bi-person-check-fill me-1"></i> Vos droits</h6>
+            <p>Vous pouvez à tout moment demander l'accès, la correction ou la suppression de vos données personnelles en contactant votre agent Fidélia.</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="accepte" required>
+                <label class="form-check-label" for="accepte">
+                    J'ai lu et j'accepte la politique de confidentialité de Fidélia Assurances.
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color: #003366;">
+                <i class="bi bi-check2-circle"></i> Continuer
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

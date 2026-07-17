@@ -26,13 +26,41 @@
         /* Style pour l'en-tête utilisateur */
         .header-user { background: white; padding: 20px 30px; border-bottom: 1px solid #e0e0e0; }
         .user-badge { width: 40px; height: 40px; border-radius: 50%; background: var(--fidelia-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+        .sidebar-toggle {
+            display: none;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        @media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 1050;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .sidebar-toggle {
+                display: inline-block;
+            }
+        }
     </style>
 </head>
 
 <body>
     <nav class="sidebar">
-        <div class="text-center py-4 border-bottom border-light border-opacity-25">
+        <div class="d-flex align-items-center justify-content-between py-4 px-3 border-bottom border-light border-opacity-25">
             <h5 class="mb-0">Fidélia eSinistre</h5>
+            <button class="sidebar-toggle d-lg-none" id="sidebarClose" style="color: white;">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
         <div class="py-3">
             <a href="{% url 'accueil_assure' %}" class="{% if request.resolver_match.url_name == 'accueil_assure' %}active{% endif %}"><i class="bi bi-house-door me-2"></i> Accueil</a>
@@ -55,10 +83,15 @@
     <main class="main-content">
         <!-- En-tête ajouté ici -->
         <div class="header-user d-flex align-items-center justify-content-between shadow-sm">
-            <h5 class="mb-0"><i class="bi bi-person-fill"></i> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
+            <div class="d-flex align-items-center">
+                <button class="sidebar-toggle me-3" id="sidebarToggle" style="color: #003366;">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h5 class="mb-0"><i class="bi bi-person-fill"></i> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
+            </div>
             <div class="d-flex align-items-center">
                 <span class="text-muted me-3">Police : {{ request.user.assure.numero_police|default:"N/A" }}</span>
-                <div class="user-badge">{{ request.user.first_name|first|default:"U" }}{{ request.user.last_name|first|default:"I" }}</div>
+                <a href="{% url 'profil_assure' %}" class="user-badge text-decoration-none">{{ request.user.first_name|first|default:"U" }}{{ request.user.last_name|first|default:"I" }}</a>
             </div>
         </div>
 
@@ -71,5 +104,21 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+    <script>
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.addEventListener('click', function () {
+                sidebar.classList.toggle('active');
+            });
+        }
+
+        const sidebarClose = document.getElementById('sidebarClose');
+        if (sidebarClose && sidebar) {
+            sidebarClose.addEventListener('click', function () {
+                sidebar.classList.remove('active');
+            });
+        }
+</script>
 </body>
 </html>

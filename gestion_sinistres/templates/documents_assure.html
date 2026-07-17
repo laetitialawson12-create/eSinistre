@@ -9,12 +9,28 @@
     <div class="card-body">
         {% if pieces %}
         <table class="table table-hover align-middle">
-            <!-- Votre contenu de tableau ici -->
+            <thead>
+                <tr>
+                    <th>Dossier</th>
+                    <th>Fichier</th>
+                    <th>Ajouté le</th>
+                    <th></th>
+                </tr>
+            </thead>
             <tbody>
                 {% for piece in pieces %}
                 <tr>
-                    <td>{{ piece.fichier.name }}</td>
-                    <!-- ... -->
+                    <td><strong>{{ piece.sinistre.numero_sinistre }}</strong></td>
+                    <td>{{ piece.fichier.name|cut:"sinistres/documents/" }}</td>
+                    <td>{{ piece.date_ajout|date:"d/m/Y H:i" }}</td>
+                    <td class="text-end">
+                        <a href="{{ piece.fichier.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i> Ouvrir
+                        </a>
+                        <a href="{{ piece.fichier.url }}" download class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-download"></i> Télécharger
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

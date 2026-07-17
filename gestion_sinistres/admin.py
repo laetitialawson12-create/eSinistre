@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sinistre, Region, Ville, Prefecture, Vehicule, PieceJointe
+from .models import Sinistre, Region, Ville, Prefecture, Vehicule, PieceJointe, Assure
 
 # Personnalisation de l'affichage dans l'admin
 @admin.register(Sinistre)
@@ -21,3 +21,4 @@ class PieceJointeAdmin(admin.ModelAdmin):
 admin.site.register(Region)
 admin.site.register(Ville)
 admin.site.register(Prefecture)
+admin.site.register(Assure)

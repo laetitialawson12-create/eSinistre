@@ -1,7 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from datetime import datetime
 from django.contrib.auth.models import User
 
 # Classe région
@@ -58,7 +57,7 @@ class Sinistre(models.Model):
     agent_traitant = models.CharField(max_length=100, blank=True, null=True)
 
     montant_estime = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    
+
     # Informations de base 
     date_survenance = models.DateTimeField()
     date_declaration = models.DateTimeField(auto_now_add=True)
@@ -127,3 +126,13 @@ class Message(models.Model):
 
     def __str__(self):
         return f"Message de {self.auteur.username} le {self.date_envoi.strftime('%d/%m')}"
+    
+
+class Assure(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='assure')
+    numero_police = models.CharField(max_length=50, unique=True)
+    compte_active = models.BooleanField(default=False)
+    politique_confidentialite_acceptee = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.numero_police}"
