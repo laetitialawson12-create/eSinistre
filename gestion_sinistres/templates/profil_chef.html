@@ -1,16 +1,59 @@
 {% extends "base_chef.html" %}
+
 {% block title %}Mon profil{% endblock %}
+
 {% block content %}
-<h4 class="mb-4">👤 Mon profil</h4>
-<div class="card shadow-sm border-0" style="max-width: 500px;">
-    <div class="card-body">
-        <p><strong>Nom :</strong> {{ request.user.last_name|default:"—" }}</p>
-        <p><strong>Prénom :</strong> {{ request.user.first_name|default:"—" }}</p>
-        <p><strong>Email :</strong> {{ request.user.email|default:"—" }}</p>
-        <p><strong>Matricule :</strong> {{ chef.matricule }}</p>
-        <p><strong>Téléphone :</strong> {{ chef.telephone|default:"—" }}</p>
-        <p><strong>Agence :</strong> {{ chef.agence }}</p>
-        <a href="{% url 'modifier_profil_chef' %}" class="btn btn-primary btn-sm mt-2">Modifier mes informations</a>
+<h3 class="mb-4" style="color: #003366;"><i class="bi bi-person-circle"></i> Mon profil</h3>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <!-- En-tête du profil avec initiales -->
+        <div class="d-flex align-items-center mb-4">
+            <div class="avatar-circle me-3" style="width: 80px; height: 80px; border-radius: 50%; background: #003366; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">
+                {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+            </div>
+            <div>
+                <h5 class="mb-0">{{ request.user.get_full_name|default:request.user.username }}</h5>
+                <small class="text-muted"><i class="bi bi-briefcase"></i> Chef d'Agence Fidélia</small>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <!-- Informations détaillées -->
+        <div class="row g-4">
+            <div class="col-md-6">
+                <label class="text-uppercase text-secondary small fw-bold">Matricule</label>
+                <p class="fs-6 fw-medium">{{ chef.matricule|default:"Non renseigné" }}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="text-uppercase text-secondary small fw-bold">Email</label>
+                <p class="fs-6 fw-medium">{{ request.user.email|default:"Non renseigné" }}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="text-uppercase text-secondary small fw-bold">Nom</label>
+                <p class="fs-6 fw-medium">{{ request.user.last_name|default:"Non renseigné" }}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="text-uppercase text-secondary small fw-bold">Prénom</label>
+                <p class="fs-6 fw-medium">{{ request.user.first_name|default:"Non renseigné" }}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="text-uppercase text-secondary small fw-bold">Téléphone</label>
+                <p class="fs-6 fw-medium">{{ chef.telephone|default:"Non renseigné" }}</p>
+            </div>
+            <div class="col-md-6">
+                <label class="text-uppercase text-secondary small fw-bold">Agence</label>
+                <p class="fs-6 fw-medium">{{ chef.agence|default:"Non renseigné" }}</p>
+            </div>
+        </div>
+
+        <!-- Action -->
+        <div class="mt-4">
+            <a href="{% url 'modifier_profil_chef' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil-square"></i> Modifier mes informations
+            </a>
+        </div>
     </div>
 </div>
 {% endblock %}
