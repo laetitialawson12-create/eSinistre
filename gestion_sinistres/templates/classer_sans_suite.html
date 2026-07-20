@@ -1,0 +1,11 @@
+{% extends "base_chef.html" %}
+{% block title %}Classer sans suite{% endblock %}
+{% block content %}
+<h4 class="mb-4">Classer sans suite le dossier {{ sinistre.numero_sinistre }}</h4>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-secondary">Classer sans suite</button>
+    <a href="{% url 'detail_sinistre_chef' sinistre.id %}" class="btn btn-outline-secondary">Annuler</a>
+</form>
+{% endblock %}

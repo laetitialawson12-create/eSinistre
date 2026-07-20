@@ -1,0 +1,16 @@
+{% extends "base_chef.html" %}
+{% block title %}Mon profil{% endblock %}
+{% block content %}
+<h4 class="mb-4">👤 Mon profil</h4>
+<div class="card shadow-sm border-0" style="max-width: 500px;">
+    <div class="card-body">
+        <p><strong>Nom :</strong> {{ request.user.last_name|default:"—" }}</p>
+        <p><strong>Prénom :</strong> {{ request.user.first_name|default:"—" }}</p>
+        <p><strong>Email :</strong> {{ request.user.email|default:"—" }}</p>
+        <p><strong>Matricule :</strong> {{ chef.matricule }}</p>
+        <p><strong>Téléphone :</strong> {{ chef.telephone|default:"—" }}</p>
+        <p><strong>Agence :</strong> {{ chef.agence }}</p>
+        <a href="{% url 'modifier_profil_chef' %}" class="btn btn-primary btn-sm mt-2">Modifier mes informations</a>
+    </div>
+</div>
+{% endblock %}

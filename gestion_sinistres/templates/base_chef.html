@@ -26,6 +26,9 @@
         <div class="py-3">
             <a href="{% url 'accueil_chef' %}" class="{% if request.resolver_match.url_name == 'accueil_chef' %}active{% endif %}"><i class="bi bi-house-door me-2"></i> Accueil</a>
             <a href="{% url 'dossiers_a_valider' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_valider' or request.resolver_match.url_name == 'detail_sinistre_chef' %}active{% endif %}"><i class="bi bi-check2-square me-2"></i> À valider</a>
+            <a href="{% url 'dossiers_en_cours_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_en_cours_chef' %}active{% endif %}"><i class="bi bi-arrow-repeat me-2"></i> En cours</a>
+            <a href="{% url 'dossiers_clotures_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_clotures_chef' %}active{% endif %}"><i class="bi bi-folder2 me-2"></i> Clôturés</a>
+            <a href="{% url 'profil_chef' %}" class="{% if request.resolver_match.url_name == 'profil_chef' or request.resolver_match.url_name == 'modifier_profil_chef' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Profil</a>
         </div>
         <div class="py-3 mt-auto">
             <form method="post" action="{% url 'logout' %}">
@@ -37,7 +40,7 @@
     <main class="main-content">
         <div class="header-user d-flex align-items-center justify-content-between shadow-sm">
             <h5 class="mb-0"><i class="bi bi-person-fill"></i> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
-            <div class="user-badge">{{ request.user.first_name|first|default:"C" }}{{ request.user.last_name|first|default:"D" }}</div>
+            <a href="{% url 'profil_chef' %}" class="user-badge text-decoration-none">{{ request.user.first_name|first|default:"C" }}{{ request.user.last_name|first|default:"D" }}</a>
         </div>
         <div class="p-4">
             {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}

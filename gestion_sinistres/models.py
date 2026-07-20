@@ -68,6 +68,11 @@ class Sinistre(models.Model):
     banque_cheque = models.CharField(max_length=100, blank=True, null=True)
     montant_cheque = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     date_emission_cheque = models.DateField(null=True, blank=True)
+    attestation_generee = models.BooleanField(default=False)
+    date_attestation = models.DateTimeField(null=True, blank=True)
+    motif_sans_suite = models.TextField(blank=True, null=True)
+    indemnisation_validee = models.BooleanField(default=False)
+    
 
     # Informations de base 
     date_survenance = models.DateTimeField()

@@ -15,7 +15,6 @@ def jours_ouvres_entre(date_debut, date_fin):
     return jours
 
 class SinistreForm(forms.ModelForm):
-    # Champ de fichier simple, sans contrainte de widget complexe
     fichiers_justificatifs = forms.FileField(
         widget=forms.FileInput(attrs={'class': 'form-control'}),
         required=False,
@@ -51,7 +50,6 @@ class SinistreForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # On force l'attribut multiple ici pour éviter l'erreur au démarrage
         self.fields['fichiers_justificatifs'].widget.attrs.update({'multiple': True})
         self.fields['quartier'].required = True
         self.fields['vehicule'].required = True
@@ -75,6 +73,21 @@ class ModifierProfilForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
+
+
+class AgentCreationForm(forms.Form):
+    matricule = forms.CharField(max_length=20, label="Matricule")
+    nom = forms.CharField(max_length=100, label="Nom")
+    prenom = forms.CharField(max_length=100, label="Prénom")
+    email = forms.EmailField(required=False, label="Email")
+    telephone = forms.CharField(max_length=20, required=False, label="Téléphone")
+    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Agence")
+
+    def clean_matricule(self):
+        matricule = self.cleaned_data['matricule']
+        if Agent.objects.filter(matricule=matricule).exists():
+            raise forms.ValidationError("Ce matricule existe déjà.")
+        return matricule
 
 
 class ChefCreationForm(forms.Form):
@@ -136,4 +149,11 @@ class IndemnisationForm(forms.Form):
     date_emission_cheque = forms.DateField(
         label="Date d'émission du chèque",
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+    )
+
+
+class SansSuiteForm(forms.Form):
+    motif = forms.CharField(
+        label="Motif du classement sans suite",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
     )

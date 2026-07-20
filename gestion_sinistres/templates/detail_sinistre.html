@@ -31,17 +31,16 @@
         <!-- Chronologie des évolutions -->
         <div class="col-md-8">
             <h4>Évolutions du dossier</h4>
-            <div class="bg-white p-4 rounded shadow-sm border-0 mb-4">
-                {% for etape in sinistre.etapes.all %}
-                <div class="mb-3 border-bottom pb-2">
-                    <div class="fw-bold text-primary">{{ etape.titre }}</div>
-                    <small class="text-muted">{{ etape.date_etape|date:"d/m/Y H:i" }}</small>
-                    <p class="mt-1 mb-0">{{ etape.description }}</p>
-                </div>
-                {% empty %}
-                <p class="text-muted">Aucune étape enregistrée pour le moment.</p>
-                {% endfor %}
-            </div>
+            <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
+    <div class="card-body">
+        {% for h in historique %}
+            <p class="mb-1"><span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span></p>
+        {% empty %}
+            <p class="text-muted">Aucun historique pour ce dossier.</p>
+        {% endfor %}
+    </div>
+</div>
         </div>
 
         <!-- Documents et Messagerie -->

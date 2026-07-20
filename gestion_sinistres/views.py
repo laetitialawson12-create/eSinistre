@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import (
     SinistreForm, ModifierProfilForm, AgentCreationForm,
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
-    ChefDepartement, ChefCreationForm
+    ChefDepartement, ChefCreationForm,
 )
 from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent
 from django.contrib.auth import login, update_session_auth_hash
@@ -62,9 +62,15 @@ def annuler_declaration(request):
 @login_required
 def confirmer_sinistre(request):
     sinistre_id = request.session.get('temp_sinistre_id')
-    if not sinistre_id:
+    sinistre = None
+    if sinistre_id:
+        sinistre = Sinistre.objects.filter(id=sinistre_id, assure=request.user).first()
+
+    if not sinistre:
+        request.session.pop('temp_sinistre_id', None)
+        messages.error(request, "Aucune déclaration en cours. Merci de recommencer.")
         return redirect('declarer_sinistre')
-    sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
+
     pieces = sinistre.pieces.all()
     return render(request, 'confirmation.html', {'sinistre': sinistre, 'pieces': pieces})
 
@@ -520,6 +526,8 @@ def valider_declaration(request, sinistre_id):
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='ATTENTE_VALIDATION')
     sinistre.statut = 'EN_COURS'
+    sinistre.attestation_generee = True
+    sinistre.date_attestation = timezone.now()
     sinistre.save()
     HistoriqueSinistre.objects.create(
         sinistre=sinistre,
@@ -611,3 +619,168 @@ def changer_mot_de_passe_chef(request):
         form = PasswordChangeForm(request.user)
 
     return render(request, 'changer_mot_de_passe_chef.html', {'form': form})
+
+
+@login_required
+def voir_attestation(request, sinistre_id):
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, attestation_generee=True)
+
+    if sinistre.assure_id == request.user.id or hasattr(request.user, 'agent') or hasattr(request.user, 'chef'):
+        return render(request, 'attestation.html', {'sinistre': sinistre})
+    return redirect('accueil_assure')
+
+
+@login_required
+def valider_indemnisation(request, sinistre_id):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='EN_COURS')
+
+    if sinistre.prix_retenu is None:
+        messages.error(request, "L'agent doit d'abord saisir le prix retenu.")
+        return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+
+    sinistre.indemnisation_validee = True
+    sinistre.save()
+    HistoriqueSinistre.objects.create(
+        sinistre=sinistre,
+        statut='EN_COURS',
+        commentaires=f"Indemnisation de {sinistre.prix_retenu} FCFA validée par le Chef de département.",
+        auteur=request.user,
+    )
+    messages.success(request, "Indemnisation validée. Le dossier peut maintenant être clôturé ou classé sans suite.")
+    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+
+
+@login_required
+def clore_sinistre(request, sinistre_id):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='EN_COURS')
+    sinistre.statut = 'CLOTURE'
+    sinistre.save()
+    HistoriqueSinistre.objects.create(
+        sinistre=sinistre,
+        statut='CLOTURE',
+        commentaires="Flux financiers constatés, dossier clôturé par le Chef de département.",
+        auteur=request.user,
+    )
+    messages.success(request, f"Dossier {sinistre.numero_sinistre} clôturé.")
+    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+
+
+@login_required
+def classer_sans_suite(request, sinistre_id):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='EN_COURS')
+
+    if request.method == 'POST':
+        form = SansSuiteForm(request.POST)
+        if form.is_valid():
+            sinistre.statut = 'SANS_SUITE'
+            sinistre.motif_sans_suite = form.cleaned_data['motif']
+            sinistre.save()
+            HistoriqueSinistre.objects.create(
+                sinistre=sinistre,
+                statut='SANS_SUITE',
+                commentaires=form.cleaned_data['motif'],
+                auteur=request.user,
+            )
+            messages.success(request, f"Dossier {sinistre.numero_sinistre} classé sans suite.")
+            return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+    else:
+        form = SansSuiteForm()
+
+    return render(request, 'classer_sans_suite.html', {'sinistre': sinistre, 'form': form})
+
+
+@login_required
+def reouvrir_dossier(request, sinistre_id):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['CLOTURE', 'SANS_SUITE'])
+    sinistre.statut = 'REOUVERT'
+    sinistre.save()
+    HistoriqueSinistre.objects.create(
+        sinistre=sinistre,
+        statut='REOUVERT',
+        commentaires="Dossier réouvert par le Chef de département pour ré-instruction.",
+        auteur=request.user,
+    )
+    messages.success(request, f"Dossier {sinistre.numero_sinistre} réouvert.")
+    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+
+
+@login_required
+def dossiers_en_cours_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+    sinistres = Sinistre.objects.filter(statut='EN_COURS').order_by('-date_declaration')
+    return render(request, 'dossiers_en_cours_chef.html', {'chef': chef, 'sinistres': sinistres})
+
+
+@login_required
+def dossiers_clotures_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+    sinistres = Sinistre.objects.filter(statut__in=['CLOTURE', 'SANS_SUITE']).order_by('-date_declaration')
+    return render(request, 'dossiers_clotures_chef.html', {'chef': chef, 'sinistres': sinistres})
+
+
+@login_required
+def profil_agent(request):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+    return render(request, 'profil_agent.html', {'agent': agent})
+
+
+@login_required
+def modifier_profil_agent(request):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+    if request.method == 'POST':
+        form = ModifierProfilForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Vos informations ont été mises à jour.")
+            return redirect('profil_agent')
+    else:
+        form = ModifierProfilForm(instance=request.user)
+    return render(request, 'modifier_profil_agent.html', {'form': form})
+
+
+@login_required
+def profil_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+    return render(request, 'profil_chef.html', {'chef': chef})
+
+
+@login_required
+def modifier_profil_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+    if request.method == 'POST':
+        form = ModifierProfilForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Vos informations ont été mises à jour.")
+            return redirect('profil_chef')
+    else:
+        form = ModifierProfilForm(instance=request.user)
+    return render(request, 'modifier_profil_chef.html', {'form': form})
