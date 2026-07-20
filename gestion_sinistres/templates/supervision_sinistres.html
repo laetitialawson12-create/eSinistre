@@ -1,0 +1,76 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Supervision des sinistres{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4" style="color: var(--fidelia-blue);">Supervision des sinistres</h3>
+
+<div class="card border-0 shadow-sm p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small text-secondary text-uppercase">Statut</label>
+            <select name="statut" class="form-select">
+                <option value="">Tous</option>
+                {% for value, label in statut_choices %}
+                <option value="{{ value }}" {% if value == statut_selectionne %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-secondary text-uppercase">Nature</label>
+            <select name="nature" class="form-select">
+                <option value="">Toutes</option>
+                {% for value, label in nature_choices %}
+                <option value="{{ value }}" {% if value == nature_selectionnee %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small text-secondary text-uppercase">Recherche (n° sinistre ou n° police)</label>
+            <input type="text" name="q" class="form-control" value="{{ recherche }}" placeholder="Ex: 2026001M000012">
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn w-100" style="background: var(--fidelia-blue); color: white;">Filtrer</button>
+        </div>
+    </form>
+    {% if statut_selectionne or nature_selectionnee or recherche %}
+    <div class="mt-2">
+        <a href="{% url 'supervision_sinistres' %}" class="small text-decoration-none">
+            <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card border-0 shadow-sm p-3">
+    <div class="mb-2 text-secondary small">{{ sinistres|length }} résultat{{ sinistres|length|pluralize }}</div>
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>N° Sinistre</th>
+                <th>Assuré</th>
+                <th>N° Police</th>
+                <th>Nature</th>
+                <th>Statut</th>
+                <th>Agent traitant</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sinistres %}
+            <tr>
+                <td>{{ s.numero_sinistre }}</td>
+                <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
+                <td>{{ s.n_police }}</td>
+                <td>{{ s.get_nature_display }}</td>
+                <td><span class="badge bg-secondary">{{ s.get_statut_display }}</span></td>
+                <td>{{ s.agent_traitant|default:"—" }}</td>
+                <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

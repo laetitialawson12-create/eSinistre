@@ -1,14 +1,12 @@
 {% extends 'base_admin.html' %}
 
-{% block title %}Créer un chef{% endblock %}
+{% block title %}Modifier mon profil{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">
-        <i class="bi bi-person-plus me-2"></i> Nouveau chef de service
-    </h3>
-    <a href="{% url 'liste_chefs' %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Modifier mes informations</h3>
+    <a href="{% url 'profil_admin' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Retour au profil
     </a>
 </div>
 
@@ -24,7 +22,7 @@
         {% endfor %}
     </div>
     <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">
-        Créer le chef
+        Enregistrer
     </button>
 </form>
 {% endblock %}

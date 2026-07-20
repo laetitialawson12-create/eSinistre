@@ -25,7 +25,7 @@
         <div class="row mb-3">
             <div class="col-md-3">
                 <label class="form-label">N° de Police</label>
-                {{ form.n_police }}
+                <input type="text" class="form-control" value="{{request.user.assure.numero_police}}" disabled readonly>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Immatriculation</label>

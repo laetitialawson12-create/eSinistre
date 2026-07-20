@@ -4,17 +4,20 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import (
     SinistreForm, ModifierProfilForm, AgentCreationForm,
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
-    ChefDepartement, ChefCreationForm,
+    ChefDepartement, ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm
 )
-from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent
+from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent, Agence, ChefDepartement
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models import Q
 
 
 @login_required
 def redirection_login(request):
+    if request.user.is_staff:
+        return redirect('accueil_admin')
     if hasattr(request.user, 'chef'):
         return redirect('accueil_chef')
     if hasattr(request.user, 'agent'):
@@ -36,6 +39,7 @@ def declarer_sinistre(request):
         if form.is_valid():
             sinistre = form.save(commit=False)
             sinistre.assure = request.user
+            sinistre.n_police = request.user.assure.numero_police
             sinistre.save()
 
             # Sauvegarde des fichiers
@@ -784,3 +788,208 @@ def modifier_profil_chef(request):
     else:
         form = ModifierProfilForm(instance=request.user)
     return render(request, 'modifier_profil_chef.html', {'form': form})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def accueil_admin(request):
+    sinistres = Sinistre.objects.all()
+    debut_mois = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    context = {
+        'nb_sinistres_total': sinistres.count(),
+        'nb_sinistres_en_cours': sinistres.exclude(statut__in=['CLOTURE', 'SANS_SUITE']).count(),
+        'nb_sinistres_clotures': sinistres.filter(statut='CLOTURE').count(),
+        'nb_sinistres_mois': sinistres.filter(date_declaration__gte=debut_mois).count(),
+        'nb_agences': Agence.objects.count(),
+        'nb_agents': Agent.objects.count(),
+        'nb_chefs': ChefDepartement.objects.count(),
+        'nb_assures': Assure.objects.count(),
+        'derniers_sinistres': sinistres.order_by('-date_declaration')[:8],
+    }
+    return render(request, 'accueil_admin.html', context)
+
+
+# --- Gestion des agents (admin) ---
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def liste_agents(request):
+    agents = Agent.objects.select_related('user', 'agence').order_by('user__last_name')
+    return render(request, 'liste_agents.html', {'agents': agents})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def modifier_agent_admin(request, agent_id):
+    agent = get_object_or_404(Agent, id=agent_id)
+    if request.method == 'POST':
+        user_form = ModifierProfilForm(request.POST, instance=agent.user)
+        agent_form = ModifierAgentAdminForm(request.POST, instance=agent)
+        if user_form.is_valid() and agent_form.is_valid():
+            user_form.save()
+            agent_form.save()
+            messages.success(request, "Agent mis à jour.")
+            return redirect('liste_agents')
+    else:
+        user_form = ModifierProfilForm(instance=agent.user)
+        agent_form = ModifierAgentAdminForm(instance=agent)
+    return render(request, 'modifier_agent_admin.html', {
+        'user_form': user_form, 'agent_form': agent_form, 'agent': agent,
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def toggle_agent_actif(request, agent_id):
+    agent = get_object_or_404(Agent, id=agent_id)
+    agent.user.is_active = not agent.user.is_active
+    agent.user.save()
+    messages.success(request, f"Compte {'réactivé' if agent.user.is_active else 'désactivé'}.")
+    return redirect('liste_agents')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supprimer_agent(request, agent_id):
+    agent = get_object_or_404(Agent, id=agent_id)
+    if request.method == 'POST':
+        agent.user.delete()
+        messages.success(request, "Agent supprimé.")
+        return redirect('liste_agents')
+    return render(request, 'confirmer_suppression.html', {
+        'objet_nom': agent.user.get_full_name() or agent.user.username,
+        'type_objet': 'agent',
+        'annuler_url': 'liste_agents',
+        'confirmer_url': 'supprimer_agent',
+        'objet_id': agent.id,
+    })
+
+
+# --- Gestion des chefs (admin) ---
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def liste_chefs(request):
+    chefs = ChefDepartement.objects.select_related('user', 'agence').order_by('user__last_name')
+    return render(request, 'liste_chefs.html', {'chefs': chefs})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def modifier_chef_admin(request, chef_id):
+    chef = get_object_or_404(ChefDepartement, id=chef_id)
+    if request.method == 'POST':
+        user_form = ModifierProfilForm(request.POST, instance=chef.user)
+        chef_form = ModifierChefAdminForm(request.POST, instance=chef)
+        if user_form.is_valid() and chef_form.is_valid():
+            user_form.save()
+            chef_form.save()
+            messages.success(request, "Chef mis à jour.")
+            return redirect('liste_chefs')
+    else:
+        user_form = ModifierProfilForm(instance=chef.user)
+        chef_form = ModifierChefAdminForm(instance=chef)
+    return render(request, 'modifier_chef_admin.html', {
+        'user_form': user_form, 'chef_form': chef_form, 'chef': chef,
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def toggle_chef_actif(request, chef_id):
+    chef = get_object_or_404(ChefDepartement, id=chef_id)
+    chef.user.is_active = not chef.user.is_active
+    chef.user.save()
+    messages.success(request, f"Compte {'réactivé' if chef.user.is_active else 'désactivé'}.")
+    return redirect('liste_chefs')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supprimer_chef(request, chef_id):
+    chef = get_object_or_404(ChefDepartement, id=chef_id)
+    if request.method == 'POST':
+        chef.user.delete()
+        messages.success(request, "Chef supprimé.")
+        return redirect('liste_chefs')
+    return render(request, 'confirmer_suppression.html', {
+        'objet_nom': chef.user.get_full_name() or chef.user.username,
+        'type_objet': 'chef',
+        'annuler_url': 'liste_chefs',
+        'confirmer_url': 'supprimer_chef',
+        'objet_id': chef.id,
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supervision_sinistres(request):
+    sinistres = Sinistre.objects.select_related('assure', 'vehicule', 'region').order_by('-date_declaration')
+
+    statut = request.GET.get('statut', '')
+    nature = request.GET.get('nature', '')
+    recherche = request.GET.get('q', '').strip()
+
+    if statut:
+        sinistres = sinistres.filter(statut=statut)
+    if nature:
+        sinistres = sinistres.filter(nature=nature)
+    if recherche:
+        sinistres = sinistres.filter(
+            Q(numero_sinistre__icontains=recherche) | Q(n_police__icontains=recherche)
+        )
+
+    context = {
+        'sinistres': sinistres,
+        'statut_choices': Sinistre.STATUS_CHOICES,
+        'nature_choices': Sinistre.NATURE_CHOICES,
+        'statut_selectionne': statut,
+        'nature_selectionnee': nature,
+        'recherche': recherche,
+    }
+    return render(request, 'supervision_sinistres.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def reinitialiser_mdp_agent(request, agent_id):
+    agent = get_object_or_404(Agent, id=agent_id)
+    agent.user.set_password('0000')
+    agent.user.save()
+    agent.doit_changer_mot_de_passe = True
+    agent.save()
+    messages.success(request, f"Mot de passe réinitialisé à 0000 pour {agent.user.get_full_name() or agent.user.username}. Il devra le changer à sa prochaine connexion.")
+    return redirect('liste_agents')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def reinitialiser_mdp_chef(request, chef_id):
+    chef = get_object_or_404(ChefDepartement, id=chef_id)
+    chef.user.set_password('0000')
+    chef.user.save()
+    chef.doit_changer_mot_de_passe = True
+    chef.save()
+    messages.success(request, f"Mot de passe réinitialisé à 0000 pour {chef.user.get_full_name() or chef.user.username}. Il devra le changer à sa prochaine connexion.")
+    return redirect('liste_chefs')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def profil_admin(request):
+    return render(request, 'profil_admin.html')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def modifier_profil_admin(request):
+    if request.method == 'POST':
+        form = ModifierProfilForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Vos informations ont été mises à jour.")
+            return redirect('profil_admin')
+    else:
+        form = ModifierProfilForm(instance=request.user)
+    return render(request, 'modifier_profil_admin.html', {'form': form})

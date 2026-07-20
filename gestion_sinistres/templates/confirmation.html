@@ -13,6 +13,12 @@
         <hr>
 
         <div class="mb-3">
+            <h6 class="text-uppercase text-secondary small">Assuré</h6>
+            <p><strong>Nom :</strong> {{ request.user.get_full_name|default:request.user.username }}</p>
+            <p><strong>N° de Police :</strong> {{ sinistre.n_police }}</p>
+        </div>
+
+        <div class="mb-3">
             <h6 class="text-uppercase text-secondary small">Localisation</h6>
             <p><strong>Quartier :</strong> {{ sinistre.quartier }}</p>
             <p><strong>Ville / Préfecture :</strong> {{ sinistre.ville }} / {{ sinistre.prefecture }}</p>
@@ -23,6 +29,8 @@
             <p><strong>Date :</strong> {{ sinistre.date_survenance }}</p>
             <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
             <p><strong>Véhicule :</strong> {{ sinistre.vehicule }}</p>
+            <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
+            <p><strong>Immatriculation :</strong> {{ sinistre.immatriculation }}</p>
         </div>
 
         <div class="mb-3">

@@ -1,0 +1,26 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Confirmer la suppression{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm p-4 mx-auto" style="max-width: 500px; border-top: 5px solid #dc3545 !important;">
+    <h4 class="fw-bold text-danger mb-3">
+        <i class="bi bi-exclamation-triangle"></i> Confirmer la suppression
+    </h4>
+    <p>
+        Tu es sur le point de supprimer définitivement le compte
+        <strong>{{ objet_nom }}</strong> ({{ type_objet }}).
+    </p>
+    <p class="text-muted small">
+        Cette action est irréversible. Le compte utilisateur associé sera également supprimé et ne pourra plus se connecter.
+    </p>
+
+    <form method="post" action="{% url confirmer_url objet_id %}" class="mt-3">
+        {% csrf_token %}
+        <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-danger w-50">Oui, supprimer</button>
+            <a href="{% url annuler_url %}" class="btn btn-outline-secondary w-50">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

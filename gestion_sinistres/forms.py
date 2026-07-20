@@ -27,7 +27,7 @@ class SinistreForm(forms.ModelForm):
             'region', 'ville', 'prefecture', 'quartier', 'precision', 
             'date_survenance', 'heure_approximative', 'nature', 
             'vehicule', 'circonstances', 'lettre_derogation',
-            'n_police', 'nom_conducteur', 'immatriculation',
+            'nom_conducteur', 'immatriculation',
             'fichiers_justificatifs'
         ]
         widgets = {
@@ -42,10 +42,10 @@ class SinistreForm(forms.ModelForm):
             'nature': forms.Select(attrs={'class': 'form-control'}),
             'vehicule': forms.Select(attrs={'class': 'form-control'}),
             'lettre_derogation': forms.FileInput(attrs={'class': 'form-control'}),
-            'n_police': forms.TextInput(attrs={'class': 'form-control'}),
             'immatriculation': forms.TextInput(attrs={'class': 'form-control'}),
             'nom_conducteur': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -73,15 +73,23 @@ class ModifierProfilForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
-
+        widgets = {
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'email': 'Email',
+        }
+        
 
 class AgentCreationForm(forms.Form):
-    matricule = forms.CharField(max_length=20, label="Matricule")
-    nom = forms.CharField(max_length=100, label="Nom")
-    prenom = forms.CharField(max_length=100, label="Prénom")
-    email = forms.EmailField(required=False, label="Email")
-    telephone = forms.CharField(max_length=20, required=False, label="Téléphone")
-    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Agence")
+    matricule = forms.CharField(max_length=20, label="Matricule", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    nom = forms.CharField(max_length=100, label="Nom", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    prenom = forms.CharField(max_length=100, label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(required=False, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    telephone = forms.CharField(max_length=20, required=False, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Agence", widget=forms.Select(attrs={'class': 'form-select'}))
 
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
@@ -91,20 +99,42 @@ class AgentCreationForm(forms.Form):
 
 
 class ChefCreationForm(forms.Form):
-    matricule = forms.CharField(max_length=20, label="Matricule")
-    nom = forms.CharField(max_length=100, label="Nom")
-    prenom = forms.CharField(max_length=100, label="Prénom")
-    email = forms.EmailField(required=False, label="Email")
-    telephone = forms.CharField(max_length=20, required=False, label="Téléphone")
-    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Agence")
+    matricule = forms.CharField(max_length=20, label="Matricule", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    nom = forms.CharField(max_length=100, label="Nom", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    prenom = forms.CharField(max_length=100, label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(required=False, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    telephone = forms.CharField(max_length=20, required=False, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Agence", widget=forms.Select(attrs={'class': 'form-select'}))
 
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
         if ChefDepartement.objects.filter(matricule=matricule).exists():
             raise forms.ValidationError("Ce matricule existe déjà.")
         return matricule
+    
+
+class ModifierAgentAdminForm(forms.ModelForm):
+    class Meta:
+        model = Agent
+        fields = ['matricule', 'telephone', 'agence']
+        widgets = {
+            'matricule': forms.TextInput(attrs={'class': 'form-control'}),
+            'telephone': forms.TextInput(attrs={'class': 'form-control'}),
+            'agence': forms.Select(attrs={'class': 'form-control'}),
+        }
 
 
+class ModifierChefAdminForm(forms.ModelForm):
+    class Meta:
+        model = ChefDepartement
+        fields = ['matricule', 'telephone', 'agence']
+        widgets = {
+            'matricule': forms.TextInput(attrs={'class': 'form-control'}),
+            'telephone': forms.TextInput(attrs={'class': 'form-control'}),
+            'agence': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+        
 class DemanderComplementsForm(forms.Form):
     motif = forms.CharField(
         label="Précisez les éléments manquants",
