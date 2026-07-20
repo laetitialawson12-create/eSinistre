@@ -1,0 +1,50 @@
+{% extends "base_chef.html" %}
+{% block title %}Dossier {{ sinistre.numero_sinistre }}{% endblock %}
+{% block content %}
+<h4 class="mb-3">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
+        <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
+        <p><strong>Statut :</strong> <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span></p>
+        <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+        <p><strong>Précisions :</strong> {{ sinistre.precision }}</p>
+
+        {% if sinistre.statut == 'ATTENTE_VALIDATION' %}
+        <div class="d-flex gap-2 mt-3">
+            <form method="post" action="{% url 'valider_declaration' sinistre.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-check2-circle me-1"></i> Valider la déclaration
+                </button>
+            </form>
+            <a href="{% url 'renvoyer_a_agent' sinistre.id %}" class="btn btn-warning btn-sm">
+                <i class="bi bi-arrow-return-left me-1"></i> Renvoyer à l'agent
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold">📎 Pièces jointes</div>
+    <div class="card-body">
+        {% for doc in documents %}
+            <a href="{{ doc.fichier.url }}" target="_blank">{{ doc.fichier.name }}</a><br>
+        {% empty %}
+            <span class="text-muted">Aucun document.</span>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
+    <div class="card-body">
+        {% for h in historique %}
+            <p class="mb-1"><span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span></p>
+        {% empty %}
+            <p class="text-muted">Aucun historique pour ce dossier.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,7 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .forms import SinistreForm, ModifierProfilForm, AgentCreationForm
+from .forms import (
+    SinistreForm, ModifierProfilForm, AgentCreationForm,
+    DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
+    ChefDepartement, ChefCreationForm
+)
 from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
@@ -11,6 +15,8 @@ from django.utils import timezone
 
 @login_required
 def redirection_login(request):
+    if hasattr(request.user, 'chef'):
+        return redirect('accueil_chef')
     if hasattr(request.user, 'agent'):
         return redirect('accueil_agent')
     if hasattr(request.user, 'assure'):
@@ -292,14 +298,13 @@ def prendre_en_charge(request, sinistre_id):
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
 
-    if sinistre.statut == 'SOUMIS':
-        sinistre.statut = 'EN_COURS'
+    if sinistre.statut == 'SOUMIS' and not sinistre.agent_traitant:
         sinistre.agent_traitant = request.user.get_full_name() or request.user.username
         sinistre.save()
         HistoriqueSinistre.objects.create(
             sinistre=sinistre,
-            statut='EN_COURS',
-            commentaires="Dossier pris en charge par l'agent.",
+            statut=sinistre.statut,
+            commentaires="Dossier pris en charge par l'agent pour vérification.",
             auteur=request.user,
         )
         messages.success(request, f"Dossier {sinistre.numero_sinistre} pris en charge.")
@@ -327,3 +332,282 @@ def detail_sinistre_agent(request, sinistre_id):
         'documents': sinistre.pieces.all(),
     }
     return render(request, 'detail_sinistre_agent.html', context)
+
+
+@login_required
+def marquer_conforme(request, sinistre_id):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    if sinistre.statut in ('SOUMIS', 'A_CORRIGER'):
+        sinistre.statut = 'ATTENTE_VALIDATION'
+        sinistre.save()
+        HistoriqueSinistre.objects.create(
+            sinistre=sinistre,
+            statut='ATTENTE_VALIDATION',
+            commentaires="Dossier jugé conforme (première validation), transmis au Chef de département.",
+            auteur=request.user,
+        )
+        messages.success(request, f"Dossier {sinistre.numero_sinistre} envoyé au Chef pour validation.")
+
+    return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
+
+@login_required
+def demander_complements(request, sinistre_id):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    if request.method == 'POST':
+        form = DemanderComplementsForm(request.POST)
+        if form.is_valid():
+            sinistre.statut = 'ATTENTE_COMPLEMENTS'
+            sinistre.save()
+            motif = form.cleaned_data['motif']
+            Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=motif)
+            HistoriqueSinistre.objects.create(
+                sinistre=sinistre,
+                statut='ATTENTE_COMPLEMENTS',
+                commentaires=motif,
+                auteur=request.user,
+            )
+            messages.success(request, f"Demande de compléments envoyée pour le dossier {sinistre.numero_sinistre}.")
+            return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+    else:
+        form = DemanderComplementsForm()
+
+    return render(request, 'demander_complements.html', {'sinistre': sinistre, 'form': form})
+
+
+@login_required
+def saisir_indemnisation(request, sinistre_id):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='CLOTURE')
+
+    if request.method == 'POST':
+        form = IndemnisationForm(request.POST)
+        if form.is_valid():
+            for champ, valeur in form.cleaned_data.items():
+                setattr(sinistre, champ, valeur)
+            sinistre.save()
+            HistoriqueSinistre.objects.create(
+                sinistre=sinistre,
+                statut='CLOTURE',
+                commentaires=(
+                    f"Chèque n°{sinistre.numero_cheque} ({sinistre.banque_cheque}) remis à "
+                    f"{sinistre.beneficiaire_nom} {sinistre.beneficiaire_prenoms} "
+                    f"({sinistre.beneficiaire_telephone})."
+                ),
+                auteur=request.user,
+            )
+            messages.success(request, "Informations d'indemnisation enregistrées.")
+            return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+    else:
+        form = IndemnisationForm()
+
+    return render(request, 'saisir_indemnisation.html', {'sinistre': sinistre, 'form': form})
+
+
+@login_required
+def dossiers_en_cours(request):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+    sinistres = Sinistre.objects.filter(statut='EN_COURS').order_by('-date_declaration')
+    return render(request, 'dossiers_en_cours.html', {'agent': agent, 'sinistres': sinistres})
+
+
+@login_required
+def dossiers_clotures(request):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+    sinistres = Sinistre.objects.filter(statut__in=['CLOTURE', 'SANS_SUITE']).order_by('-date_declaration')
+    return render(request, 'dossiers_clotures.html', {'agent': agent, 'sinistres': sinistres})
+
+
+@login_required
+def saisir_prix_retenu(request, sinistre_id):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='EN_COURS')
+
+    if request.method == 'POST':
+        form = MarquerConformeForm(request.POST)
+        if form.is_valid():
+            sinistre.prix_retenu = form.cleaned_data['prix_retenu']
+            sinistre.save()
+            HistoriqueSinistre.objects.create(
+                sinistre=sinistre,
+                statut='EN_COURS',
+                commentaires=f"Prix retenu saisi : {sinistre.prix_retenu} FCFA.",
+                auteur=request.user,
+            )
+            messages.success(request, "Prix retenu enregistré.")
+            return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
+    return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
+
+@login_required
+def accueil_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistres = Sinistre.objects.all()
+    context = {
+        'chef': chef,
+        'a_valider': sinistres.filter(statut='ATTENTE_VALIDATION').count(),
+        'en_cours': sinistres.filter(statut='EN_COURS').count(),
+        'clotures_ce_mois': sinistres.filter(
+            statut='CLOTURE',
+            date_declaration__month=timezone.now().month,
+            date_declaration__year=timezone.now().year,
+        ).count(),
+        'derniers_a_valider': sinistres.filter(statut='ATTENTE_VALIDATION').order_by('-date_declaration')[:5],
+    }
+    return render(request, 'accueil_chef.html', context)
+
+
+@login_required
+def dossiers_a_valider(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+    sinistres = Sinistre.objects.filter(statut='ATTENTE_VALIDATION').order_by('date_declaration')
+    return render(request, 'dossiers_a_valider.html', {'chef': chef, 'sinistres': sinistres})
+
+
+@login_required
+def detail_sinistre_chef(request, sinistre_id):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    if request.method == 'POST' and 'contenu' in request.POST:
+        Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
+        return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+
+    context = {
+        'chef': chef,
+        'sinistre': sinistre,
+        'historique': sinistre.historique.all().order_by('date_changement'),
+        'discussion': sinistre.messages.all().order_by('date_envoi'),
+        'documents': sinistre.pieces.all(),
+    }
+    return render(request, 'detail_sinistre_chef.html', context)
+
+
+@login_required
+def valider_declaration(request, sinistre_id):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='ATTENTE_VALIDATION')
+    sinistre.statut = 'EN_COURS'
+    sinistre.save()
+    HistoriqueSinistre.objects.create(
+        sinistre=sinistre,
+        statut='EN_COURS',
+        commentaires="Déclaration validée par le Chef de département. Attestation générée et envoyée à l'assuré.",
+        auteur=request.user,
+    )
+    messages.success(request, f"Dossier {sinistre.numero_sinistre} validé, attestation générée.")
+    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+
+
+@login_required
+def renvoyer_a_agent(request, sinistre_id):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='ATTENTE_VALIDATION')
+
+    if request.method == 'POST':
+        form = DemanderComplementsForm(request.POST)
+        if form.is_valid():
+            sinistre.statut = 'A_CORRIGER'
+            sinistre.save()
+            motif = form.cleaned_data['motif']
+            HistoriqueSinistre.objects.create(
+                sinistre=sinistre,
+                statut='A_CORRIGER',
+                commentaires=motif,
+                auteur=request.user,
+            )
+            messages.success(request, f"Dossier {sinistre.numero_sinistre} renvoyé à l'agent.")
+            return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+    else:
+        form = DemanderComplementsForm()
+
+    return render(request, 'renvoyer_a_agent.html', {'sinistre': sinistre, 'form': form})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def creer_chef(request):
+    if request.method == 'POST':
+        form = ChefCreationForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            username = f"{data['prenom']}.{data['nom']}".lower().replace(' ', '')
+
+            user = User.objects.create_user(
+                username=username,
+                email=data['email'],
+                first_name=data['prenom'],
+                last_name=data['nom'],
+            )
+            user.set_password('0000')
+            user.save()
+
+            ChefDepartement.objects.create(
+                user=user,
+                agence=data['agence'],
+                matricule=data['matricule'],
+                telephone=data['telephone'],
+                doit_changer_mot_de_passe=True,
+            )
+            messages.success(request, f"Chef créé. Identifiant : {username} — Mot de passe temporaire : 0000")
+            return redirect('creer_chef')
+    else:
+        form = ChefCreationForm()
+
+    return render(request, 'creer_chef.html', {'form': form})
+
+
+@login_required
+def changer_mot_de_passe_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user)
+            chef.doit_changer_mot_de_passe = False
+            chef.save()
+            messages.success(request, "Mot de passe modifié avec succès.")
+            return redirect('accueil_chef')
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, 'changer_mot_de_passe_chef.html', {'form': form})

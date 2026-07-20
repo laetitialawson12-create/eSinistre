@@ -6,5 +6,6 @@
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" class="btn btn-warning">Envoyer la demande</button>
+    <a href="{% url 'detail_sinistre_agent' sinistre.id %}" class="btn btn-outline-secondary">Annuler</a>
 </form>
 {% endblock %}

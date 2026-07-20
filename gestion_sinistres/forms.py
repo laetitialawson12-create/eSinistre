@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sinistre, Agent, Agence
+from .models import Sinistre, Agent, Agence, ChefDepartement
 from django.contrib.auth.models import User
 
 
@@ -77,7 +77,7 @@ class ModifierProfilForm(forms.ModelForm):
         fields = ['first_name', 'last_name', 'email']
 
 
-class AgentCreationForm(forms.Form):
+class ChefCreationForm(forms.Form):
     matricule = forms.CharField(max_length=20, label="Matricule")
     nom = forms.CharField(max_length=100, label="Nom")
     prenom = forms.CharField(max_length=100, label="Prénom")
@@ -87,6 +87,53 @@ class AgentCreationForm(forms.Form):
 
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
-        if Agent.objects.filter(matricule=matricule).exists():
+        if ChefDepartement.objects.filter(matricule=matricule).exists():
             raise forms.ValidationError("Ce matricule existe déjà.")
         return matricule
+
+
+class DemanderComplementsForm(forms.Form):
+    motif = forms.CharField(
+        label="Précisez les éléments manquants",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+    )
+
+
+class MarquerConformeForm(forms.Form):
+    prix_retenu = forms.DecimalField(
+        label="Prix retenu (FCFA)",
+        max_digits=12, decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+    )
+
+
+class IndemnisationForm(forms.Form):
+    beneficiaire_nom = forms.CharField(
+        label="Nom du bénéficiaire",
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    beneficiaire_prenoms = forms.CharField(
+        label="Prénoms du bénéficiaire",
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    beneficiaire_telephone = forms.CharField(
+        label="Téléphone du bénéficiaire",
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    numero_cheque = forms.CharField(
+        label="Numéro de chèque",
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    banque_cheque = forms.CharField(
+        label="Banque",
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    montant_cheque = forms.DecimalField(
+        label="Montant versé (FCFA)",
+        max_digits=12, decimal_places=2,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+    )
+    date_emission_cheque = forms.DateField(
+        label="Date d'émission du chèque",
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+    )

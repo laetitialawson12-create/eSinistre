@@ -9,6 +9,49 @@
         <p><strong>Statut :</strong> <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span></p>
         <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
         <p><strong>Précisions :</strong> {{ sinistre.precision }}</p>
+
+        {% if sinistre.prix_retenu %}
+        <p><strong>Prix retenu :</strong> {{ sinistre.prix_retenu }} FCFA</p>
+        {% endif %}
+
+        {% if sinistre.statut == 'SOUMIS' or sinistre.statut == 'A_CORRIGER' %}
+        <div class="d-flex gap-2 mt-3">
+            <form method="post" action="{% url 'marquer_conforme' sinistre.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-check2-circle me-1"></i> Dossier conforme — envoyer au Chef
+                </button>
+            </form>
+            <a href="{% url 'demander_complements' sinistre.id %}" class="btn btn-warning btn-sm">
+                <i class="bi bi-exclamation-circle me-1"></i> Demander des compléments
+            </a>
+        </div>
+        {% endif %}
+
+        {% if sinistre.statut == 'EN_COURS' and not sinistre.prix_retenu %}
+        <form method="post" action="{% url 'saisir_prix_retenu' sinistre.id %}" class="d-flex align-items-end gap-2 flex-wrap mt-3">
+            {% csrf_token %}
+            <div>
+                <label class="form-label fw-bold mb-1 small">Prix retenu (FCFA)</label>
+                <input type="number" name="prix_retenu" class="form-control form-control-sm" step="0.01" min="0" style="width: 160px;" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Enregistrer le prix retenu</button>
+        </form>
+        {% endif %}
+
+        {% if sinistre.statut == 'CLOTURE' %}
+            {% if sinistre.numero_cheque %}
+            <div class="alert alert-success mt-3">
+                Chèque n°{{ sinistre.numero_cheque }} ({{ sinistre.banque_cheque }}) de {{ sinistre.montant_cheque }} FCFA
+                remis le {{ sinistre.date_emission_cheque|date:"d/m/Y" }} à
+                {{ sinistre.beneficiaire_nom }} {{ sinistre.beneficiaire_prenoms }} ({{ sinistre.beneficiaire_telephone }}).
+            </div>
+            {% else %}
+            <a href="{% url 'saisir_indemnisation' sinistre.id %}" class="btn btn-primary btn-sm mt-3">
+                <i class="bi bi-credit-card me-1"></i> Saisir l'indemnisation
+            </a>
+            {% endif %}
+        {% endif %}
     </div>
 </div>
 
@@ -19,6 +62,17 @@
             <a href="{{ doc.fichier.url }}" target="_blank">{{ doc.fichier.name }}</a><br>
         {% empty %}
             <span class="text-muted">Aucun document.</span>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
+    <div class="card-body">
+        {% for h in historique %}
+            <p class="mb-1"><span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span></p>
+        {% empty %}
+            <p class="text-muted">Aucun historique pour ce dossier.</p>
         {% endfor %}
     </div>
 </div>

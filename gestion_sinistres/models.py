@@ -2,6 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.auth.models import User
+from datetime import datetime
 
 # Classe région
 class Region(models.Model):
@@ -57,6 +58,16 @@ class Sinistre(models.Model):
     agent_traitant = models.CharField(max_length=100, blank=True, null=True)
 
     montant_estime = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
+    # Indemnisation (chèque remis au bénéficiaire, saisi après clôture)
+    beneficiaire_nom = models.CharField(max_length=100, blank=True, null=True)
+    beneficiaire_prenoms = models.CharField(max_length=100, blank=True, null=True)
+    beneficiaire_telephone = models.CharField(max_length=20, blank=True, null=True)
+    numero_cheque = models.CharField(max_length=50, blank=True, null=True)
+    banque_cheque = models.CharField(max_length=100, blank=True, null=True)
+    montant_cheque = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    date_emission_cheque = models.DateField(null=True, blank=True)
 
     # Informations de base 
     date_survenance = models.DateTimeField()
@@ -157,3 +168,14 @@ class Agent(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - {self.agence}"
+    
+
+class ChefDepartement(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='chef')
+    agence = models.ForeignKey(Agence, on_delete=models.SET_NULL, null=True)
+    matricule = models.CharField(max_length=20, unique=True)
+    telephone = models.CharField(max_length=20, blank=True)
+    doit_changer_mot_de_passe = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - Chef"

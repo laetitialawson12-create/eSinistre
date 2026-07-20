@@ -1,7 +1,7 @@
 {% extends "base_agent.html" %}
-{% block title %}À instruire{% endblock %}
+{% block title %}Clôturés{% endblock %}
 {% block content %}
-<h4 class="mb-4">📥 Dossiers à instruire</h4>
+<h4 class="mb-4">📁 Dossiers clôturés</h4>
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <table class="table mb-0">
@@ -13,18 +13,11 @@
                     <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
                     <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                     <td>{{ s.get_nature_display }}</td>
-                    <td><span class="badge bg-primary">{{ s.get_statut_display }}</span></td>
-                        <td>
-                            {% if s.statut == 'SOUMIS' %}
-                            <a href="{% url 'prendre_en_charge' s.id %}" class="btn btn-sm btn-primary">Instruire</a>
-                            {% else %}
-                            <a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
-                            {% endif %}
-                        </td>
-                    </td>
+                    <td><span class="badge {% if s.statut == 'CLOTURE' %}bg-success{% else %}bg-secondary{% endif %}">{{ s.get_statut_display }}</span></td>
+                    <td><a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier à instruire pour le moment.</td></tr>
+                <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier clôturé.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

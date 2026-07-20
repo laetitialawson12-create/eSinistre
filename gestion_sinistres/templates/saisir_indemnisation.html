@@ -1,0 +1,22 @@
+{% extends "base_agent.html" %}
+{% block title %}Indemnisation — {{ sinistre.numero_sinistre }}{% endblock %}
+{% block content %}
+<h4 class="mb-3">💰 Indemnisation — Dossier {{ sinistre.numero_sinistre }}</h4>
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <p class="text-muted">Renseignez les informations du bénéficiaire venu récupérer le chèque.</p>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a href="{% url 'detail_sinistre_agent' sinistre.id %}" class="btn btn-outline-secondary">Annuler</a>
+        </form>
+    </div>
+</div>
+{% endblock %}
