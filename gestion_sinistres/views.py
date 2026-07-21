@@ -12,6 +12,7 @@ from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models import Q
+from datetime import date
 
 
 @login_required
@@ -27,37 +28,38 @@ def redirection_login(request):
     return redirect('login')
 
 
+@login_required
 def declarer_sinistre(request):
     if request.method == 'POST':
-        form = SinistreForm(request.POST, request.FILES)
+        form = SinistreForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            date_du_jour = timezone.now().date()
-            
-            quittance_active = Quittance.objects.filter(
-                contrat=request.user.assure, 
-                date_debut__lte=date_du_jour, 
-                date_fin__gte=date_du_jour
-            ).first()
-
-            if not quittance_active:
-                messages.error(request, "Impossible de déclarer le sinistre : aucune quittance valide n'est associée à votre contrat actuel.")
-                return render(request, 'declaration.html', {'form': form})
-
             sinistre = form.save(commit=False)
             sinistre.assure = request.user
-            sinistre.quittance = quittance_active
             sinistre.statut = 'SOUMIS'
-            sinistre.save()
-            form.save_m2m() 
-            
-            messages.success(request, f"Votre sinistre a été déclaré avec succès sous la référence {sinistre.numero_sinistre}.")
-            return redirect('suivi_sinistres')
-            
-    else:
-        form = SinistreForm()
-    
-    return render(request, 'declaration().html', {'form': form})
 
+            aujourd_hui = date.today()
+            quittances_valides = Quittance.objects.filter(
+                contrat=request.user.assure,
+                date_debut__lte=aujourd_hui,
+                date_fin__gte=aujourd_hui,
+            )
+
+            if quittances_valides.count() == 1:
+                sinistre.quittance = quittances_valides.first()
+            else:
+                sinistre.quittance = None
+
+            sinistre.save()
+            form.save_m2m()
+
+            messages.success(request, f"Votre sinistre {sinistre.numero_sinistre} a été déclaré avec succès.")
+            return redirect('suivi_sinistres')
+        
+    else:
+        form = SinistreForm(user=request.user)
+
+    return render(request, 'declaration.html', {'form':form})
+    
 
 def fournir_complements(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
@@ -1027,14 +1029,20 @@ def lier_quittance_agent(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
     if not agent:
         return redirect('accueil_assure')
-    
+
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
-    
+
     if request.method == 'POST':
         quittance_id = request.POST.get('quittance_id')
         if quittance_id:
-            sinistre.quittance = Quittance.objects.get(id=quittance_id)
+            quittance = get_object_or_404(
+                Quittance,
+                id=quittance_id,
+                contrat=sinistre.assure.assure
+            )
+            
+            sinistre.quittance = quittance
             sinistre.save()
             messages.success(request, "Quittance associée avec succès.")
-            
+
     return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
