@@ -69,4 +69,6 @@ urlpatterns = [
     path('agent/dossier/<int:sinistre_id>/', views.detail_sinistre_agent, name='detail_sinistre_agent'),
     path('agent/dossier/<int:sinistre_id>/lier-quittance', views.lier_quittance_agent, name='lier_quittance_agent'),
     path('agent/dossier/<int:sinistre_id>/conforme', views.marquer_conforme, name='marquer_conforme'),
+    path('sinistre/<int:sinistre_id>/attestation/voir/', views.voir_attestation, name='voir_attestation'),
+    path('sinistre/<int:sinistre_id>/attestation/telecharger/', views.telecharger_attestation, name='telecharger_attestation'),
 ]

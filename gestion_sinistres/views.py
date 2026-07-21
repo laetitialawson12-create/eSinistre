@@ -13,7 +13,12 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models import Q
 from datetime import date
-
+import os
+from django.conf import settings
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+#from weasyprint import HTML
 
 @login_required
 def redirection_login(request):
@@ -701,10 +706,32 @@ def changer_mot_de_passe_chef(request):
 @login_required
 def voir_attestation(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, attestation_generee=True)
-
-    if sinistre.assure_id == request.user.id or hasattr(request.user, 'agent') or hasattr(request.user, 'chef'):
+    
+    # Vérification directe selon la structure de ton modèle Sinistre
+    is_owner = (
+        getattr(sinistre, 'assure', None) == request.user or
+        getattr(sinistre, 'assure_id', None) == request.user.id
+    )
+    
+    # Autoriser l'accès au propriétaire, à un agent ou à un chef
+    if is_owner or hasattr(request.user, 'agent') or hasattr(request.user, 'chef'):
         return render(request, 'attestation.html', {'sinistre': sinistre})
+        
     return redirect('accueil_assure')
+
+
+@login_required
+def telecharger_attestation(request, sinistre_id):
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, attestation_generee=True)
+    
+    is_owner = (
+        getattr(sinistre, 'assure', None) == request.user or
+        getattr(sinistre, 'assure_id', None) == request.user.id
+    )
+    if not (is_owner or hasattr(request.user, 'agent') or hasattr(request.user, 'chef')):
+        return redirect('accueil_assure')
+
+    return render(request, 'attestation.html', {'sinistre': sinistre, 'download_pdf': True})
 
 
 @login_required

@@ -27,23 +27,51 @@
         </div>
     </div>
 
+    <!-- Section Attestation (Isolée proprement dans sa propre ligne) -->
+    <div class="row mb-4">
+        <div class="col-12">
+            {% if sinistre.attestation_generee %}
+                <div class="alert alert-success mb-0">
+                    <p class="mb-2">Votre déclaration a été validée et votre attestation est disponible !</p>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'voir_attestation' sinistre.id %}" class="btn btn-info me-2" target="_blank">
+                            <i class="fas fa-eye"></i> Voir l'attestation
+                        </a>
+                        <a href="{% url 'telecharger_attestation' sinistre.id %}" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Télécharger mon attestation
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary mb-0">
+                    <p class="text-muted mb-0">Votre attestation est en cours de validation par le département.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Corps principal : Historique à gauche, Documents et Messagerie à droite -->
     <div class="row">
-        <!-- Chronologie des évolutions -->
+        <!-- Colonne de gauche : Historique -->
         <div class="col-md-8">
             <h4>Évolutions du dossier</h4>
             <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
-    <div class="card-body">
-        {% for h in historique %}
-            <p class="mb-1"><span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span></p>
-        {% empty %}
-            <p class="text-muted">Aucun historique pour ce dossier.</p>
-        {% endfor %}
-    </div>
-</div>
+                <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
+                <div class="card-body">
+                    {% for h in historique %}
+                        <p class="mb-1">
+                            <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> 
+                            <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} 
+                            <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span>
+                        </p>
+                    {% empty %}
+                        <p class="text-muted">Aucun historique pour ce dossier.</p>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
-        <!-- Documents et Messagerie -->
+        <!-- Colonne de droite : Documents et Messagerie -->
         <div class="col-md-4">
             <!-- Documents joints -->
             <div class="card shadow-sm border-0 mb-4">
