@@ -1,0 +1,35 @@
+{% extends "base_assure.html" %}
+
+{% block title %}Fournir des compléments{% endblock %}
+
+{% block content %}
+<h3 class="mb-4" style="color: #003366;"><i class="bi bi-file-earmark-plus"></i> Fournir des compléments</h3>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <h5 class="mb-3">Dossier : {{ sinistre.numero_sinistre }}</h5>
+        <p class="text-muted">
+            Veuillez apporter les précisions demandées par votre agent et joindre tout document justificatif nécessaire pour le traitement de votre sinistre.
+        </p>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="precisions" class="form-label">Vos précisions ou circonstances détaillées :</label>
+                <textarea class="form-control" id="precisions" name="precisions" rows="5" required>{{ sinistre.precision }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="document" class="form-label">Ajouter un document complémentaire (optionnel) :</label>
+                <input type="file" class="form-control" id="document" name="document">
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Envoyer les compléments</button>
+                <a href="{% url 'suivi_sinistres' %}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

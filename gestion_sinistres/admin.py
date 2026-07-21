@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sinistre, Region, Ville, Prefecture, Vehicule, PieceJointe, Assure, Agence, Agent, ChefDepartement
+from .models import Sinistre, Region, Ville, Prefecture, Vehicule, PieceJointe, Assure, Agence, Agent, ChefDepartement, Quittance
 
 # Personnalisation de l'affichage dans l'admin
 @admin.register(Sinistre)
@@ -17,6 +17,13 @@ class VehiculeAdmin(admin.ModelAdmin):
 class PieceJointeAdmin(admin.ModelAdmin):
     list_display = ('sinistre', 'date_ajout')
 
+@admin.register(Quittance)
+class QuittanceAdmin(admin.ModelAdmin):
+    list_display = ('numero_quittance', 'contrat', 'date_debut', 'date_fin', 'prime')
+    list_filter = ('date_debut', 'date_fin')
+    search_fields = ('numero_quittance', 'contrat__numero_police')
+
+    
 # Enregistrement simple pour les tables de référence
 admin.site.register(Region)
 admin.site.register(Ville)

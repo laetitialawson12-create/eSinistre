@@ -32,6 +32,16 @@ class Vehicule(models.Model):
     def __str__(self):
         return f"{self.immatriculation} - {self.marque} {self.modele}"
     
+class Quittance(models.Model):
+    contrat = models.ForeignKey('Assure', on_delete=models.CASCADE, related_name='quittances')
+    numero_quittance = models.CharField(max_length=50, unique=True)
+    date_debut = models.DateField()
+    date_fin = models.DateField()
+    prime = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def __str__(self):
+        return f"Quittance {self.numero_quittance} ({self.date_debut} au {self.date_fin})"
+    
 # Classe sinistre
 class Sinistre(models.Model):
     NATURE_CHOICES = [('C', 'Corporel'), ('M', 'Matériel'), ('X', 'Mixte')]
@@ -95,6 +105,8 @@ class Sinistre(models.Model):
     numero_point_vente = models.CharField(max_length=10, default="001")
     assure = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sinistres')
 
+    quittance = models.ForeignKey(Quittance, on_delete=models.SET_NULL, null=True, blank=True)
+    
     # Pièces jointes
     lettre_derogation = models.FileField(upload_to='sinistres/derogations/', blank=True, null=True)
 

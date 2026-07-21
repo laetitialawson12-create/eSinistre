@@ -6,7 +6,7 @@ from .forms import (
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
     ChefDepartement, ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm
 )
-from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent, Agence, ChefDepartement
+from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent, Agence, ChefDepartement, Quittance;
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
 from django.contrib.auth.models import User
@@ -27,33 +27,59 @@ def redirection_login(request):
     return redirect('login')
 
 
-@login_required
 def declarer_sinistre(request):
-    sinistre_id = request.session.get('temp_sinistre_id')
-    instance = None
-    if sinistre_id:
-        instance = Sinistre.objects.filter(id=sinistre_id, assure=request.user).first()
-
     if request.method == 'POST':
-        form = SinistreForm(request.POST, request.FILES, user=request.user, instance=instance)
+        form = SinistreForm(request.POST, request.FILES)
         if form.is_valid():
+            date_du_jour = timezone.now().date()
+            
+            quittance_active = Quittance.objects.filter(
+                contrat=request.user.assure, 
+                date_debut__lte=date_du_jour, 
+                date_fin__gte=date_du_jour
+            ).first()
+
+            if not quittance_active:
+                messages.error(request, "Impossible de déclarer le sinistre : aucune quittance valide n'est associée à votre contrat actuel.")
+                return render(request, 'declaration.html', {'form': form})
+
             sinistre = form.save(commit=False)
             sinistre.assure = request.user
-            sinistre.n_police = request.user.assure.numero_police
+            sinistre.quittance = quittance_active
+            sinistre.statut = 'SOUMIS'
             sinistre.save()
-
-            # Sauvegarde des fichiers
-            files = request.FILES.getlist('fichiers_justificatifs')
-            for f in files:
-                PieceJointe.objects.create(sinistre=sinistre, fichier=f)
-
-            request.session['temp_sinistre_id'] = sinistre.id
-            messages.success(request, f"Sinistre {sinistre.numero_sinistre} déclaré avec succès.")
-            return redirect('confirmer_sinistre')
+            form.save_m2m() 
+            
+            messages.success(request, f"Votre sinistre a été déclaré avec succès sous la référence {sinistre.numero_sinistre}.")
+            return redirect('suivi_sinistres')
+            
     else:
-        form = SinistreForm(user=request.user, instance=instance)
+        form = SinistreForm()
+    
+    return render(request, 'declaration().html', {'form': form})
 
-    return render(request, 'declaration.html', {'form': form})
+
+def fournir_complements(request, sinistre_id):
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
+
+    if sinistre.statut != 'ATTENTE_COMPLEMENTS':
+        messages.error(request, "Ce dossier ne requiert pas de compléments actuellement.")
+        return redirect('suivi_sinistres')
+
+    if request.method == 'POST':
+        sinistre.precision = request.POST.get('precisions')
+        
+        if request.FILES.get('document'):
+            sinistre.lettre_derogation = request.FILES['document']
+        
+        sinistre.statut = 'SOUMIS'
+        sinistre.save()
+
+        messages.success(request, f"Vos compléments pour le dossier {sinistre.numero_sinistre} ont été transmis.")
+        return redirect('suivi_sinistres')
+
+    return render(request, 'fournir_complements.html', {'sinistre': sinistre})
+
 
 @login_required
 def annuler_declaration(request):
@@ -340,6 +366,7 @@ def detail_sinistre_agent(request, sinistre_id):
         'historique': sinistre.historique.all().order_by('date_changement'),
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
+        'quittances_disponibles': Quittance.objects.filter(contrat=sinistre.assure.assure).order_by('-date_debut'),
     }
     return render(request, 'detail_sinistre_agent.html', context)
 
@@ -993,3 +1020,21 @@ def modifier_profil_admin(request):
     else:
         form = ModifierProfilForm(instance=request.user)
     return render(request, 'modifier_profil_admin.html', {'form': form})
+
+
+@login_required
+def lier_quittance_agent(request, sinistre_id):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+    
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+    
+    if request.method == 'POST':
+        quittance_id = request.POST.get('quittance_id')
+        if quittance_id:
+            sinistre.quittance = Quittance.objects.get(id=quittance_id)
+            sinistre.save()
+            messages.success(request, "Quittance associée avec succès.")
+            
+    return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)

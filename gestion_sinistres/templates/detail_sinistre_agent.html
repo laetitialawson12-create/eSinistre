@@ -2,6 +2,7 @@
 {% block title %}Dossier {{ sinistre.numero_sinistre }}{% endblock %}
 {% block content %}
 <h4 class="mb-3">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
         <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
@@ -9,6 +10,26 @@
         <p><strong>Statut :</strong> <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span></p>
         <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
         <p><strong>Précisions :</strong> {{ sinistre.precision }}</p>
+
+        <!-- Bloc Quittance -->
+        <div class="alert alert-info py-2">
+            <strong>Quittance :</strong> 
+            {% if sinistre.quittance %}
+                {{ sinistre.quittance.numero_quittance }} ({{ sinistre.quittance.date_debut|date:"d/m/Y" }} - {{ sinistre.quittance.date_fin|date:"d/m/Y" }})
+            {% else %}
+                <span class="text-danger">Aucune quittance liée automatiquement.</span>
+                <form method="POST" action="{% url 'lier_quittance_agent' sinistre.id %}" class="d-inline-flex align-items-center gap-2 mt-2">
+                    {% csrf_token %}
+                    <select name="quittance_id" class="form-select form-select-sm" style="width: auto;" required>
+                        <option value="">-- Choisir une quittance --</option>
+                        {% for q in quittances_disponibles %}
+                            <option value="{{ q.id }}">{{ q.numero_quittance }} ({{ q.date_debut|date:"d/m/Y" }} - {{ q.date_fin|date:"d/m/Y" }})</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary">Lier</button>
+                </form>
+            {% endif %}
+        </div>
 
         {% if sinistre.prix_retenu %}
         <p><strong>Prix retenu :</strong> {{ sinistre.prix_retenu }} FCFA</p>

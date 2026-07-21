@@ -65,4 +65,5 @@ urlpatterns = [
     path('admin/chefs/<int:chef_id>/reinitialiser-mdp/', views.reinitialiser_mdp_chef, name='reinitialiser_mdp_chef'),
     path('admin/profil/', views.profil_admin, name='profil_admin'),
     path('admin/profil/modifier/', views.modifier_profil_admin, name='modifier_profil_admin'),
+    path('sinistres/<int:sinistre_id>/complements/', views.fournir_complements, name='fournir_complements'),
 ]
