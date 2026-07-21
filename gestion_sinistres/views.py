@@ -30,18 +30,28 @@ def redirection_login(request):
 
 @login_required
 def declarer_sinistre(request):
+    sinistre_id = request.session.get('temp_sinistre_id')
+    sinistre_instance = None
+    if sinistre_id:
+        sinistre_instance = Sinistre.objects.filter(id=sinistre_id, assure=request.user).first()
+
+    est_nouvelle_declaration = sinistre_instance is None
+
     if request.method == 'POST':
-        form = SinistreForm(request.POST, request.FILES, user=request.user)
+        form = SinistreForm(request.POST, request.FILES, user=request.user, instance=sinistre_instance)
         if form.is_valid():
             sinistre = form.save(commit=False)
             sinistre.assure = request.user
             sinistre.statut = 'SOUMIS'
+            sinistre.n_police = request.user.assure.numero_police
 
-            aujourd_hui = date.today()
+            date_accident = sinistre.date_survenance
+            date_ref = date_accident.date() if hasattr(date_accident, 'date') else date_accident
+
             quittances_valides = Quittance.objects.filter(
                 contrat=request.user.assure,
-                date_debut__lte=aujourd_hui,
-                date_fin__gte=aujourd_hui,
+                date_debut__lte=date_ref,
+                date_fin__gte=date_ref,
             )
 
             if quittances_valides.count() == 1:
@@ -52,15 +62,36 @@ def declarer_sinistre(request):
             sinistre.save()
             form.save_m2m()
 
-            messages.success(request, f"Votre sinistre {sinistre.numero_sinistre} a été déclaré avec succès.")
-            return redirect('suivi_sinistres')
-        
+            if est_nouvelle_declaration:
+                HistoriqueSinistre.objects.create(
+                    sinistre=sinistre,
+                    statut='SOUMIS',
+                    commentaires="Déclaration initiale du sinistre par l'assuré.",
+                    auteur=request.user,
+                )
+
+            # Sauvegarde des pièces jointes multiples, en évitant les doublons
+            noms_existants = set(
+                sinistre.pieces.values_list('fichier', flat=True)
+            )
+            noms_existants = {nom.split('/')[-1] for nom in noms_existants}
+
+            for fichier in request.FILES.getlist('fichiers_justificatifs'):
+                if fichier.name not in noms_existants:
+                    PieceJointe.objects.create(sinistre=sinistre, fichier=fichier)
+                    noms_existants.add(fichier.name)
+                else:
+                    messages.warning(request, f"Le fichier « {fichier.name} » est déjà joint à ce dossier, il n'a pas été ajouté à nouveau.")
+
+            request.session['temp_sinistre_id'] = sinistre.id
+            return redirect('confirmer_sinistre')
     else:
-        form = SinistreForm(user=request.user)
+        form = SinistreForm(user=request.user, instance=sinistre_instance)
 
-    return render(request, 'declaration.html', {'form':form})
-    
+    return render(request, 'declaration.html', {'form': form})
 
+
+@login_required
 def fournir_complements(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
 
@@ -110,11 +141,17 @@ def confirmer_sinistre(request):
 @login_required
 def finaliser_envoi(request):
     if request.method == 'POST':
+        sinistre_id = request.session.get('temp_sinistre_id')
+        sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user) if sinistre_id else None
+
         if 'temp_sinistre_id' in request.session:
             del request.session['temp_sinistre_id']
-        messages.success(request, 'Dossier transmis avec succès.')
+
+        if sinistre:
+            messages.success(request, f"Votre sinistre {sinistre.numero_sinistre} a été déclaré avec succès.")
         return redirect('accueil_assure')
     return redirect('confirmer_sinistre')
+
 
 @login_required
 def accueil_assure(request):
@@ -362,13 +399,20 @@ def detail_sinistre_agent(request, sinistre_id):
         Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
         return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
 
+    date_accident = sinistre.date_survenance
+    date_ref = date_accident.date() if hasattr(date_accident, 'date') else date_accident
+
     context = {
         'agent': agent,
         'sinistre': sinistre,
         'historique': sinistre.historique.all().order_by('date_changement'),
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
-        'quittances_disponibles': Quittance.objects.filter(contrat=sinistre.assure.assure).order_by('-date_debut'),
+        'quittances_disponibles': Quittance.objects.filter(
+            contrat=sinistre.assure.assure,
+            date_debut__lte=date_ref,
+            date_fin__gte=date_ref,
+        ).order_by('-date_debut'),
     }
     return render(request, 'detail_sinistre_agent.html', context)
 

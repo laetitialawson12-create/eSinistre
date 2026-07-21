@@ -70,7 +70,7 @@
             <small class="text-muted">À fournir car le sinistre date de plus de 5 jours.</small>
         </div>
 
-        <div class="mb-4" id="pieces-container" style="display: none;">
+        <div class="mb-4" id="pieces-container">
             <h5 class="mt-4">Pièces justificatives</h5>
             <div class="card p-3 border-0 shadow-sm bg-light">
                 {{ form.fichiers_justificatifs }}
@@ -89,32 +89,26 @@
 document.addEventListener('DOMContentLoaded', function() {
     const dateField = document.querySelector('input[name="date_survenance"]');
     const derogationContainer = document.getElementById('derogation-container');
-    const piecesContainer = document.getElementById('pieces-container');
 
     function checkDate() {
         if (!dateField.value) {
             derogationContainer.style.display = 'none';
-            piecesContainer.style.display = 'none';
             return;
         }
 
         const selectedDate = new Date(dateField.value);
         const today = new Date();
 
-        // Calcul de la différence en jours
         const diffTime = today - selectedDate;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays > 5) {
             derogationContainer.style.display = 'block';
-            piecesContainer.style.display = 'block';
         } else {
             derogationContainer.style.display = 'none';
-            piecesContainer.style.display = 'none';
         }
     }
 
-    // Écouteur sur le changement de date
     dateField.addEventListener('change', checkDate);
 });
 </script>
