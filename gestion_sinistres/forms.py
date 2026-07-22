@@ -187,3 +187,7 @@ class SansSuiteForm(forms.Form):
         label="Motif du classement sans suite",
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
     )
+
+
+class ImportExcelForm(forms.Form):
+    fichier = forms.FileField(label="Fichier Excel des contrats (.xlsx)")

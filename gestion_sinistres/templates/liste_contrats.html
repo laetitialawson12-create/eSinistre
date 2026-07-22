@@ -1,0 +1,61 @@
+{% extends 'base_admin.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Gestion des Contrats & Quittances</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'accueil_chef' %}">Tableau de bord</a></li>
+        <li class="breadcrumb-item active">Contrats importés</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Liste des assurés et de leurs contrats
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>N° Police / Contrat</th>
+                            <th>Nom & Prénom</th>
+                            <th>Email</th>
+                            <th>Quittance / Prime</th>
+                            <th>Période de validité</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for assure in assures %}
+                            <tr>
+                                <td><strong>{{ assure.numero_police }}</strong></td>
+                                <td>{{ assure.user.last_name }} {{ assure.user.first_name }}</td>
+                                <td>{{ assure.user.email }}</td>
+                                <td>
+                                    {% for quittance in assure.quittances.all %}
+                                        N° {{ quittance.numero_quittance }} <br>
+                                        <small class="text-muted">Prime : {{ quittance.prime }} FCFA</small>
+                                    {% empty %}
+                                        <span class="text-danger">Aucune quittance</span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for quittance in assure.quittances.all %}
+                                        Du {{ quittance.date_debut|date:"d/m/Y" }} au {{ quittance.date_fin|date:"d/m/Y" }}
+                                    {% empty %}
+                                        -
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">Aucun contrat importé pour le moment.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

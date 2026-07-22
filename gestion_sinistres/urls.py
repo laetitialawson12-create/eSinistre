@@ -71,4 +71,6 @@ urlpatterns = [
     path('agent/dossier/<int:sinistre_id>/conforme', views.marquer_conforme, name='marquer_conforme'),
     path('sinistre/<int:sinistre_id>/attestation/voir/', views.voir_attestation, name='voir_attestation'),
     path('sinistre/<int:sinistre_id>/attestation/telecharger/', views.telecharger_attestation, name='telecharger_attestation'),
+    path('admin/importer_donnees/', views.importer_donnees_admin, name='importer_donnees'),
+    path('admin/contrats/', views.liste_contrats_admin, name='liste_contrats'),
 ]

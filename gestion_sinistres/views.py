@@ -6,7 +6,7 @@ from .forms import (
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
     ChefDepartement, ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm
 )
-from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent, Agence, ChefDepartement, Quittance;
+from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent, Agence, ChefDepartement, Quittance
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
 from django.contrib.auth.models import User
@@ -17,8 +17,9 @@ import os
 from django.conf import settings
 from django.http import HttpResponse
 from django.template.loader import get_template
-from xhtml2pdf import pisa
-#from weasyprint import HTML
+import pandas as pd
+from .forms import ImportExcelForm
+
 
 @login_required
 def redirection_login(request):
@@ -731,6 +732,7 @@ def telecharger_attestation(request, sinistre_id):
     if not (is_owner or hasattr(request.user, 'agent') or hasattr(request.user, 'chef')):
         return redirect('accueil_assure')
 
+    # On transmet download_pdf=True pour déclencher le téléchargement direct côté client
     return render(request, 'attestation.html', {'sinistre': sinistre, 'download_pdf': True})
 
 
@@ -1117,3 +1119,71 @@ def lier_quittance_agent(request, sinistre_id):
             messages.success(request, "Quittance associée avec succès.")
 
     return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
+
+@login_required
+def importer_donnees_admin(request):
+    if request.method == 'POST':
+        form = ImportExcelForm(request.POST, request.FILES)
+        if form.is_valid():
+            fichier = request.FILES['fichier']
+            try:
+                df = pd.read_excel(fichier)
+                
+                for index, row in df.iterrows():
+                    email_excel = row['email']
+                    username_tentatif = email_excel.split('@')[0]
+                    
+                    # SÉCURITÉ ABSOLUE : On bloque l'import si l'email ou le username correspond à l'admin
+                    if request.user.username == 'admin_fidelia' and (request.user.email == email_excel or username_tentatif == 'admin_fidelia'):
+                        continue
+                    
+                    # 1. Création ou récupération de l'utilisateur assuré
+                    user, user_created = User.objects.get_or_create(
+                        email=email_excel,
+                        defaults={
+                            'username': username_tentatif,
+                            'first_name': row['prenom'],
+                            'last_name': row['nom']
+                        }
+                    )
+                    
+                    if not user_created:
+                        user.first_name = row['prenom']
+                        user.last_name = row['nom']
+                        user.save()
+
+                    # 2. Création ou récupération de l'Assuré
+                    assure, created = Assure.objects.get_or_create(
+                        numero_police=row['numero_contrat'],
+                        defaults={
+                            'user': user,
+                            'compte_active': True
+                        }
+                    )
+                    
+                    # 3. Création de la Quittance
+                    Quittance.objects.create(
+                        contrat=assure,
+                        numero_quittance=row['numero_contrat'],
+                        date_debut=row['date_effet'],
+                        date_fin=row['date_echeance'],
+                        prime=row['prime_nette']
+                    )
+                
+                messages.success(request, "Importation des assurés et quittances réussie avec succès !")
+                return redirect('accueil_chef') # Redirection vers le tableau de bord admin/chef
+                
+            except Exception as e:
+                messages.error(request, f"Erreur lors de l'importation : {e}")
+    else:
+        form = ImportExcelForm()
+    
+    return render(request, 'importer_donnees.html', {'form': form})
+
+
+@login_required
+def liste_contrats_admin(request):
+    # Récupère tous les assurés avec leurs quittances associées
+    assures = Assure.objects.all().prefetch_related('quittances', 'user')
+    return render(request, 'gestion_sinistres/liste_contrats.html', {'assures': assures})
