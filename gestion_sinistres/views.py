@@ -6,7 +6,7 @@ from .forms import (
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
     ChefDepartement, ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm
 )
-from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent, Agence, ChefDepartement, Quittance
+from .models import Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre, Assure, Agent, Agence, ChefDepartement, Quittance, Vehicule
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
 from django.contrib.auth.models import User
@@ -247,7 +247,7 @@ def activation_etape2(request):
             assure.compte_active = True
             assure.save()
             del request.session['activation_assure_id']
-            login(request, assure.user)
+            login(request, assure.user, backend='django.contrib.auth.backends.ModelBackend')
             return redirect('politique_confidentialite')
     else:
         form = SetPasswordForm(assure.user)
@@ -1131,7 +1131,6 @@ def lier_quittance_agent(request, sinistre_id):
     return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
 
 
-@login_required
 def importer_donnees_admin(request):
     if request.method == 'POST':
         form = ImportExcelForm(request.POST, request.FILES)
@@ -1179,10 +1178,9 @@ def importer_donnees_admin(request):
                     if not numero_police or not numero_quittance:
                         continue
 
-                    # Récupération de la marque et du modèle du véhicule
+                    # Récupération de la marque, du modèle et de l'immatriculation du véhicule
                     marque = get_val(row, ['MARQUE', 'MARQUE_VEHICULE']) or ''
-                    modele = get_val(row, ['MODELE', 'MODELE_VEHICULE']) or ''
-                    marque_complete = f"{marque} {modele}".strip() or None
+                    modele = get_val(row, ['MODELE', 'MODELE_VEHICULE']) or None
                     immatriculation = get_val(row, ['IMMATRICULATION', 'IMMAT'])
 
                     # 1. Création ou récupération de l'utilisateur assuré
@@ -1203,18 +1201,17 @@ def importer_donnees_admin(request):
                         user.first_name = prenom
                     if nom:
                         user.last_name = nom
-                    user.is_active = False  
+                    if user_created:
+                        user.is_active = False  
                     user.save()
 
-                    # 2. Création ou récupération de l'Assuré (avec les champs véhicule)
+                    # 2. Création ou récupération de l'Assuré (SANS champs véhicule, qui n'existent pas sur ce modèle)
                     assure, created = Assure.objects.get_or_create(
                         numero_police=numero_police,
                         defaults={
                             'user': user,
                             'telephone': telephone,
                             'compte_active': False,
-                            'marque_vehicule': marque_complete,
-                            'immatriculation': immatriculation
                         }
                     )
 
@@ -1222,10 +1219,6 @@ def importer_donnees_admin(request):
                         assure.user = user
                         if telephone:
                             assure.telephone = telephone
-                        if marque_complete:
-                            assure.marque_vehicule = marque_complete
-                        if immatriculation:
-                            assure.immatriculation = immatriculation
                         assure.save()
 
                     # Dates et prime
@@ -1233,8 +1226,8 @@ def importer_donnees_admin(request):
                     date_fin = get_val(row, ['DATE_FIN', 'DATE FIN', 'DATE_ECHEANCE', 'DATE ECHEANCE'])
                     prime = get_val(row, ['PRIME_NETTE', 'PRIME NETTE', 'PRIME'])
 
-                    # 3. Création ou mise à jour de la Quittance (sans les champs véhicule qui sont sur Assure)
-                    Quittance.objects.update_or_create(
+                    # 3. Création ou mise à jour de la Quittance
+                    quittance, _ = Quittance.objects.update_or_create(
                         numero_quittance=numero_quittance,
                         defaults={
                             'contrat': assure,
@@ -1244,6 +1237,18 @@ def importer_donnees_admin(request):
                             'prime': prime
                         }
                     )
+
+                    # 4. Création ou mise à jour du Véhicule lié à cette quittance et à cet utilisateur
+                    if immatriculation and marque:
+                        Vehicule.objects.update_or_create(
+                            immatriculation=immatriculation,
+                            defaults={
+                                'marque': marque,
+                                'modele': modele,
+                                'proprietaire': user,
+                                'quittance': quittance,
+                            }
+                        )
                 
                 messages.success(request, "Importation des contrats et de leurs quittances réussie avec succès !")
                 return redirect('accueil_admin')
@@ -1331,7 +1336,7 @@ def supprimer_contrat_admin(request, assure_id):
 def mes_contrats(request):
     quittances = Quittance.objects.filter(
         contrat__user=request.user
-    ).prefetch_related('vehicule_set')
+    ).prefetch_related('vehicules')
     
     return render(request, 'mes_contrats.html', {
         'quittances': quittances

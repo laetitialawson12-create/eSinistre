@@ -15,7 +15,27 @@ def jours_ouvres_entre(date_debut, date_fin):
     return jours
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput(attrs={'class': 'form-control', 'multiple': True}))
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = single_file_clean(data, initial)
+        return result
+
+    
 class SinistreForm(forms.ModelForm):
+    fichiers_justificatifs = MultipleFileField(required=False, label="Pièces justificatives")
+
     class Meta:
         model = Sinistre
         fields = [
@@ -35,8 +55,8 @@ class SinistreForm(forms.ModelForm):
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'nature': forms.Select(attrs={'class': 'form-control'}),
             'region': forms.Select(attrs={'class': 'form-control'}),
-            'ville': forms.TextInput(attrs={'class': 'form-control'}),
-            'prefecture': forms.TextInput(attrs={'class': 'form-control'}),
+            'ville': forms.Select(attrs={'class': 'form-control'}),
+            'prefecture': forms.Select(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'vehicule': forms.Select(attrs={'class': 'form-control'}),

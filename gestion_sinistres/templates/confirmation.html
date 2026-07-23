@@ -20,8 +20,9 @@
 
         <div class="mb-3">
             <h6 class="text-uppercase text-secondary small">Localisation</h6>
-            <p><strong>Quartier :</strong> {{ sinistre.quartier }}</p>
-            <p><strong>Ville / Préfecture :</strong> {{ sinistre.ville }} / {{ sinistre.prefecture }}</p>
+            <p><strong>Quartier: </strong> {{ sinistre.quartier }}</p>
+            <p><strong>Ville: </strong> {{ sinistre.ville }}</p>
+            <p><strong>Préfecture: </strong>{{ sinistre.prefecture }}</p>
         </div>
 
         <div class="mb-3">
@@ -30,12 +31,11 @@
             <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
             <p><strong>Véhicule :</strong> {{ sinistre.vehicule }}</p>
             <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
-            <p><strong>Immatriculation :</strong> {{ sinistre.immatriculation }}</p>
         </div>
 
         <div class="mb-3">
             <h6 class="text-uppercase text-secondary small">Circonstances</h6>
-            <p class="bg-light p-2 border">{{ sinistre.precision }}</p>
+            <p class="bg-light p-2 border">{{ sinistre.circonstances }}</p>
         </div>
 
         <div class="mb-3">

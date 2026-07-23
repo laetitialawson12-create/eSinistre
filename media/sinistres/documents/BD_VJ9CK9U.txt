@@ -1,0 +1,131 @@
+-- =====================================================================
+-- 1. TABLES INDÉPENDANTES (NIVEAU 1)
+-- =====================================================================
+
+CREATE TABLE departement (
+    id_departement INT AUTO_INCREMENT PRIMARY KEY,
+    nom_departement VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE statut (
+    id_statut INT AUTO_INCREMENT PRIMARY KEY,
+    libelle_statut VARCHAR(50) NOT NULL -- Ex: 'Ouvert', 'En cours', 'Clôturé'
+);
+
+-- =====================================================================
+-- 2. TABLES LIÉES AUX POSTES ET UTILISATEURS (NIVEAU 2)
+-- =====================================================================
+
+CREATE TABLE poste (
+    id_poste INT AUTO_INCREMENT PRIMARY KEY,
+    libelle_post VARCHAR(100) NOT NULL,
+    id_departement INT NOT NULL,
+    FOREIGN KEY (id_departement) REFERENCES departement(id_departement)
+);
+
+CREATE TABLE utilisateur (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    prenom VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    mot_de_passe VARCHAR(255) NOT NULL,
+    date_creation DATE NOT NULL,
+    id_poste INT, 
+    -- Application de l'ENUM selon ton discriminant
+    type_utilisateur ENUM('Assuré', 'Agent sinistre', 'Administrateur') NOT NULL, 
+    FOREIGN KEY (id_poste) REFERENCES poste(id_poste)
+);
+
+-- =====================================================================
+-- 3. ENFANTS HÉRITANTS DE UTILISATEUR (NIVEAU 3)
+-- =====================================================================
+
+CREATE TABLE assure (
+    id_utilisateur INT PRIMARY KEY,
+    numero_assure VARCHAR(50) UNIQUE NOT NULL,
+    adresse VARCHAR(255),
+    telephone VARCHAR(20),
+    date_naissance DATE,
+    FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id) ON DELETE CASCADE
+);
+
+CREATE TABLE agent_sinistre (
+    id_utilisateur INT PRIMARY KEY,
+    matricule VARCHAR(50) UNIQUE NOT NULL,
+    -- Application de l'ENUM selon ta fiche
+    niveau_habilitation ENUM('Rédacteur sinistre', 'Chef de département') NOT NULL, 
+    FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id) ON DELETE CASCADE
+);
+
+CREATE TABLE  administrateur (
+    id_utilisateur INT PRIMARY KEY,
+    niveau_acces VARCHAR(50) NOT NULL,
+    FOREIGN KEY (id_utilisateur) REFERENCES utilisateur(id) ON DELETE CASCADE
+);
+
+-- =====================================================================
+-- 4. CONTRATS ET DÉCLARATIONS (NIVEAU 4)
+-- =====================================================================
+
+CREATE TABLE contrat (
+    numero_contrat VARCHAR(50) PRIMARY KEY,
+    type_contrat VARCHAR(50) NOT NULL,
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    montant_prime DECIMAL(10, 2) NOT NULL, 
+    -- Application d'un ENUM pour le statut du contrat
+    statut ENUM('En cours', 'Résilié', 'Expiré') NOT NULL, 
+    id_assure INT NOT NULL,
+    FOREIGN KEY (id_assure) REFERENCES assure(id_utilisateur)
+);
+
+CREATE TABLE declaration (
+    numero_declaration VARCHAR(50) PRIMARY KEY,
+    date_declaration DATE NOT NULL,
+    date_sinistre DATE NOT NULL,
+    lieu_sinistre VARCHAR(255) NOT NULL,
+    id_assure INT NOT NULL,
+    FOREIGN KEY (id_assure) REFERENCES assure(id_utilisateur)
+);
+
+-- =====================================================================
+-- 5. DOSSIERS SINISTRES ET FACTURATION (NIVEAU 5)
+-- =====================================================================
+
+CREATE TABLE dossier_sinistre (
+    numero_sinistre VARCHAR(50) PRIMARY KEY,
+    date_ouverture DATE NOT NULL,
+    date_cloture DATE,
+    montant_propose DECIMAL(10, 2), 
+    montant_paye DECIMAL(10, 2),    
+    montant_retenu DECIMAL(10, 2),  
+    numero_declaration VARCHAR(50) NOT NULL,
+    numero_contrat VARCHAR(50) NOT NULL,
+    id_statut INT NOT NULL, -- Reste lié à la table 'statut' comme sur ta fiche
+    id_agent INT NOT NULL,
+    FOREIGN KEY (numero_declaration) REFERENCES declaration(numero_declaration),
+    FOREIGN KEY (numero_contrat) REFERENCES contrat(numero_contrat),
+    FOREIGN KEY (id_statut) REFERENCES statut(id_statut),
+    FOREIGN KEY (id_agent) REFERENCES agent_sinistre(id_utilisateur)
+);
+
+CREATE TABLE quittance (
+    numero_quittance VARCHAR(50) PRIMARY KEY,
+    montant DECIMAL(10, 2) NOT NULL, 
+    date_emission DATE NOT NULL,
+    date_echeance DATE NOT NULL,
+    -- Application de l'ENUM pour le suivi des paiements
+    statut_paiement ENUM('Impayé', 'Partiel', 'Payé') NOT NULL, 
+    numero_sinistre VARCHAR(50) NOT NULL,
+    FOREIGN KEY (numero_sinistre) REFERENCES dossier_sinistre(numero_sinistre)
+);
+
+CREATE TABLE paiement (
+    numero_paiement VARCHAR(50) PRIMARY KEY,
+    montant_paye DECIMAL(10, 2) NOT NULL, 
+    date_paiement DATE NOT NULL,
+    -- Application de l'ENUM pour les modes de paiement sécurisés
+    mode_paiement ENUM('Carte', 'Virement', 'Chèque', 'Espèces') NOT NULL, 
+    numero_quittance VARCHAR(50) NOT NULL,
+    FOREIGN KEY (numero_quittance) REFERENCES quittance(numero_quittance)
+);
