@@ -33,17 +33,54 @@ class Vehicule(models.Model):
     def __str__(self):
         return f"{self.immatriculation} - {self.marque} {self.modele or 'Modèle non spécifié'}"
     
-    
+
 class Quittance(models.Model):
     contrat = models.ForeignKey('Assure', on_delete=models.CASCADE, related_name='quittances')
     numero_quittance = models.CharField(max_length=50, unique=True)
     type_contrat = models.CharField(max_length=100, blank=True, null=True)
     date_debut = models.DateField()
     date_fin = models.DateField()
-    prime = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    # Champs financiers
+    prime = models.DecimalField(max_digits=12, decimal_places=2)  # Représente la prime nette
+    prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(prix_retenu__lte=models.F('prime')),
+                name='check_prix_retenu_lte_prime'
+            ),
+            models.CheckConstraint(
+                condition=models.Q(date_debut__lte=models.F('date_fin')),
+                name='check_quittance_date_debut_lte_date_fin'
+            ),
+        ]
+
+    def clean(self):
+        super().clean()
+
+        # Validation logique : prix_retenu <= prime
+        if self.prix_retenu is not None and self.prime is not None:
+            if self.prix_retenu > self.prime:
+                raise ValidationError({
+                    'prix_retenu': "Le prix retenu ne peut pas être supérieur à la prime."
+                })
+
+        # Validation logique : date_debut <= date_fin
+        if self.date_debut and self.date_fin and self.date_debut > self.date_fin:
+            raise ValidationError({
+                'date_fin': "La date de fin doit être postérieure ou égale à la date de début."
+            })
+
+    def save(self, *args, **kwargs):
+        # Force l'exécution de clean() avant tout enregistrement
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Quittance N° {self.numero_quittance}"
+
     
 # Classe sinistre
 class Sinistre(models.Model):
@@ -63,7 +100,7 @@ class Sinistre(models.Model):
 
     n_police = models.CharField(max_length=50)
     nom_conducteur = models.CharField(max_length=100) 
-    immatriculation = models.CharField(max_length=20)
+    immatriculation = models.CharField(max_length=50, blank=True, null=True, verbose_name="Immatriculation")
 
     # Identifiants
     numero_sinistre = models.CharField(max_length=20, unique=True)
@@ -85,7 +122,6 @@ class Sinistre(models.Model):
     date_attestation = models.DateTimeField(null=True, blank=True)
     motif_sans_suite = models.TextField(blank=True, null=True)
     indemnisation_validee = models.BooleanField(default=False)
-    
 
     # Informations de base 
     date_survenance = models.DateTimeField()
@@ -102,7 +138,6 @@ class Sinistre(models.Model):
 
     # Détails du sinistre
     nature = models.CharField(max_length=1, choices=NATURE_CHOICES)
-    precision = models.TextField(help_text="Circonstances exactes")
 
     # Informations pour la génération du numéro
     numero_point_vente = models.CharField(max_length=10, default="001")
@@ -113,21 +148,34 @@ class Sinistre(models.Model):
     # Pièces jointes
     lettre_derogation = models.FileField(upload_to='sinistres/derogations/', blank=True, null=True)
 
+    def clean(self):
+        super().clean()
+
+        # Validation : prix_retenu <= prime de la quittance liée
+        if self.prix_retenu is not None and self.prix_retenu < 0:
+            raise ValidationError({
+                f"Le prix retenu ({self.prix_retenu} FCFA) ne peut pas être négatif."
+            })
+
     def save(self, *args, **kwargs):
-        # Génération automatique du numéro de sinistre à la création
+        # 1. Génération automatique du numéro de sinistre à la création
         if not self.numero_sinistre:
-            annee = datetime.now().strftime('%Y')
+            annee = timezone.now().strftime('%Y')
             count = Sinistre.objects.filter(
-                numero_sinistre__startswith = f"{annee}{self.numero_point_vente}"
+                numero_sinistre__startswith=f"{annee}{self.numero_point_vente}"
             ).count() + 1
             ordre = str(count).zfill(6)
             self.numero_sinistre = f"{annee}{self.numero_point_vente}{self.nature}{ordre}"
+
+        # 2. Exécute la méthode clean() pour forcer la validation avant sauvegarde
+        self.full_clean()
+
         super().save(*args, **kwargs)
     
     def __str__(self):
         return f"Sinistre {self.numero_sinistre} - {self.nature}"
-
-
+    
+    
 class PieceJointe(models.Model):
     sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='pieces')
     fichier = models.FileField(upload_to='sinistres/documents/')

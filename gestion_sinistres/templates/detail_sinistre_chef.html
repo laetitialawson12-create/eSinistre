@@ -1,14 +1,16 @@
 {% extends "base_chef.html" %}
 {% block title %}Dossier {{ sinistre.numero_sinistre }}{% endblock %}
+
 {% block content %}
 <h4 class="mb-3">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
         <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
         <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
         <p><strong>Statut :</strong> <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span></p>
         <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
-        <p><strong>Précisions :</strong> {{ sinistre.precision }}</p>
+
         {% if sinistre.attestation_generee %}
             <a href="{% url 'voir_attestation' sinistre.id %}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">
                 <i class="bi bi-file-earmark-text me-1"></i> Voir l'attestation
@@ -16,64 +18,100 @@
         {% endif %}
 
         {% if sinistre.motif_sans_suite %}
-            <div class="alert alert-secondary mt-3"><strong>Motif sans suite :</strong> {{ sinistre.motif_sans_suite }}</div>
+            <div class="alert alert-secondary mt-3">
+                <strong>Motif sans suite :</strong> {{ sinistre.motif_sans_suite }}
+            </div>
         {% endif %}
 
-{% if sinistre.statut == 'ATTENTE_VALIDATION' %}
-<div class="d-flex gap-2 mt-3">
-    <form method="post" action="{% url 'valider_declaration' sinistre.id %}">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-success btn-sm">
-            <i class="bi bi-check2-circle me-1"></i> Valider la déclaration
-        </button>
-    </form>
-    <a href="{% url 'renvoyer_a_agent' sinistre.id %}" class="btn btn-warning btn-sm">
-        <i class="bi bi-arrow-return-left me-1"></i> Renvoyer à l'agent
-    </a>
-</div>
-{% endif %}
+        {# --- CAS 1 : Attente de validation de la déclaration initiale --- #}
+        {% if sinistre.statut == 'ATTENTE_VALIDATION' %}
+        <div class="d-flex gap-2 mt-3">
+            <form method="post" action="{% url 'valider_declaration' sinistre.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">
+                    <i class="bi bi-check2-circle me-1"></i> Valider la déclaration
+                </button>
+            </form>
+            <button type="button" class="btn btn-warning btn-sm text-white" data-bs-toggle="modal" data-bs-target="#modalRevision">
+                <i class="bi bi-arrow-return-left me-1"></i> Renvoyer à l'agent
+            </button>
+        </div>
+        {% endif %}
 
+        {# --- CAS 2 : Dossier en cours (Saisie/Validation de l'indemnisation) --- #}
+        {% if sinistre.statut == 'EN_COURS' %}
+            {% if not sinistre.prix_retenu %}
+            <div class="alert alert-info mt-3">En attente de la saisie du prix retenu par l'agent.</div>
+            {% elif not sinistre.indemnisation_validee %}
+            <div class="mt-3">
+                <p><strong>Prix retenu proposé :</strong> {{ sinistre.prix_retenu }} FCFA</p>
+                <div class="d-flex gap-2">
+                    <form method="post" action="{% url 'valider_indemnisation' sinistre.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="bi bi-patch-check me-1"></i> Valider l'indemnisation
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-warning btn-sm text-white" data-bs-toggle="modal" data-bs-target="#modalRevision">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Demander une révision du prix
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="d-flex gap-2 mt-3">
+                <form method="post" action="{% url 'clore_sinistre' sinistre.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-check2-square me-1"></i> Clôturer le sinistre
+                    </button>
+                </form>
+                <a href="{% url 'classer_sans_suite' sinistre.id %}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i> Classer sans suite
+                </a>
+            </div>
+            {% endif %}
+        {% endif %}
 
-{% if sinistre.statut == 'EN_COURS' %}
-    {% if not sinistre.prix_retenu %}
-    <div class="alert alert-info mt-3">En attente de la saisie du prix retenu par l'agent.</div>
-    {% elif not sinistre.indemnisation_validee %}
-    <div class="mt-3">
-        <p><strong>Prix retenu proposé :</strong> {{ sinistre.prix_retenu }} FCFA</p>
-        <form method="post" action="{% url 'valider_indemnisation' sinistre.id %}">
+        {# --- CAS 3 : Dossier Clôturé ou Sans suite --- #}
+        {% if sinistre.statut == 'CLOTURE' or sinistre.statut == 'SANS_SUITE' %}
+        <form method="post" action="{% url 'reouvrir_dossier' sinistre.id %}" class="mt-3">
             {% csrf_token %}
-            <button type="submit" class="btn btn-success btn-sm">
-                <i class="bi bi-patch-check me-1"></i> Valider l'indemnisation
+            <button type="submit" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Réouvrir le dossier
             </button>
         </form>
-    </div>
-    {% else %}
-    <div class="d-flex gap-2 mt-3">
-        <form method="post" action="{% url 'clore_sinistre' sinistre.id %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-success btn-sm">
-                <i class="bi bi-check2-square me-1"></i> Clôturer le sinistre
-            </button>
-        </form>
-        <a href="{% url 'classer_sans_suite' sinistre.id %}" class="btn btn-secondary btn-sm">
-            <i class="bi bi-x-circle me-1"></i> Classer sans suite
-        </a>
-    </div>
-    {% endif %}
-{% endif %}
-
-
-{% if sinistre.statut == 'CLOTURE' or sinistre.statut == 'SANS_SUITE' %}
-<form method="post" action="{% url 'reouvrir_dossier' sinistre.id %}" class="mt-3">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-outline-primary btn-sm">
-        <i class="bi bi-arrow-counterclockwise me-1"></i> Réouvrir le dossier
-    </button>
-</form>
-{% endif %}
+        {% endif %}
     </div>
 </div>
 
+<!-- Modal Bootstrap pour Demander une Révision / Renvoyer à l'agent -->
+<div class="modal fade" id="modalRevision" tabindex="-1" aria-labelledby="modalRevisionLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'renvoyer_a_agent' sinistre.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRevisionLabel">Demander une révision à l'agent</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="commentaires" class="form-label">Motif / Instructions pour l'agent :</label>
+                        <textarea class="form-control" id="commentaires" name="commentaires" rows="3" placeholder="Ex: Le prix retenu doit être révisé à la baisse suite au devis d'expertise..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning btn-sm text-white">
+                        <i class="bi bi-send me-1"></i> Renvoyer à l'agent
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Section Pièces jointes -->
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white fw-bold">📎 Pièces jointes</div>
     <div class="card-body">
@@ -85,11 +123,16 @@
     </div>
 </div>
 
+<!-- Section Historique -->
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
     <div class="card-body">
         {% for h in historique %}
-            <p class="mb-1"><span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span></p>
+            <p class="mb-1">
+                <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> 
+                <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} 
+                <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span>
+            </p>
         {% empty %}
             <p class="text-muted">Aucun historique pour ce dossier.</p>
         {% endfor %}

@@ -1,7 +1,20 @@
 {% extends "base_agent.html" %}
 {% block title %}Dossier {{ sinistre.numero_sinistre }}{% endblock %}
+
 {% block content %}
 <h4 class="mb-3">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+
+<!-- Affichage des messages de notification / erreurs de validation -->
+{% if messages %}
+    <div class="mb-3">
+        {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
 
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
@@ -9,68 +22,83 @@
         <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
         <p><strong>Statut :</strong> <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span></p>
         <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
-        <p><strong>Précisions :</strong> {{ sinistre.precision }}</p>
 
         <!-- Bloc Quittance -->
-        <div class="alert alert-info py-2">
+        <div class="alert alert-info py-2 mb-3">
             <strong>Quittance :</strong> 
             {% if sinistre.quittance %}
-                {{ sinistre.quittance.numero_quittance }} ({{ sinistre.quittance.date_debut|date:"d/m/Y" }} - {{ sinistre.quittance.date_fin|date:"d/m/Y" }})
+                <span class="fw-bold">{{ sinistre.quittance.numero_quittance }}</span> 
+                ({{ sinistre.quittance.date_debut|date:"d/m/Y" }} - {{ sinistre.quittance.date_fin|date:"d/m/Y" }}) 
+                — <span class="badge bg-secondary">Prime : {{ sinistre.quittance.prime }} FCFA</span>
             {% else %}
-                <span class="text-danger">Aucune quittance liée automatiquement.</span>
-                <form method="POST" action="{% url 'lier_quittance_agent' sinistre.id %}" class="d-inline-flex align-items-center gap-2 mt-2">
+                <span class="text-danger fw-bold">Aucune quittance liée automatiquement.</span>
+                <form method="POST" action="{% url 'lier_quittance_agent' sinistre.id %}" class="d-inline-flex align-items-center gap-2 mt-2 flex-wrap">
                     {% csrf_token %}
                     <select name="quittance_id" class="form-select form-select-sm" style="width: auto;" required>
                         <option value="">-- Choisir une quittance --</option>
                         {% for q in quittances_disponibles %}
-                            <option value="{{ q.id }}">{{ q.numero_quittance }} ({{ q.date_debut|date:"d/m/Y" }} - {{ q.date_fin|date:"d/m/Y" }})</option>
+                            <option value="{{ q.id }}">
+                                {{ q.numero_quittance }} ({{ q.date_debut|date:"d/m/Y" }} - {{ q.date_fin|date:"d/m/Y" }}) — Prime : {{ q.prime }} FCFA
+                            </option>
                         {% endfor %}
                     </select>
-                    <button type="submit" class="btn btn-sm btn-primary">Lier</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Lier la quittance</button>
                 </form>
             {% endif %}
         </div>
 
         {% if sinistre.prix_retenu %}
-        <p><strong>Prix retenu :</strong> {{ sinistre.prix_retenu }} FCFA</p>
+            <p><strong>Prix retenu :</strong> <span class="badge bg-success fs-6">{{ sinistre.prix_retenu }} FCFA</span></p>
         {% endif %}
 
+        <!-- Actions sur le dossier selon le statut -->
         {% if sinistre.statut == 'SOUMIS' or sinistre.statut == 'A_CORRIGER' %}
-        <div class="d-flex gap-2 mt-3">
-            <form method="post" action="{% url 'marquer_conforme' sinistre.id %}">
+            <div class="d-flex gap-2 mt-3">
+                <form method="post" action="{% url 'marquer_conforme' sinistre.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Dossier conforme — envoyer au Chef
+                    </button>
+                </form>
+                <a href="{% url 'demander_complements' sinistre.id %}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-exclamation-circle me-1"></i> Demander des compléments
+                </a>
+            </div>
+        {% endif %}
+
+        {% if sinistre.statut == 'EN_COURS' %}
+            <form method="post" action="{% url 'saisir_prix_retenu' sinistre.id %}" class="d-flex align-items-end gap-2 flex-wrap mt-3">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-success btn-sm">
-                    <i class="bi bi-check2-circle me-1"></i> Dossier conforme — envoyer au Chef
+                <div>
+                    <label class="form-label fw-bold mb-1 small">Prix retenu (FCFA)</label>
+                    <input type="number" 
+                           name="prix_retenu" 
+                           class="form-control form-control-sm" 
+                           step="0.01" 
+                           min="0" 
+                           {% if sinistre.quittance and sinistre.quittance.prime %}max="{{ sinistre.quittance.prime }}"{% endif %}
+                           value="{{ sinistre.prix_retenu|default:'' }}" 
+                           style="width: 180px;" 
+                           required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    {% if sinistre.prix_retenu %}Modifier{% else %}Enregistrer{% endif %} le prix retenu
                 </button>
             </form>
-            <a href="{% url 'demander_complements' sinistre.id %}" class="btn btn-warning btn-sm">
-                <i class="bi bi-exclamation-circle me-1"></i> Demander des compléments
-            </a>
-        </div>
-        {% endif %}
-
-        {% if sinistre.statut == 'EN_COURS' and not sinistre.prix_retenu %}
-        <form method="post" action="{% url 'saisir_prix_retenu' sinistre.id %}" class="d-flex align-items-end gap-2 flex-wrap mt-3">
-            {% csrf_token %}
-            <div>
-                <label class="form-label fw-bold mb-1 small">Prix retenu (FCFA)</label>
-                <input type="number" name="prix_retenu" class="form-control form-control-sm" step="0.01" min="0" style="width: 160px;" required>
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm">Enregistrer le prix retenu</button>
-        </form>
         {% endif %}
 
         {% if sinistre.statut == 'CLOTURE' %}
             {% if sinistre.numero_cheque %}
-            <div class="alert alert-success mt-3">
-                Chèque n°{{ sinistre.numero_cheque }} ({{ sinistre.banque_cheque }}) de {{ sinistre.montant_cheque }} FCFA
-                remis le {{ sinistre.date_emission_cheque|date:"d/m/Y" }} à
-                {{ sinistre.beneficiaire_nom }} {{ sinistre.beneficiaire_prenoms }} ({{ sinistre.beneficiaire_telephone }}).
-            </div>
+                <div class="alert alert-success mt-3 mb-0">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    Chèque n°<strong>{{ sinistre.numero_cheque }}</strong> ({{ sinistre.banque_cheque }}) de <strong>{{ sinistre.montant_cheque }} FCFA</strong> 
+                    remis le {{ sinistre.date_emission_cheque|date:"d/m/Y" }} à 
+                    <strong>{{ sinistre.beneficiaire_nom }} {{ sinistre.beneficiaire_prenoms }}</strong> ({{ sinistre.beneficiaire_telephone }}).
+                </div>
             {% else %}
-            <a href="{% url 'saisir_indemnisation' sinistre.id %}" class="btn btn-primary btn-sm mt-3">
-                <i class="bi bi-credit-card me-1"></i> Saisir l'indemnisation
-            </a>
+                <a href="{% url 'saisir_indemnisation' sinistre.id %}" class="btn btn-primary btn-sm mt-3">
+                    <i class="bi bi-credit-card me-1"></i> Saisir l'indemnisation
+                </a>
             {% endif %}
         {% endif %}
     </div>
@@ -80,9 +108,11 @@
     <div class="card-header bg-white fw-bold">📎 Pièces jointes</div>
     <div class="card-body">
         {% for doc in documents %}
-            <a href="{{ doc.fichier.url }}" target="_blank">{{ doc.fichier.name }}</a><br>
+            <a href="{{ doc.fichier.url }}" target="_blank" class="text-decoration-none">
+                <i class="bi bi-file-earmark-text me-1"></i>{{ doc.fichier.name }}
+            </a><br>
         {% empty %}
-            <span class="text-muted">Aucun document.</span>
+            <span class="text-muted">Aucun document rattaché.</span>
         {% endfor %}
     </div>
 </div>
@@ -91,9 +121,13 @@
     <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
     <div class="card-body">
         {% for h in historique %}
-            <p class="mb-1"><span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span></p>
+            <p class="mb-1">
+                <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> 
+                <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} 
+                <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span>
+            </p>
         {% empty %}
-            <p class="text-muted">Aucun historique pour ce dossier.</p>
+            <p class="text-muted mb-0">Aucun historique pour ce dossier.</p>
         {% endfor %}
     </div>
 </div>
@@ -102,14 +136,20 @@
     <div class="card-header bg-white fw-bold">💬 Messages</div>
     <div class="card-body">
         {% for m in discussion %}
-            <p><strong>{{ m.auteur.get_full_name|default:m.auteur.username }}</strong> ({{ m.date_envoi|date:"d/m/Y H:i" }}) : {{ m.contenu }}</p>
+            <div class="mb-2 p-2 rounded bg-light">
+                <strong>{{ m.auteur.get_full_name|default:m.auteur.username }}</strong> 
+                <small class="text-muted">({{ m.date_envoi|date:"d/m/Y H:i" }})</small> : 
+                <span>{{ m.contenu }}</span>
+            </div>
         {% empty %}
-            <p class="text-muted">Aucun message.</p>
+            <p class="text-muted">Aucun message pour le moment.</p>
         {% endfor %}
-        <form method="post">
+        <form method="post" class="mt-3">
             {% csrf_token %}
-            <textarea name="contenu" class="form-control mb-2" rows="2" placeholder="Écrire à l'assuré..."></textarea>
-            <button type="submit" class="btn btn-primary btn-sm">Envoyer</button>
+            <textarea name="contenu" class="form-control mb-2" rows="2" placeholder="Écrire un message à l'assuré..." required></textarea>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="bi bi-send me-1"></i> Envoyer
+            </button>
         </form>
     </div>
 </div>

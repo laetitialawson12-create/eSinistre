@@ -48,9 +48,14 @@ class SinistreForm(forms.ModelForm):
             'ville', 
             'prefecture', 
             'quartier', 
-            'circonstances'
+            'circonstances',
+            'prix_retenu',
+            'statut',
+            'agent_traitant'
         ]
         widgets = {
+            'vehicule': forms.Select(attrs={'class': 'form-control'}),
+            'nom_conducteur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du conducteur'}),
             'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'nature': forms.Select(attrs={'class': 'form-control'}),
@@ -59,19 +64,35 @@ class SinistreForm(forms.ModelForm):
             'prefecture': forms.Select(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'vehicule': forms.Select(attrs={'class': 'form-control'}),
+            'prix_retenu': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Prix retenu en FCFA'}),
+            'statut': forms.Select(attrs={'class': 'form-control'}),
+            'agent_traitant': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
+    def clean_prix_retenu(self):
+        prix_retenu = self.cleaned_data.get('prix_retenu')
+        
+        # Récupération de l'instance du sinistre en cours d'édition
+        if self.instance and self.instance.quittance:
+            quittance = self.instance.quittance
+            
+            if prix_retenu is not None and quittance.prime is not None:
+                if prix_retenu > quittance.prime:
+                    raise forms.ValidationError(
+                        f"Le prix retenu ({prix_retenu} FCFA) ne peut pas dépasser la prime de la quittance ({quittance.prime} FCFA)."
+                    )
+        
+        return prix_retenu
+    
     def __init__(self, *args, **kwargs):
-        # On récupère l'utilisateur passé depuis la vue
+        # Récupération de l'utilisateur passé depuis la vue
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         
-        # Si un utilisateur est présent, on filtre les véhicules qui lui appartiennent
-        if user is not None:
+        # Si un utilisateur assuré est présent, filtrer ses véhicules
+        if user is not None and hasattr(user, 'vehicules'):
             self.fields['vehicule'].queryset = Vehicule.objects.filter(proprietaire=user)
         
-        # Personnalisation de l'affichage du menu déroulant pour le véhicule
         self.fields['vehicule'].empty_label = "Sélectionnez votre véhicule"
 
 
