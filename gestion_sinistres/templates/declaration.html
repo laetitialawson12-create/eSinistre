@@ -23,19 +23,15 @@
         {% endif %}
 
         <div class="row mb-3">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">N° de Police</label>
-                <input type="text" class="form-control" value="{{request.user.assure.numero_police}}" disabled readonly>
+                <input type="text" class="form-control" value="{{ request.user.assure.numero_police }}" disabled readonly>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Immatriculation</label>
-                {{ form.immatriculation }}
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label class="form-label">Nom du conducteur</label>
                 {{ form.nom_conducteur }}
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 {{ form.vehicule.label_tag }}
                 {{ form.vehicule }}
             </div>
@@ -109,7 +105,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    dateField.addEventListener('change', checkDate);
+    if (dateField && dateField.value) {
+        checkDate();
+    }
+
+    if (dateField) {
+        dateField.addEventListener('change', checkDate);
+    }
 });
 </script>
 {% endblock %}

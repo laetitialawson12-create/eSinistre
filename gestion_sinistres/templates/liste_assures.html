@@ -1,0 +1,65 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Gestion des assurés{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Gestion des assurés</h3>
+</div>
+
+<div class="card border-0 shadow-sm p-3">
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>N° Police</th>
+                <th>Email</th>
+                <th>Téléphone</th>
+                <th>Activation</th>
+                <th>Statut du compte</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assure in assures %}
+            <tr>
+                <td>{{ assure.user.get_full_name|default:assure.user.username }}</td>
+                <td>{{ assure.numero_police }}</td>
+                <td>{{ assure.user.email|default:"—" }}</td>
+                <td>{{ assure.telephone|default:"—" }}</td>
+                <td>
+                    {% if assure.compte_active %}
+                        <span class="badge bg-info">Activé par l'assuré</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">En attente d'activation</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if assure.user.is_active %}
+                        <span class="badge bg-success">Actif</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Désactivé</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <form method="post" action="{% url 'toggle_assure_actif' assure.id %}">
+                        {% csrf_token %}
+                        {% if assure.user.is_active %}
+                            <button type="submit" class="btn btn-sm btn-outline-secondary" title="Désactiver">
+                                <i class="bi bi-slash-circle"></i>
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-sm btn-outline-success" title="Réactiver">
+                                <i class="bi bi-check-circle"></i>
+                            </button>
+                        {% endif %}
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-muted fst-italic">Aucun assuré enregistré pour le moment.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

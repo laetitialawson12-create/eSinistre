@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sinistre, Agent, Agence, ChefDepartement
+from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule
 from django.contrib.auth.models import User
 
 
@@ -14,60 +14,46 @@ def jours_ouvres_entre(date_debut, date_fin):
             jours += 1
     return jours
 
-class SinistreForm(forms.ModelForm):
-    fichiers_justificatifs = forms.FileField(
-        widget=forms.FileInput(attrs={'class': 'form-control'}),
-        required=False,
-        label="Pièces justificatives"
-    )
 
+class SinistreForm(forms.ModelForm):
     class Meta:
         model = Sinistre
         fields = [
-            'region', 'ville', 'prefecture', 'quartier', 'precision', 
-            'date_survenance', 'heure_approximative', 'nature', 
-            'vehicule', 'circonstances', 'lettre_derogation',
-            'nom_conducteur', 'immatriculation',
-            'fichiers_justificatifs'
+            'vehicule', 
+            'nom_conducteur',
+            'date_survenance', 
+            'heure_approximative', 
+            'nature', 
+            'region', 
+            'ville', 
+            'prefecture', 
+            'quartier', 
+            'circonstances'
         ]
         widgets = {
-            'date_survenance': forms.DateTimeInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'circonstances': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'precision': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'region': forms.Select(attrs={'class': 'form-control'}),
-            'ville': forms.Select(attrs={'class': 'form-control'}),
-            'prefecture': forms.Select(attrs={'class': 'form-control'}),
-            'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'nature': forms.Select(attrs={'class': 'form-control'}),
+            'region': forms.Select(attrs={'class': 'form-control'}),
+            'ville': forms.TextInput(attrs={'class': 'form-control'}),
+            'prefecture': forms.TextInput(attrs={'class': 'form-control'}),
+            'quartier': forms.TextInput(attrs={'class': 'form-control'}),
+            'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'vehicule': forms.Select(attrs={'class': 'form-control'}),
-            'lettre_derogation': forms.FileInput(attrs={'class': 'form-control'}),
-            'immatriculation': forms.TextInput(attrs={'class': 'form-control'}),
-            'nom_conducteur': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
-
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user', None)
+        # On récupère l'utilisateur passé depuis la vue
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        self.fields['fichiers_justificatifs'].widget.attrs.update({'multiple': True})
-        self.fields['quartier'].required = True
-        self.fields['vehicule'].required = True
-        if self.user and self.user.is_authenticated:
-            self.fields['vehicule'].queryset = self.user.vehicules.all()
+        
+        # Si un utilisateur est présent, on filtre les véhicules qui lui appartiennent
+        if user is not None:
+            self.fields['vehicule'].queryset = Vehicule.objects.filter(proprietaire=user)
+        
+        # Personnalisation de l'affichage du menu déroulant pour le véhicule
+        self.fields['vehicule'].empty_label = "Sélectionnez votre véhicule"
 
-    def clean(self):
-        cleaned_data = super().clean()
-        date_survenance = cleaned_data.get("date_survenance")
-        lettre = cleaned_data.get("lettre_derogation")
-        if date_survenance:
-            date_ref = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
-            aujourdhui = timezone.now().date()
-            if date_ref <= aujourdhui:
-                if jours_ouvres_entre(date_ref, aujourdhui) > 5 and not lettre:
-                    raise forms.ValidationError({'lettre_derogation': "Le délai de 5 jours est dépassé."})
-        return cleaned_data
-    
 
 class ModifierProfilForm(forms.ModelForm):
     class Meta:
@@ -191,3 +177,37 @@ class SansSuiteForm(forms.Form):
 
 class ImportExcelForm(forms.Form):
     fichier = forms.FileField(label="Fichier Excel des contrats (.xlsx)")
+
+
+class AssureAdminForm(forms.ModelForm):
+    # Champs de l'utilisateur lié
+    first_name = forms.CharField(label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(label="Nom", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+
+    class Meta:
+        model = Assure
+        fields = ['numero_police', 'telephone']
+        widgets = {
+            'numero_police': forms.TextInput(attrs={'class': 'form-control'}),
+            'telephone': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk and self.instance.user:
+            self.fields['first_name'].initial = self.instance.user.first_name
+            self.fields['last_name'].initial = self.instance.user.last_name
+            self.fields['email'].initial = self.instance.user.email
+
+    def save(self, commit=True):
+        assure = super().save(commit=False)
+        if assure.user:
+            assure.user.first_name = self.cleaned_data['first_name']
+            assure.user.last_name = self.cleaned_data['last_name']
+            assure.user.email = self.cleaned_data['email']
+            if commit:
+                assure.user.save()
+        if commit:
+            assure.save()
+        return assure

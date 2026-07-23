@@ -73,4 +73,10 @@ urlpatterns = [
     path('sinistre/<int:sinistre_id>/attestation/telecharger/', views.telecharger_attestation, name='telecharger_attestation'),
     path('admin/importer_donnees/', views.importer_donnees_admin, name='importer_donnees'),
     path('admin/contrats/', views.liste_contrats_admin, name='liste_contrats'),
+    path('admin/assures/', views.liste_assures, name='liste_assures'),
+    path('admin/assures/<int:assure_id>/toggle/', views.toggle_assure_actif, name='toggle_assure_actif'),
+    path('admin/contrats/<int:assure_id>/modifier/', views.modifier_contrat_admin, name='modifier_contrat_admin'),
+    path('admin/contrats/<int:assure_id>/supprimer/', views.supprimer_contrat_admin, name='supprimer_contrat_admin'),
+    path('admin/contrats/', views.liste_contrats_admin, name='liste_contrats'),
+    path('mes_contrats/', views.mes_contrats, name='mes_contrats'),
 ]

@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .forms import (
-    SinistreForm, ModifierProfilForm, AgentCreationForm,
+    SinistreForm, ModifierProfilForm, AgentCreationForm, AssureAdminForm,
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
     ChefDepartement, ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm
 )
@@ -19,6 +19,7 @@ from django.http import HttpResponse
 from django.template.loader import get_template
 import pandas as pd
 from .forms import ImportExcelForm
+from django.urls import reverse
 
 
 @login_required
@@ -51,19 +52,9 @@ def declarer_sinistre(request):
             sinistre.statut = 'SOUMIS'
             sinistre.n_police = request.user.assure.numero_police
 
-            date_accident = sinistre.date_survenance
-            date_ref = date_accident.date() if hasattr(date_accident, 'date') else date_accident
-
-            quittances_valides = Quittance.objects.filter(
-                contrat=request.user.assure,
-                date_debut__lte=date_ref,
-                date_fin__gte=date_ref,
-            )
-
-            if quittances_valides.count() == 1:
-                sinistre.quittance = quittances_valides.first()
-            else:
-                sinistre.quittance = None
+            # Attribution automatique de la quittance liée au véhicule choisi dans le formulaire
+            if sinistre.vehicule:
+                sinistre.quittance = sinistre.vehicule.quittance
 
             sinistre.save()
             form.save_m2m()
@@ -251,6 +242,8 @@ def activation_etape2(request):
         form = SetPasswordForm(assure.user, request.POST)
         if form.is_valid():
             form.save()
+            assure.user.is_active = True
+            assure.user.save()
             assure.compte_active = True
             assure.save()
             del request.session['activation_assure_id']
@@ -979,6 +972,23 @@ def liste_chefs(request):
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
+def liste_assures(request):
+    assures = Assure.objects.select_related('user', 'agence').order_by('user__last_name')
+    return render(request, 'liste_assures.html', {'assures': assures})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def toggle_assure_actif(request, assure_id):
+    assure = get_object_or_404(Assure, id=assure_id)
+    assure.user.is_active = not assure.user.is_active
+    assure.user.save()
+    messages.success(request, f"Compte {'réactivé' if assure.user.is_active else 'désactivé'}.")
+    return redirect('liste_assures')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
 def modifier_chef_admin(request, chef_id):
     chef = get_object_or_404(ChefDepartement, id=chef_id)
     if request.method == 'POST':
@@ -1130,49 +1140,113 @@ def importer_donnees_admin(request):
             try:
                 df = pd.read_excel(fichier)
                 
+                # Nettoyage global des en-têtes
+                df.columns = [str(c).strip() for c in df.columns]
+                
+                # Fonction utilitaire pour récupérer une valeur avec tolérance
+                def get_val(row, possible_keys):
+                    for k in possible_keys:
+                        for col in row.index:
+                            if str(col).strip().lower().replace(' ', '_') == str(k).strip().lower().replace(' ', '_'):
+                                val = row[col]
+                                if pd.notna(val):
+                                    return val
+                    return None
+
                 for index, row in df.iterrows():
-                    email_excel = row['email']
-                    username_tentatif = email_excel.split('@')[0]
-                    
-                    # SÉCURITÉ ABSOLUE : On bloque l'import si l'email ou le username correspond à l'admin
-                    if request.user.username == 'admin_fidelia' and (request.user.email == email_excel or username_tentatif == 'admin_fidelia'):
+                    # FILTRE : On ne traite que les contrats de type Automobile
+                    type_contrat = str(get_val(row, ['TYPE_CONTRAT', 'TYPE CONTRAT', 'CONTRAT']) or '').strip()
+                    if type_contrat.lower() != 'automobile':
+                        continue  
+                        
+                    email_excel = get_val(row, ['EMAIL', 'COURRIEL', 'MAIL'])
+                    if not email_excel:
                         continue
                     
+                    # Sécurité admin
+                    if request.user.is_authenticated and email_excel == request.user.email:
+                        continue
+                    
+                    if User.objects.filter(email=email_excel, is_staff=True).exists():
+                        continue
+
+                    numero_police = get_val(row, ['NUMERO_POLICE', 'NUMERO POLICE', 'NUMERO_CONTRAT', 'NUMERO CONTRAT'])
+                    prenom = get_val(row, ['PRENOM', 'PRENOMS'])
+                    nom = get_val(row, ['NOM'])
+                    telephone = get_val(row, ['TELEPHONE', 'TEL'])
+                    numero_quittance = get_val(row, ['NUMERO_QUITTANCE', 'NUMERO QUITTANCE', 'QUITTANCE'])
+                    
+                    if not numero_police or not numero_quittance:
+                        continue
+
+                    # Récupération de la marque et du modèle du véhicule
+                    marque = get_val(row, ['MARQUE', 'MARQUE_VEHICULE']) or ''
+                    modele = get_val(row, ['MODELE', 'MODELE_VEHICULE']) or ''
+                    marque_complete = f"{marque} {modele}".strip() or None
+                    immatriculation = get_val(row, ['IMMATRICULATION', 'IMMAT'])
+
                     # 1. Création ou récupération de l'utilisateur assuré
                     user, user_created = User.objects.get_or_create(
                         email=email_excel,
                         defaults={
-                            'username': username_tentatif,
-                            'first_name': row['prenom'],
-                            'last_name': row['nom']
+                            'username': email_excel,
+                            'first_name': prenom or '',
+                            'last_name': nom or '',
+                            'is_active': False,
                         }
                     )
                     
-                    if not user_created:
-                        user.first_name = row['prenom']
-                        user.last_name = row['nom']
-                        user.save()
+                    if user.username == 'admin_fidelia' or user.is_staff:
+                        continue
 
-                    # 2. Création ou récupération de l'Assuré
+                    if prenom:
+                        user.first_name = prenom
+                    if nom:
+                        user.last_name = nom
+                    user.is_active = False  
+                    user.save()
+
+                    # 2. Création ou récupération de l'Assuré (avec les champs véhicule)
                     assure, created = Assure.objects.get_or_create(
-                        numero_police=row['numero_contrat'],
+                        numero_police=numero_police,
                         defaults={
                             'user': user,
-                            'compte_active': True
+                            'telephone': telephone,
+                            'compte_active': False,
+                            'marque_vehicule': marque_complete,
+                            'immatriculation': immatriculation
                         }
                     )
-                    
-                    # 3. Création de la Quittance
-                    Quittance.objects.create(
-                        contrat=assure,
-                        numero_quittance=row['numero_contrat'],
-                        date_debut=row['date_effet'],
-                        date_fin=row['date_echeance'],
-                        prime=row['prime_nette']
+
+                    if not created:
+                        assure.user = user
+                        if telephone:
+                            assure.telephone = telephone
+                        if marque_complete:
+                            assure.marque_vehicule = marque_complete
+                        if immatriculation:
+                            assure.immatriculation = immatriculation
+                        assure.save()
+
+                    # Dates et prime
+                    date_debut = get_val(row, ['DATE_DEBUT', 'DATE DEBUT', 'DATE_EFFET', 'DATE EFFET'])
+                    date_fin = get_val(row, ['DATE_FIN', 'DATE FIN', 'DATE_ECHEANCE', 'DATE ECHEANCE'])
+                    prime = get_val(row, ['PRIME_NETTE', 'PRIME NETTE', 'PRIME'])
+
+                    # 3. Création ou mise à jour de la Quittance (sans les champs véhicule qui sont sur Assure)
+                    Quittance.objects.update_or_create(
+                        numero_quittance=numero_quittance,
+                        defaults={
+                            'contrat': assure,
+                            'type_contrat': type_contrat,
+                            'date_debut': date_debut,
+                            'date_fin': date_fin,
+                            'prime': prime
+                        }
                     )
                 
-                messages.success(request, "Importation des assurés et quittances réussie avec succès !")
-                return redirect('accueil_chef') # Redirection vers le tableau de bord admin/chef
+                messages.success(request, "Importation des contrats et de leurs quittances réussie avec succès !")
+                return redirect('accueil_admin')
                 
             except Exception as e:
                 messages.error(request, f"Erreur lors de l'importation : {e}")
@@ -1183,7 +1257,82 @@ def importer_donnees_admin(request):
 
 
 @login_required
+@user_passes_test(lambda u: u.is_staff)
 def liste_contrats_admin(request):
-    # Récupère tous les assurés avec leurs quittances associées
-    assures = Assure.objects.all().prefetch_related('quittances', 'user')
-    return render(request, 'gestion_sinistres/liste_contrats.html', {'assures': assures})
+    # On filtre pour ne récupérer que les contrats de type Automobile (avec select_related pour optimiser les performances)
+    quittances = Quittance.objects.select_related('contrat', 'contrat__user').order_by('contrat__user__last_name', 'contrat__user__first_name')
+    # Récupération des paramètres de recherche GET
+    query_police = request.GET.get('police', '').strip()
+    query_nom = request.GET.get('nom', '').strip()
+    query_type = request.GET.get('type_contrat', '').strip()
+
+    # Application des filtres si renseignés
+    if query_police:
+        quittances = quittances.filter(contrat__numero_police__icontains=query_police)
+    
+    if query_nom:
+        quittances = quittances.filter(
+            models.Q(contrat__user__last_name__icontains=query_nom) | 
+            models.Q(contrat__user__first_name__icontains=query_nom)
+        )
+        
+    if query_type:
+        quittances = quittances.filter(type_contrat__icontains=query_type)
+
+    return render(request, 'liste_contrats.html', {
+        'quittances': quittances,
+        'query_police': query_police,
+        'query_nom': query_nom,
+        'query_type': query_type,
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def modifier_contrat_admin(request, assure_id):
+    assure = get_object_or_404(Assure, id=assure_id)
+    
+    if request.method == 'POST':
+        form = AssureAdminForm(request.POST, instance=assure)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Le contrat a été mis à jour avec succès.")
+            return redirect('liste_contrats')
+    else:
+        form = AssureAdminForm(instance=assure)
+
+    return render(request, 'modifier_contrat.html', {
+        'form': form,
+        'assure': assure
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supprimer_contrat_admin(request, assure_id):
+    assure = get_object_or_404(Assure, id=assure_id)
+    
+    if request.method == 'POST':
+        nom_complet = assure.user.get_full_name() or assure.user.username
+        assure.user.delete()
+        messages.success(request, f"Le contrat et le compte de {nom_complet} ont été supprimés.")
+        return redirect('liste_contrats') # Utiliser le bon nom de route
+
+    return render(request, 'confirmer_suppression.html', {
+        'objet_nom': f"Contrat {assure.numero_police} ({assure.user.get_full_name()})",
+        'type_objet': 'contrat',
+        'annuler_url': reverse('liste_contrats'), # Utiliser le bon nom de route ici aussi
+        'confirmer_url': 'supprimer_contrat_admin',
+        'objet_id': assure.id,
+    })
+
+
+@login_required
+def mes_contrats(request):
+    quittances = Quittance.objects.filter(
+        contrat__user=request.user
+    ).prefetch_related('vehicule_set')
+    
+    return render(request, 'mes_contrats.html', {
+        'quittances': quittances
+    })

@@ -1,55 +1,115 @@
 {% extends 'base_admin.html' %}
 
-{% block content %}
-<div class="container-fluid px-4">
-    <h1 class="mt-4">Gestion des Contrats & Quittances</h1>
-    <ol class="breadcrumb mb-4">
-        <li class="breadcrumb-item"><a href="{% url 'accueil_chef' %}">Tableau de bord</a></li>
-        <li class="breadcrumb-item active">Contrats importés</li>
-    </ol>
+{% block title %}Liste des contrats{% endblock %}
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-table me-1"></i>
-            Liste des assurés et de leurs contrats
+{% block content %}
+
+<style>
+    .table td, .table th {
+        padding: 14px 12px !important;
+        vertical-align: middle !important;
+    }
+    .btn-outline-warning:hover {
+        background-color: #ffc107 !important;
+        color: #000 !important;
+    }
+    .btn-outline-danger:hover {
+        background-color: #dc3545 !important;
+        color: #fff !important;
+    }
+</style>
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <h1 class="mb-0" style="color: #0b2545;">Gestion des contrats</h1>
+        <a href="{% url 'importer_donnees' %}" class="btn btn-outline-primary shadow-sm">
+            <i class="bi bi-file-earmark-arrow-up me-2"></i> Importer des contrats
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header text-white" style="background-color: #0b2545;">
+            <i class="fas fa-table me-1"></i> Liste des contrats automobiles enregistrés
         </div>
+        
         <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped">
-                    <thead>
+            <!-- Ajout du scroll vertical (max-height) et horizontal si nécessaire -->
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-bordered table-striped align-middle" style="font-size: 0.9rem;">
+                    <thead class="table-dark text-center align-middle sticky-top" style="background-color: #0b2545; color: white; z-index: 1;">
                         <tr>
-                            <th>N° Police / Contrat</th>
-                            <th>Nom & Prénom</th>
+                            <th>N° Contrat</th>
+                            <th>NOM</th>
+                            <th>Prénom(s)</th>
                             <th>Email</th>
-                            <th>Quittance / Prime</th>
-                            <th>Période de validité</th>
+                            <th>Téléphone</th>
+                            <th>Véhicule</th>
+                            <th>Immatriculation</th>
+                            <th>N° Quittance</th>
+                            <th>Date effet</th>
+                            <th>Date échéance</th>
+                            <th>Prime Nette</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for assure in assures %}
+                        {% for quittance in quittances %}
                             <tr>
-                                <td><strong>{{ assure.numero_police }}</strong></td>
-                                <td>{{ assure.user.last_name }} {{ assure.user.first_name }}</td>
-                                <td>{{ assure.user.email }}</td>
+                                <td><strong>{{ quittance.contrat.numero_police }}</strong></td>
+                                <td>{{ quittance.contrat.user.last_name }}</td>
+                                <td>{{ quittance.contrat.user.first_name }}</td>
+                                <td><small>{{ quittance.contrat.user.email }}</small></td>
+                                <td>{{ quittance.contrat.telephone|default:"N/A" }}</td>
+                                
+                                <!-- Colonne Véhicule (Corrigée) -->
                                 <td>
-                                    {% for quittance in assure.quittances.all %}
-                                        N° {{ quittance.numero_quittance }} <br>
-                                        <small class="text-muted">Prime : {{ quittance.prime }} FCFA</small>
-                                    {% empty %}
-                                        <span class="text-danger">Aucune quittance</span>
-                                    {% endfor %}
+                                    {% with v=quittance.vehicules.first %}
+                                        {% if v %}
+                                            {{ v.marque }} {{ v.modele }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    {% endwith %}
                                 </td>
+                                
+                                <!-- Colonne Immatriculation (Corrigée) -->
                                 <td>
-                                    {% for quittance in assure.quittances.all %}
-                                        Du {{ quittance.date_debut|date:"d/m/Y" }} au {{ quittance.date_fin|date:"d/m/Y" }}
-                                    {% empty %}
-                                        -
-                                    {% endfor %}
+                                    {% with v=quittance.vehicules.first %}
+                                        {% if v %}
+                                            <code class="text-dark fw-bold">{{ v.immatriculation }}</code>
+                                        {% else %}
+                                            <span class="text-danger">N/A</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+
+                                <td><strong>{{ quittance.numero_quittance|default:"N/A" }}</strong></td>
+                                <td class="text-center">{{ quittance.date_debut|date:"d/m/Y" }}</td>
+                                <td class="text-center">{{ quittance.date_fin|date:"d/m/Y" }}</td>
+                                <td class="text-end"><strong>{{ quittance.prime|floatformat:0 }} FCFA</strong></td>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a href="{% url 'modifier_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-warning text-warning" title="Modifier">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        <a href="{% url 'supprimer_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-danger text-danger" title="Supprimer">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center">Aucun contrat importé pour le moment.</td>
+                                <td colspan="12" class="text-center py-4 text-muted">Aucun contrat automobile trouvé.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

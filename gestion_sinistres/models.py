@@ -25,22 +25,25 @@ class Prefecture(models.Model):
 class Vehicule(models.Model):
     immatriculation = models.CharField(max_length=20, unique=True)
     marque = models.CharField(max_length=50)
-    modele = models.CharField(max_length=50)
-    annee = models.IntegerField()
-    proprietaire = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vehicules')
+    modele = models.CharField(max_length=50, null=True, blank=True)
+    annee = models.IntegerField(null=True, blank=True)
+    proprietaire = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vehicules', null=True, blank=True)
+    quittance = models.ForeignKey('Quittance', on_delete=models.CASCADE, related_name='vehicules', null=True, blank=True)
 
     def __str__(self):
-        return f"{self.immatriculation} - {self.marque} {self.modele}"
+        return f"{self.immatriculation} - {self.marque} {self.modele or 'Modèle non spécifié'}"
+    
     
 class Quittance(models.Model):
     contrat = models.ForeignKey('Assure', on_delete=models.CASCADE, related_name='quittances')
     numero_quittance = models.CharField(max_length=50, unique=True)
+    type_contrat = models.CharField(max_length=100, blank=True, null=True)
     date_debut = models.DateField()
     date_fin = models.DateField()
     prime = models.DecimalField(max_digits=12, decimal_places=2)
 
     def __str__(self):
-        return f"Quittance {self.numero_quittance} ({self.date_debut} au {self.date_fin})"
+        return f"Quittance N° {self.numero_quittance}"
     
 # Classe sinistre
 class Sinistre(models.Model):
@@ -167,6 +170,7 @@ class Agence(models.Model):
 class Assure(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='assure')
     numero_police = models.CharField(max_length=50, unique=True)
+    telephone = models.CharField(max_length=20, blank=True, null=True)
     agence = models.ForeignKey(Agence, on_delete=models.SET_NULL, null=True, blank=True)
     compte_active = models.BooleanField(default=False)
     politique_confidentialite_acceptee = models.BooleanField(default=False)
@@ -192,6 +196,7 @@ class ChefDepartement(models.Model):
     agence = models.ForeignKey(Agence, on_delete=models.SET_NULL, null=True)
     matricule = models.CharField(max_length=20, unique=True)
     telephone = models.CharField(max_length=20, blank=True)
+    compte_active = models.BooleanField(default=False)
     doit_changer_mot_de_passe = models.BooleanField(default=True)
 
     def __str__(self):

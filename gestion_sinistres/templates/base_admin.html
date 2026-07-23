@@ -10,18 +10,66 @@
     <style>
         :root { --fidelia-blue: #003366; }
         body { background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
-        .sidebar { width: 250px; height: 100vh; background: var(--fidelia-blue); color: white; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; }
+        
+        .sidebar { 
+            width: 250px; 
+            height: 100vh; 
+            background: var(--fidelia-blue); 
+            color: white; 
+            position: fixed; 
+            left: 0; 
+            top: 0; 
+            display: flex; 
+            flex-direction: column; 
+            overflow-y: auto;       /* Permet de scroller si le contenu dépasse */
+            overflow-x: hidden;
+            z-index: 1050;
+            transition: transform 0.3s ease;
+        }
+
+        /* Personnalisation de la barre de défilement de la sidebar */
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+
         .sidebar a { color: rgba(255,255,255,0.85); display: block; padding: 12px 20px; text-decoration: none; border-radius: 6px; margin: 2px 10px; }
         .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.15); color: white; }
-        .main-content { margin-left: 250px; }
+        
+        .main-content { margin-left: 250px; transition: margin-left 0.3s ease; }
         .header-user { background: white; padding: 20px 30px; border-bottom: 1px solid #e0e0e0; }
-        .user-badge { width: 40px; height: 40px; border-radius: 50%; background: var(--fidelia-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        .user-badge { 
+            width: 40px; 
+            height: 40px; 
+            border-radius: 50%; 
+            background: var(--fidelia-blue); 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            text-decoration: none !important; 
+        }
+        .user-badge:focus, .user-badge:active { 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.25); 
+            color: white; 
+        }
+
+        .sidebar-toggle { display: none; background: transparent; border: none; font-size: 1.5rem; }
+
+        @media (max-width: 991px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: inline-block; }
+        }
     </style>
 </head>
 <body>
     <nav class="sidebar">
         <div class="d-flex align-items-center justify-content-between py-4 px-3 border-bottom border-light border-opacity-25">
             <h5 class="mb-0">Fidélia eSinistre</h5>
+            <button class="sidebar-toggle d-lg-none text-white" id="sidebarClose"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="py-3">
             <a href="{% url 'accueil_admin' %}" class="{% if request.resolver_match.url_name == 'accueil_admin' %}active{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Tableau de bord</a>
@@ -30,26 +78,50 @@
             <a href="{% url 'supervision_sinistres' %}" class="{% if request.resolver_match.url_name == 'supervision_sinistres' %}active{% endif %}"><i class="bi bi-folder2-open me-2"></i> Sinistres</a>
             <a href="{% url 'liste_agents' %}" class="{% if request.resolver_match.url_name == 'liste_agents' or request.resolver_match.url_name == 'modifier_agent_admin' %}active{% endif %}"><i class="bi bi-people me-2"></i> Agents</a>
             <a href="{% url 'liste_chefs' %}" class="{% if request.resolver_match.url_name == 'liste_chefs' or request.resolver_match.url_name == 'modifier_chef_admin' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Chefs de service</a>
+            <a href="{% url 'liste_assures' %}" class="{% if request.resolver_match.url_name == 'liste_assures' %}active{% endif %}"><i class="bi bi-person-lines-fill me-2"></i> Assurés</a>
             <a href="{% url 'liste_contrats' %}" class="{% if request.resolver_match.url_name == 'liste_contrats' %}active{% endif %}"><i class="bi bi-file-text me-2"></i> Voir les contrats</a>
-            <a href="{% url 'importer_donnees' %}" class="{% if request.resolver_match.url_name == 'importer_donnees' %}active{% endif %}"><i class="bi bi-file-earmark-arrow-up me-2"></i>Importer contrats</a>
+            <a href="{% url 'importer_donnees' %}" class="{% if request.resolver_match.url_name == 'importer_donnees' %}active{% endif %}"><i class="bi bi-file-earmark-arrow-up me-2"></i> Importer contrats</a>
             <a href="{% url 'profil_admin' %}" class="{% if request.resolver_match.url_name == 'profil_admin' or request.resolver_match.url_name == 'modifier_profil_admin' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Mon profil</a>
         </div>
         <div class="py-3 mt-auto">
             <form method="post" action="{% url 'logout' %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-link" style="color: rgba(255,255,255,0.85); padding: 12px 20px;"><i class="bi bi-box-arrow-right me-2"></i> Déconnexion</button>
+                <button type="submit" class="btn btn-link text-decoration-none" style="color: rgba(255,255,255,0.85); padding: 12px 20px;"><i class="bi bi-box-arrow-right me-2"></i> Déconnexion</button>
             </form>
         </div>
     </nav>
+
     <main class="main-content">
         <div class="header-user d-flex align-items-center justify-content-between shadow-sm">
-            <span class="text-muted me-3"> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</span>
-            <a href="{% url 'profil_admin' %}" class="user-badge text-decoration-none">{{ request.user.first_name|first|default:"A" }}{{ request.user.last_name|first|default:"D" }}</a>
+            <div class="d-flex align-items-center">
+                <button class="sidebar-toggle me-3 text-primary" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h5 class="mb-0 text-dark"><i class="bi bi-shield-lock-fill me-1"></i> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
+            </div>
+            <div class="d-flex align-items-center">
+                <span class="text-muted me-3 d-none d-md-inline">Espace Administrateur</span>
+                <a href="{% url 'profil_admin' %}" class="user-badge">{{ request.user.first_name|first|default:"A" }}{{ request.user.last_name|first|default:"D" }}</a>
+            </div>
         </div>
         <div class="p-4">
-            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <script>
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+        }
+        const sidebarClose = document.getElementById('sidebarClose');
+        if (sidebarClose && sidebar) {
+            sidebarClose.addEventListener('click', () => sidebar.classList.remove('active'));
+        }
+    </script>
 </body>
 </html>

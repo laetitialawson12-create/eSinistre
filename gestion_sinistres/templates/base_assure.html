@@ -37,6 +37,7 @@
             <a href="{% url 'declarer_sinistre' %}" class="{% if request.resolver_match.url_name == 'declarer_sinistre' %}active{% endif %}"><i class="bi bi-pencil-square me-2"></i> Nouvelle déclaration</a>
             <a href="{% url 'suivi_sinistres' %}" class="{% if request.resolver_match.url_name == 'suivi_sinistres' %}active{% endif %}"><i class="bi bi-list-check me-2"></i> Suivi de mes dossiers</a>
             <a href="{% url 'documents_assure' %}" class="{% if request.resolver_match.url_name == 'documents_assure' %}active{% endif %}"><i class="bi bi-folder2-open me-2"></i> Documents</a>
+            <a href="{% url 'mes_contrats' %}" class="{% if request.resolver_match.url_name == 'mes_contrats' %}active{% endif %}"><i class="bi bi-file-earmark-text me-2"></i>Mes contrats</a>
             <a href="{% url 'profil_assure' %}" class="{% if request.resolver_match.url_name == 'profil_assure' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Profil</a>
         </div>
         <div class="py-3 mt-auto">
