@@ -27,7 +27,8 @@
         </div>
     </div>
 
-    <!-- Section Attestation (Isolée proprement dans sa propre ligne) -->
+    
+    <!-- Section Attestation -->
     <div class="row mb-4">
         <div class="col-12">
             {% if sinistre.attestation_generee %}
@@ -49,6 +50,7 @@
             {% endif %}
         </div>
     </div>
+    
 
     <!-- Corps principal : Historique à gauche, Documents et Messagerie à droite -->
     <div class="row">
@@ -59,11 +61,14 @@
                 <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
                 <div class="card-body">
                     {% for h in historique %}
-                        <p class="mb-1">
-                            <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> 
-                            <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} 
-                            <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span>
-                        </p>
+                        <!-- On filtre pour ne pas afficher les lignes contenant des prix ou des indemnisations côté assuré -->
+                        {% if "Prix" not in h.commentaires and "Indemnisation" not in h.commentaires %}
+                            <p class="mb-1">
+                                <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> 
+                                <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} 
+                                <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span>
+                            </p>
+                        {% endif %}
                     {% empty %}
                         <p class="text-muted">Aucun historique pour ce dossier.</p>
                     {% endfor %}

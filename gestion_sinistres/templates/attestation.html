@@ -164,11 +164,11 @@
         }
 
         // Déclenchement automatique optionnel
-        {% if download_pdf %}
-        window.addEventListener('load', function() {
-            setTimeout(telechargerPDFDirect, 500);
-        });
-        {% endif %}
+        if (download_pdf) {
+            window.addEventListener('load', function() {
+                setTimeout(telechargerPDFDirect, 500);
+            });
+        }
     </script>
 </body>
 </html>

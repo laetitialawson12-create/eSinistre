@@ -44,7 +44,8 @@ class Quittance(models.Model):
     # Champs financiers
     prime = models.DecimalField(max_digits=12, decimal_places=2)  # Représente la prime nette
     prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-
+    prix_valide = models.BooleanField(default=False)
+    
     class Meta:
         constraints = [
             models.CheckConstraint(
@@ -93,12 +94,12 @@ class Sinistre(models.Model):
         ('ATTENTE_VALIDATION', 'En attente de validation'),
         ('A_CORRIGER', 'A corriger'),
         ('EN_COURS', 'En cours'),
+        ('CHEQUE_EMIS', 'Chèque émis'),
         ('CLOTURE', 'Clôturé'),
         ('SANS_SUITE', 'Sans suite'),
         ('REOUVERT', 'Réouvert'),
     ]
 
-    n_police = models.CharField(max_length=50)
     nom_conducteur = models.CharField(max_length=100) 
     immatriculation = models.CharField(max_length=50, blank=True, null=True, verbose_name="Immatriculation")
 
@@ -109,19 +110,6 @@ class Sinistre(models.Model):
 
     montant_estime = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-
-    # Indemnisation (chèque remis au bénéficiaire, saisi après clôture)
-    beneficiaire_nom = models.CharField(max_length=100, blank=True, null=True)
-    beneficiaire_prenoms = models.CharField(max_length=100, blank=True, null=True)
-    beneficiaire_telephone = models.CharField(max_length=20, blank=True, null=True)
-    numero_cheque = models.CharField(max_length=50, blank=True, null=True)
-    banque_cheque = models.CharField(max_length=100, blank=True, null=True)
-    montant_cheque = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    date_emission_cheque = models.DateField(null=True, blank=True)
-    attestation_generee = models.BooleanField(default=False)
-    date_attestation = models.DateTimeField(null=True, blank=True)
-    motif_sans_suite = models.TextField(blank=True, null=True)
-    indemnisation_validee = models.BooleanField(default=False)
 
     # Informations de base 
     date_survenance = models.DateTimeField()
@@ -148,13 +136,24 @@ class Sinistre(models.Model):
     # Pièces jointes
     lettre_derogation = models.FileField(upload_to='sinistres/derogations/', blank=True, null=True)
 
+    @property
+    def total_paye(self):
+        """Calcule la somme totale des paiements/chèques émis pour ce sinistre"""
+        return sum(p.montant for p in self.paiements.all())
+
+    @property
+    def reste_a_payer(self):
+        """Calcule le montant restant à verser par rapport au prix retenu"""
+        if not self.prix_retenu:
+            return 0
+        return self.prix_retenu - self.total_paye
+
     def clean(self):
         super().clean()
 
-        # Validation : prix_retenu <= prime de la quittance liée
         if self.prix_retenu is not None and self.prix_retenu < 0:
             raise ValidationError({
-                f"Le prix retenu ({self.prix_retenu} FCFA) ne peut pas être négatif."
+                'prix_retenu': f"Le prix retenu ({self.prix_retenu} FCFA) ne peut pas être négatif."
             })
 
     def save(self, *args, **kwargs):
@@ -174,7 +173,22 @@ class Sinistre(models.Model):
     
     def __str__(self):
         return f"Sinistre {self.numero_sinistre} - {self.nature}"
-    
+
+
+class Paiement(models.Model):
+    sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='paiements')
+    numero_cheque = models.CharField(max_length=100)
+    banque_cheque = models.CharField(max_length=100)
+    montant = models.DecimalField(max_digits=12, decimal_places=2)
+    beneficiaire_nom = models.CharField(max_length=100)
+    beneficiaire_prenoms = models.CharField(max_length=150)
+    beneficiaire_telephone = models.CharField(max_length=20)
+    date_emission = models.DateField()
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Chèque n°{self.numero_cheque} - {self.montant} FCFA"
+        
     
 class PieceJointe(models.Model):
     sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='pieces')
@@ -249,3 +263,42 @@ class ChefDepartement(models.Model):
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - Chef"
+
+
+# models.py
+from django.db import models
+
+class Cheque(models.Model):
+    STATUT_CHEQUE = [
+        ('EN_PREPARATION', 'En cours de préparation'),
+        ('DISPONIBLE', 'Prêt pour retrait'),
+        ('RETIRE', 'Retiré par l\'assuré'),
+        ('ANNULE', 'Annulé'),
+    ]
+
+    sinistre = models.OneToOneField(
+        'Sinistre', 
+        on_delete=models.CASCADE, 
+        related_name='cheque',
+        verbose_name="Sinistre associé"
+    )
+    numero_cheque = models.CharField(max_length=50, unique=True, verbose_name="Numéro du chèque")
+    banque_emettrice = models.CharField(max_length=100, verbose_name="Banque émettrice")
+    montant = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Montant (FCFA)")
+    beneficiaire = models.CharField(max_length=200, verbose_name="Nom du bénéficiaire")
+    
+    statut = models.CharField(max_length=20, choices=STATUT_CHEQUE, default='EN_PREPARATION')
+    
+    date_emission = models.DateField(auto_now_add=True, verbose_name="Date d'émission")
+    date_disponibilite = models.DateField(null=True, blank=True, verbose_name="Date de disponibilité")
+    date_retrait = models.DateField(null=True, blank=True, verbose_name="Date de retrait")
+    
+    agent_emetteur = models.ForeignKey(
+        'auth.User', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        verbose_name="Agent ayant émis le chèque"
+    )
+
+    def __str__(self):
+        return f"Chèque N° {self.numero_cheque} - {self.montant} FCFA ({self.get_statut_display()})"

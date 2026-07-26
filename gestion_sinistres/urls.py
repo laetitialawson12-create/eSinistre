@@ -46,6 +46,7 @@ urlpatterns = [
     path('agent/dossier/<int:sinistre_id>/indemnisation/', views.saisir_indemnisation, name='saisir_indemnisation'),
     path('agent/dossier/<int:sinistre_id>/prix-retenu/', views.saisir_prix_retenu, name='saisir_prix_retenu'),
     path('agent/dossier/<int:sinistre_id>/lier-quittance/', views.lier_quittance_agent, name='lier_quittance_agent'),
+    path('agent/dossier/<int:sinistre_id>/emettre-cheque/', views.emettre_cheque, name='emettre_cheque'),
 
     # ==========================================
     # 4. ESPACE CHEF DE DÉPARTEMENT
@@ -65,6 +66,7 @@ urlpatterns = [
     path('chef/dossier/<int:sinistre_id>/sans-suite/', views.classer_sans_suite, name='classer_sans_suite'),
     path('chef/dossier/<int:sinistre_id>/reouvrir/', views.reouvrir_dossier, name='reouvrir_dossier'),
     path('chef/sinistre/<int:sinistre_id>/demander-revision/', views.demander_revision_prix, name='demander_revision_prix'),
+
     # ==========================================
     # 5. ESPACE ADMINISTRATION
     # ==========================================
@@ -102,5 +104,4 @@ urlpatterns = [
     # ==========================================
     path('attestation/<int:sinistre_id>/', views.voir_attestation, name='voir_attestation'),
     path('attestation/<int:sinistre_id>/telecharger/', views.telecharger_attestation, name='telecharger_attestation')
-
 ]

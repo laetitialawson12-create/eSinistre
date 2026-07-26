@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule
+from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque
 from django.contrib.auth.models import User
 
 
@@ -50,7 +50,6 @@ class SinistreForm(forms.ModelForm):
             'quartier', 
             'circonstances',
             'prix_retenu',
-            'statut',
             'agent_traitant'
         ]
         widgets = {
@@ -192,11 +191,11 @@ class IndemnisationForm(forms.Form):
     )
     numero_cheque = forms.CharField(
         label="Numéro de chèque",
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: CHK-2026-001'}),
     )
     banque_cheque = forms.CharField(
-        label="Banque",
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label="Banque émettrice",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Ecobank'}),
     )
     montant_cheque = forms.DecimalField(
         label="Montant versé (FCFA)",
@@ -208,6 +207,25 @@ class IndemnisationForm(forms.Form):
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
     )
 
+    def __init__(self, *args, **kwargs):
+        # Récupération du sinistre passé depuis la vue
+        self.sinistre = kwargs.pop('sinistre', None)
+        super().__init__(*args, **kwargs)
+        
+        # Pré-remplissage du montant si le prix retenu existe
+        if self.sinistre and self.sinistre.prix_retenu:
+            self.fields['montant_cheque'].initial = self.sinistre.prix_retenu
+            self.fields['date_emission_cheque'].initial = timezone.now().date()
+
+    def clean_montant_cheque(self):
+        montant = self.cleaned_data.get('montant_cheque')
+        if self.sinistre and self.sinistre.prix_retenu:
+            if montant > self.sinistre.prix_retenu:
+                raise forms.ValidationError(
+                    f"Le montant du chèque ({montant} FCFA) ne peut pas dépasser le prix retenu ({self.sinistre.prix_retenu} FCFA)."
+                )
+        return montant
+    
 
 class SansSuiteForm(forms.Form):
     motif = forms.CharField(
@@ -252,3 +270,50 @@ class AssureAdminForm(forms.ModelForm):
         if commit:
             assure.save()
         return assure
+
+
+class ChequeForm(forms.ModelForm):
+    class Meta:
+        model = Cheque
+        fields = [
+            'numero_cheque', 
+            'banque_emettrice', 
+            'montant', 
+            'beneficiaire', 
+            'date_disponibilite', 
+            'statut'
+        ]
+        widgets = {
+            'numero_cheque': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: CHK-2026-00123'}),
+            'banque_emettrice': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Ecobank / Orabank'}),
+            'montant': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'beneficiaire': forms.TextInput(attrs={'class': 'form-control'}),
+            'date_disponibilite': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'statut': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        # Récupération de l'instance du sinistre passée depuis la vue
+        self.sinistre = kwargs.pop('sinistre', None)
+        super().__init__(*args, **kwargs)
+
+        if self.sinistre:
+            # 1. Pré-remplissage du montant avec le prix retenu du sinistre
+            if not self.initial.get('montant') and self.sinistre.prix_retenu is not None:
+                self.fields['montant'].initial = self.sinistre.prix_retenu
+
+            # 2. Pré-remplissage du nom du bénéficiaire
+            if not self.initial.get('beneficiaire') and self.sinistre.assure:
+                user_assure = self.sinistre.assure
+                nom_complet = f"{user_assure.last_name} {user_assure.first_name}".strip()
+                self.fields['beneficiaire'].initial = nom_complet if nom_complet else user_assure.username
+
+    def clean_montant(self):
+        montant = self.cleaned_data.get('montant')
+        # Vérification logique : le chèque ne doit pas dépasser le prix retenu du sinistre
+        if self.sinistre and self.sinistre.prix_retenu is not None:
+            if montant > self.sinistre.prix_retenu:
+                raise forms.ValidationError(
+                    f"Le montant du chèque ({montant} FCFA) ne peut pas être supérieur au prix retenu ({self.sinistre.prix_retenu} FCFA)."
+                )
+        return montant
