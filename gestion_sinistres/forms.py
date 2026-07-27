@@ -1,9 +1,10 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque
+from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque, Region, Ville, Prefecture
 from django.contrib.auth.models import User
-
+from django.contrib.auth.forms import AuthenticationForm
+from .auth_utils import get_profil_par_identifiant, profil_est_bloque
 
 def jours_ouvres_entre(date_debut, date_fin):
     jours = 0
@@ -50,7 +51,13 @@ class SinistreForm(forms.ModelForm):
             'quartier', 
             'circonstances',
             'prix_retenu',
-            'agent_traitant'
+            'agent_traitant',
+            'autre_vehicule_implique',
+            'vehicule_adverse_immatriculation',
+            'vehicule_adverse_marque',
+            'vehicule_adverse_modele',
+            'nombre_blesses',
+            'nombre_morts',
         ]
         widgets = {
             'vehicule': forms.Select(attrs={'class': 'form-control'}),
@@ -66,6 +73,12 @@ class SinistreForm(forms.ModelForm):
             'prix_retenu': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Prix retenu en FCFA'}),
             'statut': forms.Select(attrs={'class': 'form-control'}),
             'agent_traitant': forms.TextInput(attrs={'class': 'form-control'}),
+            'autre_vehicule_implique':forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_autre_vehicule'}),
+            'vehicule_adverse_immatriculation': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Immatriculation du véhicule adverse'}),
+            'vehicule_adverse_marque': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Marque'}),
+            'vehicule_adverse_modele': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Modèle'}),
+            'nombre_blesses': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+            'nombres_morts': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
         }
 
     def clean_prix_retenu(self):
@@ -317,3 +330,76 @@ class ChequeForm(forms.ModelForm):
                     f"Le montant du chèque ({montant} FCFA) ne peut pas être supérieur au prix retenu ({self.sinistre.prix_retenu} FCFA)."
                 )
         return montant
+
+
+class EsinistreAuthentificationForm(AuthenticationForm):
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        profil = get_profil_par_identifiant(username)
+        if profil_est_bloque(profil):
+            raise forms.ValidationError(
+                "Compte temporairement bloqué après plusieurs tentatives de connexion"
+                f"incorrectes. Réessayez après {profil.bloque__jusqu_a.strftime('%H:%M')}.",
+                code='compte_bloque',
+            )
+        return super().clean()
+
+
+class MotDePasseOublieForm(forms.Form):
+    identifiant = forms.CharField(
+        label="N° de police / Identifiant",
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    telephone = forms.CharField(
+        label="Téléphone enregistré",
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+
+
+class RegionForm(forms.ModelForm):
+    class Meta:
+        model = Region
+        fields = ['nom']
+        widgets = {'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom de la région'})}
+
+
+class VilleForm(forms.ModelForm):
+    class Meta:
+        model = Ville
+        fields = ['region', 'nom']
+        widgets = {
+            'region': forms.Select(attrs={'class': 'form-select'}),
+            'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom de la ville'}),
+        }
+
+
+class PrefectureForm(forms.ModelsForm):
+    class Meta:
+        model = Prefecture
+        fields = ['ville', 'nom']
+        widgets = {
+            'ville':forms.Select(attrs={'class': 'form-select'}),
+            'nom': forms.TextInput(attrs={'class':'form-control', 'placeholder': 'Nom de la préfecture'}),
+        }
+
+
+class RetraitChequeForm(forms.Form):
+    nom_retirant = forms.CharField(
+        label="Nom du retirant", required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Laisser vide si c'est le bénéficiaire"}),
+    )
+
+    type_piece_retirant = forms.ChoiceField(
+        label="Type de pièce", choices=Paiement.TYPE_PIECE_CHOICES,
+        widget= forms.Select(attrs={'class': 'form-select'}),
+    )
+
+    numero_piece_retirant = forms.CharField(
+        label="N° de la pièce",
+        widget= forms.TextInput(attrs={'class': 'form-control'}),
+    )
+
+    piece_identite_retirant = forms.FileField(
+        label="Scan/Photo de la pièce",
+        widget= forms.ClearableFileInput(attrs={'class': 'form-control'}),
+    )

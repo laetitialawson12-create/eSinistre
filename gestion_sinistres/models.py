@@ -107,6 +107,9 @@ class Sinistre(models.Model):
     numero_sinistre = models.CharField(max_length=20, unique=True)
     statut = models.CharField(max_length=30, choices=STATUS_CHOICES, default='SOUMIS')
     agent_traitant = models.CharField(max_length=100, blank=True, null=True)
+    numero_assure = models.CharField(max_length=50, unique=True, null=True, blank=True, verbose_name="Numéro d'assuré")
+    tentatives_echouees = models.PositiveSmallIntegerField(default=0)
+    bloque_jusqu_a = models.DateTimeField(null=True, blank=True)
 
     montant_estime = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
@@ -141,6 +144,14 @@ class Sinistre(models.Model):
     
     # Pièces jointes
     lettre_derogation = models.FileField(upload_to='sinistres/derogations/', blank=True, null=True)
+
+    # Autres détails du sinistre
+    autre_vehicule_implique = models.BooleanField(default=False)
+    vehicule_adverse_immatriculation = models.CharField(max_length=50, blank=True, null=True)
+    vehicule_adverse_marque = models.CharField(max_length=50, blank=True, null=True)
+    vehicule_adverse_modele = models.CharField(max_length=50, blank=True, null=True)
+    nombre_blesses = models.PositiveSmallIntegerField(default=0)
+    nombre_morts = models.PositiveSmallIntegerField(default=0)
 
     @property
     def total_paye(self):
@@ -187,7 +198,14 @@ class Paiement(models.Model):
             ('DISPONIBLE', 'Prêt pour retrait'),
             ('RETIRE', 'Retiré'),
             ('ANNULE', 'Annulé'),
-        ]
+    ]
+
+    TYPE_PIECE_CHOICES = [
+        ('CNI', "Carte Nationale d'Identité"),
+        ('PERMIS', "Permis de conduire"),
+        ('PASSEPORT', "Passeport"),
+    ]
+
     sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='paiements')
     numero_cheque = models.CharField(max_length=100)
     banque_cheque = models.CharField(max_length=100)
@@ -197,7 +215,10 @@ class Paiement(models.Model):
     beneficiaire_telephone = models.CharField(max_length=20)
     date_emission = models.DateField()
     date_creation = models.DateTimeField(auto_now_add=True)
-
+    nom_retirant = models.CharField(max_length=150, blank=True, null=True, help_text="Si différent du bénéficiaire")
+    type_piece_retirant = models.CharField(max_length=20, choices=TYPE_PIECE_CHOICES, blank=True, null=True)
+    numero_piece_retirant = models.CharField(max_length=50, blank=True, null=True)
+    piece_identite_retirant = models.FileField(upload_to='paiements/pieces_identite/', blank=True, null=True)
     statut = models.CharField(max_length=20, choices=STATUT_PAIEMENT, default='EMIS')
     
     def __str__(self):
@@ -262,6 +283,8 @@ class Agent(models.Model):
     telephone = models.CharField(max_length=20, blank=True)
     compte_active = models.BooleanField(default=False)
     doit_changer_mot_de_passe = models.BooleanField(default=True)   # ← nouveau
+    tentatives_echouees = models.PositiveSmallIntegerField(default=0)
+    bloque_jusqu_a = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - {self.agence}"
@@ -274,6 +297,8 @@ class ChefDepartement(models.Model):
     telephone = models.CharField(max_length=20, blank=True)
     compte_active = models.BooleanField(default=False)
     doit_changer_mot_de_passe = models.BooleanField(default=True)
+    tentatives_echouees = models.PositiveSmallIntegerField(default=0)
+    bloque_jusqu_a = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - Chef"

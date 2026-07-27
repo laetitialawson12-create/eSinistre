@@ -1,7 +1,10 @@
 import os
 import pandas as pd
+import openpyxl
+from openpyxl.styles import Font
+from django.http import HttpResponse
 from datetime import date
-
+from .auth_utils import get_profil_par_identifiant, reinitialiser_tentatives
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -18,12 +21,13 @@ from .forms import (
     SinistreForm, ModifierProfilForm, AgentCreationForm, AssureAdminForm,
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
     ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm,
-    ImportExcelForm, SansSuiteForm, ChequeForm
+    ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
+    RegionForm, VilleForm, PrefectureForm, RetraitChequeForm
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
     Assure, Agent, Agence, ChefDepartement, Quittance, Vehicule, Cheque,
-    Paiement
+    Paiement, Region, Prefecture, Ville
 )
 
 
@@ -1351,6 +1355,67 @@ def importer_donnees_admin(request):
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
+def gestion_localisation(request):
+    region_form = RegionForm()
+    ville_form = VilleForm()
+    prefecture_form =PrefectureForm()
+
+    if request.method == 'POST':
+        type_objet == request.POST.get('type_objet')
+        if type_objet == 'region':
+            region_form = RegionForm(request.POST)
+            if region_form.is_valid():
+                region_form.save()
+                messages.success(request, "Région ajoutée.")
+                return redirect('gestion_localisation')
+        elif type_objet == 'ville':
+            ville_form = VilleForm(request.POST)
+            if ville_form.is_valid():
+                ville_form.save()
+                messages.success(request, "Ville ajoutée.")
+                return redirect('gestion_localisation')
+        elif type_objet == 'prefecture':
+            prefecture_form = PrefectureForm(request.POST)
+            if prefecture_form.is_valid():
+                prefecture_form.save()
+                messages.success(request, "Préfecture ajoutée.")
+                return redirect('gestion_localisation')
+
+    return render(request, 'gestion_localisation_html', {
+        'region_form': region_form,
+        'ville_form': ville_form,
+        'prefecture_form': prefecture_form,
+        'regions': Region.objects.all().order_by('nom'),
+        'prefecture': Prefecture.objects.select_related('Ville').order_by('nom'),
+    })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supprimer_region(request, region_id):
+    get_object_or_404(Region, id=region_id).delete()
+    messages.success(request, 'Région supprimée.')
+    return redirect('gestion_localisation')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supprimer_ville(request, ville_id):
+    get_object_or_404(Ville, id=ville_id).delete()
+    messages.success(request, 'Ville supprimée.')
+    return redirect('gestion_localisation')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supprimer_prefecture(request, prefecture_id):
+    get_object_or_404(Prefecture, id=prefecture_id).delete()
+    messages.success(request, 'Préfecture supprimée.')
+    return redirect('gestion_localisation')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
 def liste_contrats_admin(request):
     quittances = Quittance.objects.select_related('contrat', 'contrat__user').order_by('contrat__user__last_name', 'contrat__user__first_name')
     query_police = request.GET.get('police', '').strip()
@@ -1375,6 +1440,59 @@ def liste_contrats_admin(request):
         'query_nom': query_nom,
         'query_type': query_type,
     })
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def exporter_contrats_admin(request):
+    quittances = Quittance.objects.select_related('contrat', 'contrat__user').order_by('contrat__user__last_name')
+    query_police = request.GET.get('police', '').strip()
+    query_nom = request.GET.get('nom', '').strip()
+
+    if query_police:
+        quittances = quittances.filter(contrat__numero_police__icontains=query_police)
+    if query_nom:
+        quittances = quittances.filter(
+            Q(contrat__user__last_name__incontains=query_nom) |
+            Q(contrat__user__last_name__incontains=query_nom)
+        )
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Contrats"
+
+    entetes =  ["N° Police", "Nom", "Prénom(s)", "Email", "Téléphone",
+                "N° Quittance", "Type de contrat", "Date effet", 
+                "Date échéance", "Prime nette(FCFA)", "Véhicule(s)"]
+
+    ws.append(entetes)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    for q in quittances:
+        vehicules = ", ".join(f"{v.immatriculation} ({v.marque})" for v in q.vehicule.all())
+        ws.append([
+            q.contrat.numero_police,
+            q.contrat.user.last_name,
+            q.contrat.user.first_name,
+            q.contrat.user.email,
+            q.contrat.telephone or '',
+            q.numero_quittance,
+            q.type_contrat or '',
+            q.date_debut.strftime('%d/%m/%Y') if q.date_debut else '',
+            q.date_fin.strftime('%d/%m/%Y') if q.date_fin else '',
+            float(q.prime),
+            vehicules,
+        ])
+
+    for col_cells in ws.columns:
+        longueur = max((len(str(c.value)) if c.value else 0) for c in col_cells)
+        ws.column_dimensions[col_cells[0].column_letter].width = min(longueur + 2, 40)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="contrats_fidelia.xlsx"'
+    wb.save(response)
+    return response
 
 
 @login_required
@@ -1561,19 +1679,103 @@ def modifier_statut_cheque(request, paiement_id):
     paiement = get_object_or_404(Paiement, pk=paiement_id)
     nouveau_statut = request.POST.get('statut')
     
+    if nouveau_statut == 'RETIRE':
+        return redirect('marquer_cheque_retire', paiement_id=paiement_id)
+
     if nouveau_statut in dict(Paiement.STATUT_PAIEMENT).keys():
         paiement.statut = nouveau_statut
         paiement.save()
-        
-        # Ajout d'une trace dans l'historique du sinistre
+
         HistoriqueSinistre.objects.create(
             sinistre=paiement.sinistre,
-            statut='Mise à jour chèque',
-            commentaires=f"Le statut du chèque N° {paiement.numero_cheque} est passé à : {paiement.get_statut_display()}.",
+            statut="Mise à jour chèque",
+            commentaires=f"Le statut du chèque N° {paiement.numero_cheque} est passé à: {paiement.get_statut_display()}.",
             auteur=request.user
         )
         messages.success(request, f"Le statut du chèque {paiement.numero_cheque} a été mis à jour avec succès.")
     else:
         messages.error(request, "Statut invalide.")
-        
+
     return redirect('detail_sinistre_agent', sinistre_id=paiement.sinistre.pk)
+
+
+@login_required
+def marquer_cheque_retire(request, paiement_id):
+    paiement = get_object_or_404(Paiement, pk=paiement_id)
+
+    if request.method == 'POST':
+        form = RetraitChequeForm(request.POST, request.FILES)
+        if form.is_valid():
+            paiement.statut = 'RETIRE'
+            paiement.nom_retirant = form.cleaned_data['nom_retirant']
+            paiement.type_piece_retirant = form.cleaned_data['type_piece_retirant']
+            paiement.numero_piece_retirant = form.cleaned_data['numero_piece_retirant']
+            paiement.piece_identite_retirant = form.cleaned_data['piece_identite_retirant']
+            paiement.save()
+
+            HistoriqueSinistre.objects.create(
+                sinistre = paiement.sinistre,
+                statut='Chèque retiré',
+                commentaires=(
+                    f"Chèque N° {paiement.numero_cheque} retiré par "
+                    f"{paiement.nom_retirant or (paiement.beneficiaire_prenoms + ' ' + paiement.beneficiaire_nom)}"
+                    f"(pièce: {paiement.get_type_piece_retirant_display()} N° {paiement.numero_piece_retirant})."
+                ),
+                auteur=request.user,
+            )
+            messages.success(request, f"Chèque {paiement.numero_cheque} marqué comme retiré.")
+            return redirect('detail_sinistre_agent', sinistre_id=paiement.sinistre.pk)
+        else:
+            form = RetraitChequeForm()
+
+        return render(request, 'marquer_cheque_retire.html', {'form': form, 'paiement': paiement})
+
+
+def mot_de_passe_oublie_etape1(request):
+    if request.method == 'POST':
+        form = MotDePasseOublieForm(request.POST)
+        if form.is_valid():
+            identifiant = form.cleaned_data['identifiant'].strip()
+            telephone = form.cleaned_data['telephone'].strip()
+            profil = get_profil_par_identifiant(identifiant)
+            telephone_profil = getattr(profil, 'telephone', None) if profil else None
+
+            if profil and telephone_profil and telephone_profil.strip() == telephone:
+                request.session['reset_user_id'] = profil.user.id
+                return redirect('mot_de_passe_oublie_etape2')
+            messages.error(request, "Identifiant ou numéro de téléphone incorrect.")
+        else:
+            form = MotDePasseOublieForm()
+        return render(request, 'mot_de_passe_oublie_etape2.html', {'form': form})
+
+
+def mot_de_passe_oublie_etape2(request):
+    user_id = request.session.get('reser_user_id')
+    if not user_id:
+        return redirect('mot_de_passe_oublie_etape1')
+    useer = get_object_or_404(User, id=user_id)
+
+    if request.method == 'POST':
+        form = SetPasswordForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            del request.session['reset_user_id']
+
+            profil = (
+                getattr(user, 'assure', None)
+                or getattr(user, 'agent', None)
+                or getattr(user, 'chef', None)
+            )
+
+            if profil:
+                reinitialiser_tentatives(profil)
+                if hasattr(profil,'doit_changer_mot_de_passe'):
+                    profil.doit_changer_mot_de_passe = False
+                    profil.save(update_fields=['doit_changer_mot_de_passe'])
+
+            messages.success(request, "Votre mot de passe a été réinitialisé. Vous pouvez vous connecter. ")
+            return redirect('login')
+    else:
+        form = SetPasswordForm(user)
+
+    return render(request, 'mot_de_passe_oublie_etape2.html', {'form': form})

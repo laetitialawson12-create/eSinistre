@@ -1,5 +1,28 @@
+from datetime import timedelta
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.contrib.auth import logout
+from django.utils import timezone
+
+
+class InactiviteMiddleware:
+    DELAI_INACTIVITE = timedelta(minutes=5)
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user.is_authenticated:
+            derniere_activite = request.session.get('derniere_activite')
+            maintenant = timezone.now().timestamp()
+
+            if derniere_activite and (maintenant - derniere_activite) > self.DELAI_INACTIVITE.total_seconds():
+                logout(request)
+                return redirect('login')
+
+            request.session['derniere_activite'] = maintenant
+
+        return self.get_response(request)
 
 
 class PolitiqueConfidentialiteMiddleware:

@@ -1,12 +1,13 @@
 from django.urls import path
 from django.contrib.auth.views import LoginView, LogoutView
+from .forms import EsinistreAuthentificationForm
 from . import views
 
 urlpatterns = [
     # ==========================================
     # 1. AUTHENTIFICATION & ACTIVATION
     # ==========================================
-    path('login/', LoginView.as_view(template_name='login.html'), name='login'),
+    path('login/', LoginView.as_view(template_name='login.html', authentication_form=EsinistreAuthenticationForm), name='login'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path('redirection/', views.redirection_login, name='redirection_login'),
     path('activer-compte/', views.activation_etape1, name='activation_etape1'),
@@ -28,6 +29,7 @@ urlpatterns = [
     path('sinistres/<int:sinistre_id>/complements/', views.fournir_complements, name='fournir_complements'),
     path('profil/', views.profil_assure, name='profil_assure'),
     path('profil/modifier/', views.modifier_profil, name='modifier_profil'),
+    path('mes-contrats/<int:quittance_id>/', views.detail_contrat_assure, name='detail_contrat_assure'),
 
     # ==========================================
     # 3. ESPACE AGENT
@@ -48,7 +50,8 @@ urlpatterns = [
     path('agent/dossier/<int:sinistre_id>/lier-quittance/', views.lier_quittance_agent, name='lier_quittance_agent'),
     path('agent/dossier/<int:sinistre_id>/emettre-cheque/', views.emettre_cheque, name='emettre_cheque'),
     path('paiement/<int:paiement_id>/modifier-statut/', views.modifier_statut_cheque, name='modifier_statut_cheque'),
-    
+    path('paiement/<int:paiement_id>/retrait/', views.marquer_cheque_retire, name='marquer_cheque_retire'),
+
     # ==========================================
     # 4. ESPACE CHEF DE DÉPARTEMENT
     # ==========================================
@@ -100,9 +103,22 @@ urlpatterns = [
     path('admin/contrats/<int:assure_id>/modifier/', views.modifier_contrat_admin, name='modifier_contrat_admin'),
     path('admin/contrats/<int:assure_id>/supprimer/', views.supprimer_contrat_admin, name='supprimer_contrat_admin'),
 
+    # Administration — localisation
+    path('admin/localisation/', views.gestion_localisation, name='gestion_localisation'),
+    path('admin/localisation/region/<int:region_id>/supprimer/', views.supprimer_region, name='supprimer_region'),
+    path('admin/localisation/ville/<int:ville_id>/supprimer/', views.supprimer_ville, name='supprimer_ville'),
+    path('admin/localisation/prefecture/<int:prefecture_id>/supprimer/', views.supprimer_prefecture, name='supprimer_prefecture'),
+
+    # Administration — export contrats
+    path('admin/contrats/exporter/', views.exporter_contrats_admin, name='exporter_contrats'),
+
     # ==========================================
     # 6. ATTESTATIONS & DOCUMENTS
     # ==========================================
     path('attestation/<int:sinistre_id>/', views.voir_attestation, name='voir_attestation'),
-    path('attestation/<int:sinistre_id>/telecharger/', views.telecharger_attestation, name='telecharger_attestation')
+    path('attestation/<int:sinistre_id>/telecharger/', views.telecharger_attestation, name='telecharger_attestation'),
+
+    # Authentification - mot de passe oublié
+    path('mot-de-passe-oublie/', views.mot_de_passe_oublie_etape1, name='mot_de_passe_oublie_etape1'),
+    path('mot-de-passe-oublie/nouveau/', views.mot_de_passe_oublie_etape2, name='mot_de_passe_oublie_etape2')
 ]
