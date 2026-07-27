@@ -38,20 +38,51 @@
             <form method="post">
                 {% csrf_token %}
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Mot de passe temporaire (actuel)</label>
-                    {{ form.old_password|default_if_none:"" }}
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Nouveau mot de passe</label>
-                    {{ form.new_password1 }}
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Confirmer le nouveau mot de passe</label>
-                    {{ form.new_password2 }}
-                </div>
+    <label class="form-label fw-bold">Mot de passe temporaire (actuel)</label>
+    <div class="input-group">
+        {{ form.old_password|default_if_none:"" }}
+        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('id_old_password', this)">
+            <i class="bi bi-eye"></i>
+        </button>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label fw-bold">Nouveau mot de passe</label>
+    <div class="input-group">
+        {{ form.new_password1 }}
+        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('id_new_password1', this)">
+            <i class="bi bi-eye"></i>
+        </button>
+    </div>
+</div>
+<div class="mb-3">
+    <label class="form-label fw-bold">Confirmer le nouveau mot de passe</label>
+    <div class="input-group">
+        {{ form.new_password2 }}
+        <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('id_new_password2', this)">
+            <i class="bi bi-eye"></i>
+        </button>
+    </div>
+</div>
                 <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color: var(--fidelia-blue);">Valider le nouveau mot de passe</button>
             </form>
         </div>
     </div>
+
+<script>
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
+    </script>
 </body>
 </html>

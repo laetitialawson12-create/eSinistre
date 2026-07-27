@@ -106,8 +106,8 @@ urlpatterns = [
     # Administration — localisation
     path('admin/localisation/', views.gestion_localisation, name='gestion_localisation'),
     path('admin/localisation/region/<int:region_id>/supprimer/', views.supprimer_region, name='supprimer_region'),
+    path('admin/localisation/commune/<int:commune_id>/supprimer/', views.supprimer_Commune, name='supprimer_commune'),
     path('admin/localisation/ville/<int:ville_id>/supprimer/', views.supprimer_ville, name='supprimer_ville'),
-    path('admin/localisation/prefecture/<int:prefecture_id>/supprimer/', views.supprimer_prefecture, name='supprimer_prefecture'),
 
     # Administration — export contrats
     path('admin/contrats/exporter/', views.exporter_contrats_admin, name='exporter_contrats'),

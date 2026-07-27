@@ -10,14 +10,14 @@ class Region(models.Model):
     def __str__(self): return self.nom
 
 # Classe ville
-class Ville(models.Model):
+class Commune(models.Model):
     region = models.ForeignKey(Region, on_delete=models.CASCADE)
     nom = models.CharField(max_length=100)
     def __str__(self): return self.nom
 
-# Classe préfecture
-class Prefecture(models.Model):
-    ville = models.ForeignKey(Ville, on_delete=models.CASCADE)
+# Classe commune
+class Ville(models.Model):
+    commune = models.ForeignKey(Commune, on_delete=models.CASCADE)
     nom = models.CharField(max_length=100)
     def __str__(self): return self.nom
 
@@ -108,9 +108,7 @@ class Sinistre(models.Model):
     statut = models.CharField(max_length=30, choices=STATUS_CHOICES, default='SOUMIS')
     agent_traitant = models.CharField(max_length=100, blank=True, null=True)
     numero_assure = models.CharField(max_length=50, unique=True, null=True, blank=True, verbose_name="Numéro d'assuré")
-    tentatives_echouees = models.PositiveSmallIntegerField(default=0)
-    bloque_jusqu_a = models.DateTimeField(null=True, blank=True)
-
+    
     montant_estime = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
@@ -129,8 +127,8 @@ class Sinistre(models.Model):
 
     # Localisation
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True)
+    commune = models.ForeignKey(Commune, on_delete=models.SET_NULL, null=True)
     ville = models.ForeignKey(Ville, on_delete=models.SET_NULL, null=True)
-    prefecture = models.ForeignKey(Prefecture, on_delete=models.SET_NULL, null=True)
     quartier = models.CharField(max_length=150)
 
     # Détails du sinistre
@@ -271,7 +269,10 @@ class Assure(models.Model):
     agence = models.ForeignKey(Agence, on_delete=models.SET_NULL, null=True, blank=True)
     compte_active = models.BooleanField(default=False)
     politique_confidentialite_acceptee = models.BooleanField(default=False)
+    tentatives_echouees = models.PositiveSmallIntegerField(default=0)
+    bloque_jusqu_a = models.DateTimeField(null=True, blank=True)
 
+    
     def __str__(self):
         return f"{self.user.username} - {self.numero_police}"
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Sinistre, Region, Ville, Prefecture, Vehicule, PieceJointe, Assure, Agence, Agent, ChefDepartement, Quittance
+from .models import Sinistre, Region, Commune, Ville, Vehicule, PieceJointe, Assure, Agence, Agent, ChefDepartement, Quittance
 
 # Personnalisation de l'affichage dans l'admin
 @admin.register(Sinistre)
@@ -27,8 +27,8 @@ class QuittanceAdmin(admin.ModelAdmin):
     
 # Enregistrement simple pour les tables de référence
 admin.site.register(Region)
+admin.site.register(Commune)
 admin.site.register(Ville)
-admin.site.register(Prefecture)
 admin.site.register(Assure)
 admin.site.register(Agence)
 admin.site.register(Agent)

@@ -1,6 +1,6 @@
 {% extends 'base_admin.html' %}
 
-{% block title %}Régions / Villes / Préfectures{% endblock %}
+{% block title %}Régions / Communes / Villes{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-4">
@@ -50,6 +50,48 @@
             </div>
         </div>
 
+
+        <!-- COMMUNES -->
+        <div class="col-md-4">
+    <div class="card shadow-sm mb-3">
+        <div class="card-header text-white" style="background-color: #0b2545;">Ajouter une commune</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="type_objet" value="commune">
+                <div class="mb-2">
+                    {{ commune_form.region }}
+                </div>
+                <div class="mb-2">
+                    {{ commune_form.nom }}
+                </div>
+                <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
+            </form>
+        </div>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0">
+                <thead><tr><th>Commune</th><th>Région</th><th></th></tr></thead>
+                <tbody>
+                    {% for commune in communes %}
+                    <tr>
+                        <td>{{ commune.nom }}</td>
+                        <td>{{ commune.region.nom }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'supprimer_commune' commune.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette commune ?');"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-muted text-center py-3">Aucune commune</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
         <!-- VILLES -->
         <div class="col-md-4">
             <div class="card shadow-sm mb-3">
@@ -58,7 +100,7 @@
                     <form method="post">
                         {% csrf_token %}
                         <input type="hidden" name="type_objet" value="ville">
-                        <div class="mb-2">{{ ville_form.region }}</div>
+                        <div class="mb-2">{{ ville_form.commune }}</div>
                         {{ ville_form.nom }}
                         <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
                     </form>
@@ -67,54 +109,18 @@
             <div class="card shadow-sm">
                 <div class="card-body p-0">
                     <table class="table table-striped mb-0">
-                        <thead><tr><th>Ville</th><th>Région</th><th></th></tr></thead>
+                        <thead><tr><th>Ville</th><th>Commune</th><th></th></tr></thead>
                         <tbody>
                             {% for ville in villes %}
                             <tr>
                                 <td>{{ ville.nom }}</td>
-                                <td>{{ ville.region.nom }}</td>
+                                <td>{{ ville.commune.nom }}</td>
                                 <td class="text-end">
                                     <a href="{% url 'supprimer_ville' ville.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette ville ?');"><i class="bi bi-trash"></i></a>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr><td colspan="3" class="text-muted text-center py-3">Aucune ville</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- PRÉFECTURES -->
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-3">
-                <div class="card-header text-white" style="background-color: #0b2545;">Ajouter une préfecture</div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="type_objet" value="prefecture">
-                        <div class="mb-2">{{ prefecture_form.ville }}</div>
-                        {{ prefecture_form.nom }}
-                        <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
-                    </form>
-                </div>
-            </div>
-            <div class="card shadow-sm">
-                <div class="card-body p-0">
-                    <table class="table table-striped mb-0">
-                        <thead><tr><th>Préfecture</th><th>Ville</th><th></th></tr></thead>
-                        <tbody>
-                            {% for prefecture in prefectures %}
-                            <tr>
-                                <td>{{ prefecture.nom }}</td>
-                                <td>{{ prefecture.ville.nom }}</td>
-                                <td class="text-end">
-                                    <a href="{% url 'supprimer_prefecture' prefecture.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette préfecture ?');"><i class="bi bi-trash"></i></a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="3" class="text-muted text-center py-3">Aucune préfecture</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>

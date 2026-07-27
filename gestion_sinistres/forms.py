@@ -1,7 +1,7 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque, Region, Ville, Prefecture, Paiement
+from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque, Region, Ville, Commune, Paiement
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from .auth_utils import get_profil_par_identifiant, profil_est_bloque, enregistrer_echec, reinitialiser_tentatives
@@ -46,8 +46,8 @@ class SinistreForm(forms.ModelForm):
             'heure_approximative', 
             'nature', 
             'region', 
+            'commune', 
             'ville', 
-            'prefecture', 
             'quartier', 
             'circonstances',
             'prix_retenu',
@@ -66,8 +66,8 @@ class SinistreForm(forms.ModelForm):
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'nature': forms.Select(attrs={'class': 'form-control'}),
             'region': forms.Select(attrs={'class': 'form-control'}),
+            'commune': forms.Select(attrs={'class': 'form-control'}),
             'ville': forms.Select(attrs={'class': 'form-control'}),
-            'prefecture': forms.Select(attrs={'class': 'form-control'}),
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'prix_retenu': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Prix retenu en FCFA'}),
@@ -392,23 +392,23 @@ class RegionForm(forms.ModelForm):
         widgets = {'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom de la région'})}
 
 
-class VilleForm(forms.ModelForm):
+class CommuneForm(forms.ModelForm):
     class Meta:
-        model = Ville
+        model = Commune
         fields = ['region', 'nom']
         widgets = {
-            'region': forms.Select(attrs={'class': 'form-select'}),
-            'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom de la ville'}),
+            'region':forms.Select(attrs={'class': 'form-select'}),
+            'nom': forms.TextInput(attrs={'class':'form-control', 'placeholder': 'Nom de la commune'}),
         }
 
 
-class PrefectureForm(forms.ModelForm):
+class VilleForm(forms.ModelForm):
     class Meta:
-        model = Prefecture
-        fields = ['ville', 'nom']
+        model = Ville
+        fields = ['commune', 'nom']
         widgets = {
-            'ville':forms.Select(attrs={'class': 'form-select'}),
-            'nom': forms.TextInput(attrs={'class':'form-control', 'placeholder': 'Nom de la préfecture'}),
+            'commune': forms.Select(attrs={'class': 'form-select'}),
+            'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom de la ville'}),
         }
 
 

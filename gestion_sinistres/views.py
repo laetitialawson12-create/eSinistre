@@ -22,12 +22,12 @@ from .forms import (
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
     ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm,
     ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
-    RegionForm, VilleForm, PrefectureForm, RetraitChequeForm
+    RegionForm, VilleForm, CommuneForm, RetraitChequeForm
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
     Assure, Agent, Agence, ChefDepartement, Quittance, Vehicule, Cheque,
-    Paiement, Region, Prefecture, Ville
+    Paiement, Region, Commune, Ville
 )
 
 
@@ -1357,8 +1357,8 @@ def importer_donnees_admin(request):
 @user_passes_test(lambda u: u.is_staff)
 def gestion_localisation(request):
     region_form = RegionForm()
+    commune_form = CommuneForm()
     ville_form = VilleForm()
-    prefecture_form =PrefectureForm()
 
     if request.method == 'POST':
         type_objet = request.POST.get('type_objet')
@@ -1368,25 +1368,28 @@ def gestion_localisation(request):
                 region_form.save()
                 messages.success(request, "Région ajoutée.")
                 return redirect('gestion_localisation')
+            
+        elif type_objet == 'commune':
+            commune_form = CommuneForm(request.POST)
+            if commune_form.is_valid():
+                commune_form.save()
+                messages.success(request, "Commune ajoutée.")
+                return redirect('gestion_localisation')
+            
         elif type_objet == 'ville':
             ville_form = VilleForm(request.POST)
             if ville_form.is_valid():
                 ville_form.save()
                 messages.success(request, "Ville ajoutée.")
                 return redirect('gestion_localisation')
-        elif type_objet == 'prefecture':
-            prefecture_form = PrefectureForm(request.POST)
-            if prefecture_form.is_valid():
-                prefecture_form.save()
-                messages.success(request, "Préfecture ajoutée.")
-                return redirect('gestion_localisation')
-
-    return render(request, 'gestion_localisation_html', {
+        
+    return render(request, 'gestion_localisation.html', {
         'region_form': region_form,
         'ville_form': ville_form,
-        'prefecture_form': prefecture_form,
+        'Commune_form': commune_form,
         'regions': Region.objects.all().order_by('nom'),
-        'prefecture': Prefecture.objects.select_related('Ville').order_by('nom'),
+        'commune': Commune.objects.select_related('region').order_by('nom'),
+        'ville': Ville.objects.select_related('commune').order_by('nom'),
     })
 
 
@@ -1408,9 +1411,9 @@ def supprimer_ville(request, ville_id):
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
-def supprimer_prefecture(request, prefecture_id):
-    get_object_or_404(Prefecture, id=prefecture_id).delete()
-    messages.success(request, 'Préfecture supprimée.')
+def supprimer_Commune(request, Commune_id):
+    get_object_or_404(Commune, id=Commune_id).delete()
+    messages.success(request, 'Commune supprimée.')
     return redirect('gestion_localisation')
 
 
@@ -1773,6 +1776,10 @@ def mot_de_passe_oublie_etape2(request):
                 if hasattr(profil, 'doit_changer_mot_de_passe'):
                     profil.doit_changer_mot_de_passe = False
                     profil.save(update_fields=['doit_changer_mot_de_passe'])
+
+                # Réactivation du compte : on remet le compteur de tentatives
+                # et le blocage à zéro suite à la réinitialisation du mot de passe.
+                reinitialiser_tentatives(profil)
 
             messages.success(request, "Votre mot de passe a été réinitialisé.")
             return redirect('login')
