@@ -47,7 +47,8 @@ urlpatterns = [
     path('agent/dossier/<int:sinistre_id>/prix-retenu/', views.saisir_prix_retenu, name='saisir_prix_retenu'),
     path('agent/dossier/<int:sinistre_id>/lier-quittance/', views.lier_quittance_agent, name='lier_quittance_agent'),
     path('agent/dossier/<int:sinistre_id>/emettre-cheque/', views.emettre_cheque, name='emettre_cheque'),
-
+    path('paiement/<int:paiement_id>/modifier-statut/', views.modifier_statut_cheque, name='modifier_statut_cheque'),
+    
     # ==========================================
     # 4. ESPACE CHEF DE DÉPARTEMENT
     # ==========================================

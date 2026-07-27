@@ -52,10 +52,58 @@
     </div>
     
 
-    <!-- Corps principal : Historique à gauche, Documents et Messagerie à droite -->
+    <!-- Corps principal : Chèques puis Historique à gauche, Documents et Messagerie à droite -->
     <div class="row">
-        <!-- Colonne de gauche : Historique -->
+        <!-- Colonne de gauche : Chèques et Historique -->
         <div class="col-md-8">
+            <!-- Section : Suivi des chèques / paiements pour l'assuré (Placé avant l'historique) -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white fw-bold">💳 Mes chèques / Paiements d'indemnisation</div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>N° Chèque</th>
+                                    <th>Banque</th>
+                                    <th>Montant</th>
+                                    <th>Bénéficiaire</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for paiement in sinistre.paiements.all %}
+                                <tr>
+                                    <td><strong>{{ paiement.numero_cheque }}</strong></td>
+                                    <td>{{ paiement.banque_cheque }}</td>
+                                    <td class="text-success fw-bold">{{ paiement.montant }} FCFA</td>
+                                    <td>{{ paiement.beneficiaire_prenoms }} {{ paiement.beneficiaire_nom }}</td>
+                                    <td>{{ paiement.date_emission|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if paiement.statut == 'EMIS' %}
+                                            <span class="badge bg-primary">Émis</span>
+                                        {% elif paiement.statut == 'DISPONIBLE' %}
+                                            <span class="badge bg-warning text-dark">Prêt pour retrait</span>
+                                        {% elif paiement.statut == 'RETIRE' %}
+                                            <span class="badge bg-success">Retiré</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Annulé</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">Aucun chèque émis pour le moment.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historique du dossier -->
             <h4>Évolutions du dossier</h4>
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
@@ -127,3 +175,4 @@
     </div>
 </div>
 {% endblock %}
+```[cite: 3]

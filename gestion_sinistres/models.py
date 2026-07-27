@@ -111,6 +111,12 @@ class Sinistre(models.Model):
     montant_estime = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
 
+    # Suivi de l'attestation et de l'indemnisation (Chef de département)
+    attestation_generee = models.BooleanField(default=False)
+    date_attestation = models.DateTimeField(null=True, blank=True)
+    date_cloture = models.DateTimeField(null=True, blank=True)
+    indemnisation_validee = models.BooleanField(default=False)
+
     # Informations de base 
     date_survenance = models.DateTimeField()
     date_declaration = models.DateTimeField(auto_now_add=True)
@@ -173,9 +179,15 @@ class Sinistre(models.Model):
     
     def __str__(self):
         return f"Sinistre {self.numero_sinistre} - {self.nature}"
-
+    
 
 class Paiement(models.Model):
+    STATUT_PAIEMENT = [
+            ('EMIS', 'Emis'),
+            ('DISPONIBLE', 'Prêt pour retrait'),
+            ('RETIRE', 'Retiré'),
+            ('ANNULE', 'Annulé'),
+        ]
     sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='paiements')
     numero_cheque = models.CharField(max_length=100)
     banque_cheque = models.CharField(max_length=100)
@@ -186,6 +198,8 @@ class Paiement(models.Model):
     date_emission = models.DateField()
     date_creation = models.DateTimeField(auto_now_add=True)
 
+    statut = models.CharField(max_length=20, choices=STATUT_PAIEMENT, default='EMIS')
+    
     def __str__(self):
         return f"Chèque n°{self.numero_cheque} - {self.montant} FCFA"
         
@@ -266,8 +280,6 @@ class ChefDepartement(models.Model):
 
 
 # models.py
-from django.db import models
-
 class Cheque(models.Model):
     STATUT_CHEQUE = [
         ('EN_PREPARATION', 'En cours de préparation'),

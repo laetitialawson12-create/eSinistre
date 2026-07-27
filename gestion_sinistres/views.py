@@ -12,6 +12,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
 from django.urls import reverse
+from decimal import Decimal, InvalidOperation
 
 from .forms import (
     SinistreForm, ModifierProfilForm, AgentCreationForm, AssureAdminForm,
@@ -108,9 +109,16 @@ def accueil_assure(request):
 
 @login_required
 def declarer_sinistre(request):
+    sinistre_id = request.session.get('temp_sinistre_id')
+    sinistre_instance = None
+    if sinistre_id:
+        sinistre_instance = Sinistre.objects.filter(id=sinistre_id, assure=request.user).first()
+
+    est_nouvelle_declaration = sinistre_instance is None
+
     if request.method == 'POST':
-        form = SinistreForm(request.POST, request.FILES, user=request.user)
-        
+        form = SinistreForm(request.POST, request.FILES, user=request.user, instance=sinistre_instance)
+
         if form.is_valid():
             sinistre = form.save(commit=False)
             sinistre.assure = request.user
@@ -127,10 +135,7 @@ def declarer_sinistre(request):
                     date_debut__lte=date_evenement,
                     date_fin__gte=date_evenement
                 )
-                if quittances_valides.count() == 1:
-                    sinistre.quittance = quittances_valides.first()
-                else:
-                    sinistre.quittance = None
+                sinistre.quittance = quittances_valides.first() if quittances_valides.count() == 1 else None
             else:
                 sinistre.quittance = None
 
@@ -141,23 +146,25 @@ def declarer_sinistre(request):
                 for f in fichiers:
                     PieceJointe.objects.create(sinistre=sinistre, fichier=f)
 
-                if sinistre.quittance:
-                    messages.success(request, f"Votre sinistre N° {sinistre.numero_sinistre} a été enregistré avec succès.")
-                else:
-                    messages.info(
-                        request, 
-                        f"Votre sinistre N° {sinistre.numero_sinistre} a été enregistré. "
-                        "Une vérification de la quittance par un agent est requise."
+                # Historique : uniquement à la toute première déclaration,
+                # pas lors des modifications avant confirmation finale
+                if est_nouvelle_declaration:
+                    HistoriqueSinistre.objects.create(
+                        sinistre=sinistre,
+                        statut='SOUMIS',
+                        commentaires="Déclaration initiale du sinistre par l'assuré.",
+                        auteur=request.user,
                     )
 
-                return redirect('detail_sinistre', sinistre_id=sinistre.id)
+                request.session['temp_sinistre_id'] = sinistre.id
+                return redirect('confirmer_sinistre')
 
             except ValidationError as e:
                 form.add_error(None, e)
         else:
             messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
     else:
-        form = SinistreForm(user=request.user)
+        form = SinistreForm(user=request.user, instance=sinistre_instance)
 
     return render(request, 'declaration.html', {'form': form, 'title': 'Déclarer un sinistre'})
 
@@ -250,7 +257,14 @@ def finaliser_envoi(request):
             del request.session['temp_sinistre_id']
 
         if sinistre:
-            messages.success(request, f"Votre sinistre {sinistre.numero_sinistre} a été déclaré avec succès.")
+            if sinistre.quittance:
+                messages.success(request, f"Votre sinistre N° {sinistre.numero_sinistre} a été enregistré avec succès.")
+            else:
+                messages.info(
+                    request,
+                    f"Votre sinistre N° {sinistre.numero_sinistre} a été enregistré. "
+                    "Une vérification de la quittance par un agent est requise."
+                )
         return redirect('accueil_assure')
     return redirect('confirmer_sinistre')
 
@@ -286,7 +300,6 @@ def mes_contrats(request):
 
 
 # --- ESPACE AGENT ---
-
 @login_required
 def accueil_agent(request):
     agent = getattr(request.user, 'agent', None)
@@ -301,8 +314,8 @@ def accueil_agent(request):
         'attente_complements': sinistres_agence.filter(statut='ATTENTE_COMPLEMENTS').count(),
         'valides_ce_mois': sinistres_agence.filter(
             statut='CLOTURE',
-            date_declaration__month=timezone.now().month,
-            date_declaration__year=timezone.now().year,
+            date_cloture__month=timezone.now().month,
+            date_cloture__year=timezone.now().year,
         ).count(),
         'derniers_a_instruire': sinistres_agence.filter(statut='SOUMIS').order_by('-date_declaration')[:5],
     }
@@ -375,6 +388,13 @@ def detail_sinistre_agent(request, sinistre_id):
     if request.method == 'POST':
         # Cas 1 : Modification ou saisie du prix retenu
         if 'prix_retenu' in request.POST:
+            if sinistre.statut != 'EN_COURS':
+                messages.error(
+                    request,
+                    "Le prix retenu ne peut être saisi qu'après validation du dossier par le Chef de département."
+                )
+                return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
             nouveau_prix = request.POST.get('prix_retenu')
             if nouveau_prix:
                 sinistre.prix_retenu = nouveau_prix
@@ -498,6 +518,20 @@ def saisir_prix_retenu(request, sinistre_id):
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
 
+    # Le prix retenu peut être saisi une première fois en EN_COURS,
+    # ou révisé si le Chef a renvoyé le dossier en A_CORRIGER pour ce motif
+    # (dans ce cas, l'attestation a déjà été générée précédemment)
+    autorise = sinistre.statut == 'EN_COURS' or (
+        sinistre.statut == 'A_CORRIGER' and sinistre.attestation_generee
+    )
+
+    if not autorise:
+        messages.error(
+            request,
+            "Le prix retenu ne peut être saisi qu'après validation du dossier par le Chef de département."
+        )
+        return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
     # Vérification si le prix peut être modifié (par exemple, si non validé par le chef)
     if getattr(sinistre, 'indemnisation_validee', False):
         messages.error(request, "Le prix retenu a été validé par le Chef. Il ne peut plus être modifié.")
@@ -508,7 +542,7 @@ def saisir_prix_retenu(request, sinistre_id):
         if nouveau_prix:
             sinistre.prix_retenu = nouveau_prix
             sinistre.save()
-            
+
             # Enregistrement dans l'historique du dossier
             HistoriqueSinistre.objects.create(
                 sinistre=sinistre,
@@ -517,7 +551,7 @@ def saisir_prix_retenu(request, sinistre_id):
                 auteur=request.user,
             )
             messages.success(request, "Le prix retenu a été enregistré avec succès.")
-            
+
     return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
 
 
@@ -731,7 +765,7 @@ def valider_indemnisation(request, sinistre_id):
     if not chef:
         return redirect('accueil_assure')
 
-    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='EN_COURS')
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['EN_COURS','ATTENTE_VALIDATION'])
 
     if sinistre.prix_retenu is None:
         messages.error(request, "L'agent doit d'abord saisir le prix retenu.")
@@ -757,6 +791,7 @@ def clore_sinistre(request, sinistre_id):
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='EN_COURS')
     sinistre.statut = 'CLOTURE'
+    sinistre.date_cloture = timezone.now()
     sinistre.save()
     HistoriqueSinistre.objects.create(
         sinistre=sinistre,
@@ -1464,8 +1499,8 @@ def indemniser_sinistre(request, sinistre_id):
 
 
 @login_required
-def emettre_cheque(request, pk):
-    sinistre = get_object_or_404(Sinistre, pk=pk)
+def emettre_cheque(request, sinistre_id):
+    sinistre = get_object_or_404(Sinistre, pk=sinistre_id)
     
     if request.method == 'POST':
         numero_cheque = request.POST.get('numero_cheque')
@@ -1475,17 +1510,33 @@ def emettre_cheque(request, pk):
         beneficiaire_prenoms = request.POST.get('beneficiaire_prenoms')
         beneficiaire_telephone = request.POST.get('beneficiaire_telephone')
         date_emission = request.POST.get('date_emission')
-        
-        # 1. Enregistrement du paiement / chèque
+
+        # Vérification : le montant ne doit pas dépasser le reste à payer
+        try:
+            montant_decimal = Decimal(montant)
+        except (TypeError, ValueError, InvalidOperation):
+            messages.error(request, "Montant invalide.")
+            return redirect('emettre_cheque', sinistre_id=sinistre.id)
+
+        if montant_decimal > sinistre.reste_a_payer:
+            messages.error(
+                request,
+                f"Le montant du chèque ({montant_decimal} FCFA) dépasse le reste à payer "
+                f"({sinistre.reste_a_payer} FCFA)."
+            )
+            return redirect('emettre_cheque', sinistre_id=sinistre.id)
+
+        # 1. Enregistrement du paiement / chèque avec son statut initial
         paiement = Paiement.objects.create(
             sinistre=sinistre,
             numero_cheque=numero_cheque,
             banque_cheque=banque_cheque,
-            montant=montant,
+            montant=montant_decimal,
             beneficiaire_nom=beneficiaire_nom,
             beneficiaire_prenoms=beneficiaire_prenoms,
             beneficiaire_telephone=beneficiaire_telephone,
-            date_emission=date_emission
+            date_emission=date_emission,
+            statut='EMIS'  # ← Statut initial ajouté ici
         )
         
         # 2. Mise à jour éventuelle du statut du sinistre
@@ -1496,10 +1547,33 @@ def emettre_cheque(request, pk):
         HistoriqueSinistre.objects.create(
             sinistre=sinistre,
             statut='Chèque émis',
-            commentaires=f"Émission d'un chèque de {montant} FCFA (N° {numero_cheque}) tiré sur {banque_cheque} pour {beneficiaire_prenoms} {beneficiaire_nom}.",
+            commentaires=f"Émission d'un chèque de {montant_decimal} FCFA (N° {numero_cheque}) tiré sur {banque_cheque} pour {beneficiaire_prenoms} {beneficiaire_nom}.",
             auteur=request.user
         )
         
-        return redirect('detail_sinistre_agent', pk=sinistre.pk)
+        return redirect('detail_sinistre_agent', sinistre_id=sinistre.pk)
 
     return render(request, 'emettre_cheque.html', {'sinistre': sinistre})
+
+
+@login_required
+def modifier_statut_cheque(request, paiement_id):
+    paiement = get_object_or_404(Paiement, pk=paiement_id)
+    nouveau_statut = request.POST.get('statut')
+    
+    if nouveau_statut in dict(Paiement.STATUT_PAIEMENT).keys():
+        paiement.statut = nouveau_statut
+        paiement.save()
+        
+        # Ajout d'une trace dans l'historique du sinistre
+        HistoriqueSinistre.objects.create(
+            sinistre=paiement.sinistre,
+            statut='Mise à jour chèque',
+            commentaires=f"Le statut du chèque N° {paiement.numero_cheque} est passé à : {paiement.get_statut_display()}.",
+            auteur=request.user
+        )
+        messages.success(request, f"Le statut du chèque {paiement.numero_cheque} a été mis à jour avec succès.")
+    else:
+        messages.error(request, "Statut invalide.")
+        
+    return redirect('detail_sinistre_agent', sinistre_id=paiement.sinistre.pk)
