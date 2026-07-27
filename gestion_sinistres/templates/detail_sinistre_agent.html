@@ -194,7 +194,8 @@
                                 <!-- Formulaire rapide pour changer le statut en un clic -->
                                 <form method="POST" action="{% url 'modifier_statut_cheque' paiement.id %}" class="d-inline">
                                     {% csrf_token %}
-                                    <select name="statut" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                                    <select name="statut" class="form-select form-select-sm d-inline-block w-auto"
+                                        onchange="if (this.value === 'RETIRE') { window.location.href = '{% url 'marquer_cheque_retire' paiement.id %}'; } else { this.form.submit(); }">
                                         <option value="" selected disabled>Changer...</option>
                                         <option value="EMIS">Émis</option>
                                         <option value="DISPONIBLE">Prêt pour retrait</option>

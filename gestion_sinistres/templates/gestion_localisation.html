@@ -1,0 +1,126 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Régions / Villes / Préfectures{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mb-4 mt-4" style="color: #0b2545;">Gestion des zones géographiques</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- RÉGIONS -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header text-white" style="background-color: #0b2545;">Ajouter une région</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="type_objet" value="region">
+                        {{ region_form.nom }}
+                        <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead><tr><th>Région</th><th></th></tr></thead>
+                        <tbody>
+                            {% for region in regions %}
+                            <tr>
+                                <td>{{ region.nom }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'supprimer_region' region.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette région ?');"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="2" class="text-muted text-center py-3">Aucune région</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VILLES -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header text-white" style="background-color: #0b2545;">Ajouter une ville</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="type_objet" value="ville">
+                        <div class="mb-2">{{ ville_form.region }}</div>
+                        {{ ville_form.nom }}
+                        <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead><tr><th>Ville</th><th>Région</th><th></th></tr></thead>
+                        <tbody>
+                            {% for ville in villes %}
+                            <tr>
+                                <td>{{ ville.nom }}</td>
+                                <td>{{ ville.region.nom }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'supprimer_ville' ville.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette ville ?');"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-muted text-center py-3">Aucune ville</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRÉFECTURES -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header text-white" style="background-color: #0b2545;">Ajouter une préfecture</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="type_objet" value="prefecture">
+                        <div class="mb-2">{{ prefecture_form.ville }}</div>
+                        {{ prefecture_form.nom }}
+                        <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead><tr><th>Préfecture</th><th>Ville</th><th></th></tr></thead>
+                        <tbody>
+                            {% for prefecture in prefectures %}
+                            <tr>
+                                <td>{{ prefecture.nom }}</td>
+                                <td>{{ prefecture.ville.nom }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'supprimer_prefecture' prefecture.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette préfecture ?');"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="3" class="text-muted text-center py-3">Aucune préfecture</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,10 +1,10 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
-from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque, Region, Ville, Prefecture
+from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque, Region, Ville, Prefecture, Paiement
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from .auth_utils import get_profil_par_identifiant, profil_est_bloque
+from .auth_utils import get_profil_par_identifiant, profil_est_bloque, enregistrer_echec, reinitialiser_tentatives
 
 def jours_ouvres_entre(date_debut, date_fin):
     jours = 0
@@ -335,15 +335,44 @@ class ChequeForm(forms.ModelForm):
 class EsinistreAuthentificationForm(AuthenticationForm):
     def clean(self):
         username = self.cleaned_data.get('username')
-        profil = get_profil_par_identifiant(username)
-        if profil_est_bloque(profil):
-            raise forms.ValidationError(
-                "Compte temporairement bloqué après plusieurs tentatives de connexion"
-                f"incorrectes. Réessayez après {profil.bloque__jusqu_a.strftime('%H:%M')}.",
-                code='compte_bloque',
-            )
-        return super().clean()
+        password = self.cleaned_data.get('password')
+        
+        if username:
+            profil = get_profil_par_identifiant(username)
+            
+            # 1. Vérifier si le compte est déjà bloqué
+            if profil_est_bloque(profil):
+                raise forms.ValidationError(
+                    "Vous avez atteint 3 tentatives infructueuses. Votre compte est bloqué. "
+                    "Veuillez cliquer sur « Mot de passe oublié ? » pour le réactiver.",
+                    code='compte_bloque',
+                )
 
+        # 2. Laisser Django effectuer sa validation normale
+        try:
+            cleaned_data = super().clean()
+        except forms.ValidationError:
+            # 3. Si Django refuse l'authentification (mauvais mot de passe), on enregistre l'échec
+            if username:
+                enregistrer_echec(username)
+                
+                # On vérifie immédiatement si cet échec vient de bloquer le compte
+                profil_mis_a_jour = get_profil_par_identifiant(username)
+                if profil_mis_a_jour and profil_est_bloque(profil_mis_a_jour):
+                    raise forms.ValidationError(
+                        "Vous avez atteint 3 tentatives infructueuses. Votre compte est bloqué. "
+                        "Veuillez cliquer sur « Mot de passe oublié ? » pour le réactiver.",
+                        code='compte_bloque',
+                    )
+            raise
+
+        # 4. Si la connexion réussit, on remet le compteur à zéro
+        if username:
+            profil = get_profil_par_identifiant(username)
+            reinitialiser_tentatives(profil)
+
+        return cleaned_data
+            
 
 class MotDePasseOublieForm(forms.Form):
     identifiant = forms.CharField(
@@ -373,7 +402,7 @@ class VilleForm(forms.ModelForm):
         }
 
 
-class PrefectureForm(forms.ModelsForm):
+class PrefectureForm(forms.ModelForm):
     class Meta:
         model = Prefecture
         fields = ['ville', 'nom']

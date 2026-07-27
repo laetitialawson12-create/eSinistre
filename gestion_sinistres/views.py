@@ -1361,7 +1361,7 @@ def gestion_localisation(request):
     prefecture_form =PrefectureForm()
 
     if request.method == 'POST':
-        type_objet == request.POST.get('type_objet')
+        type_objet = request.POST.get('type_objet')
         if type_objet == 'region':
             region_form = RegionForm(request.POST)
             if region_form.is_valid():
@@ -1744,16 +1744,18 @@ def mot_de_passe_oublie_etape1(request):
                 request.session['reset_user_id'] = profil.user.id
                 return redirect('mot_de_passe_oublie_etape2')
             messages.error(request, "Identifiant ou numéro de téléphone incorrect.")
-        else:
-            form = MotDePasseOublieForm()
-        return render(request, 'mot_de_passe_oublie_etape2.html', {'form': form})
+    else:
+        form = MotDePasseOublieForm()
+    return render(request, 'mot_de_passe_oublie_etape1.html', {'form': form})
 
 
 def mot_de_passe_oublie_etape2(request):
-    user_id = request.session.get('reser_user_id')
+    user_id = request.session.get('reset_user_id')
     if not user_id:
+        messages.error(request, "Veuillez d'abord renseigner votre identifiant et votre numéro de téléphone.")
         return redirect('mot_de_passe_oublie_etape1')
-    useer = get_object_or_404(User, id=user_id)
+    
+    user = get_object_or_404(User, id=user_id)
 
     if request.method == 'POST':
         form = SetPasswordForm(user, request.POST)
@@ -1768,14 +1770,52 @@ def mot_de_passe_oublie_etape2(request):
             )
 
             if profil:
-                reinitialiser_tentatives(profil)
-                if hasattr(profil,'doit_changer_mot_de_passe'):
+                if hasattr(profil, 'doit_changer_mot_de_passe'):
                     profil.doit_changer_mot_de_passe = False
                     profil.save(update_fields=['doit_changer_mot_de_passe'])
 
-            messages.success(request, "Votre mot de passe a été réinitialisé. Vous pouvez vous connecter. ")
+            messages.success(request, "Votre mot de passe a été réinitialisé.")
             return redirect('login')
     else:
         form = SetPasswordForm(user)
 
     return render(request, 'mot_de_passe_oublie_etape2.html', {'form': form})
+
+
+@login_required
+def detail_contrat_assure(request, quittance_id):
+    """Vue permettant à l'assuré de consulter les détails d'une quittance / d'un contrat."""
+    quittance = get_object_or_404(Quittance, id=quittance_id, contrat__user=request.user)
+    vehicules = quittance.vehicules.all() if hasattr(quittance, 'vehicules') else []
+    
+    return render(request, 'detail_contrat_assure.html', {
+        'quittance': quittance,
+        'vehicules': vehicules,
+    })
+
+
+def ma_vue_de_connexion(request):
+    if request.method == 'POST':
+        identifiant = request.POST.get('username')
+        mot_de_passe = request.POST.get('password')
+        
+        # 1. Récupérer le profil pour vérifier s'il est bloqué
+        profil = get_profil_par_identifiant(identifiant)
+        
+        if profil_est_bloque(profil):
+            messages.error(request, "Votre compte est temporairement bloqué suite à 3 tentatives infructueuses. Veuillez patienter 5 minutes.")
+            return render(request, 'login.html') # Remplacez 'login.html' par le nom exact de votre fichier HTML ci-dessus
+
+        # 2. Tenter l'authentification Django
+        user = authenticate(request, username=identifiant, password=mot_de_passe)
+        
+        if user is not None:
+            login(request, user)
+            reinitialiser_tentatives(profil) # Remet les compteurs à zéro en cas de succès
+            return redirect('redirection_login') # Utilise votre vue de redirection existante pour dispatcher l'utilisateur
+        else:
+            # 3. Enregistrer l'échec en cas de mauvais mot de passe
+            enregistrer_echec(identifiant)
+            messages.error(request, "Identifiant ou mot de passe incorrect.")
+            
+    return render(request, 'login.html')

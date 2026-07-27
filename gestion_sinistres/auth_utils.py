@@ -23,24 +23,37 @@ def get_profil_par_identifiant(identifiant):
 
     return None 
 
-
 def profil_est_bloque(profil):
-    return bool(profil and profil.bloque__jusqu_a and profil.bloque__jusqu_a > timezone.now())
-
+    if not profil or not hasattr(profil, 'bloque_jusqu_a'):
+        return False
+    return bool(profil.bloque_jusqu_a and profil.bloque_jusqu_a > timezone.now())
 
 def enregistrer_echec(identifiant):
     profil = get_profil_par_identifiant(identifiant)
-    if not profil:
+    if not profil or not hasattr(profil, 'tentatives_echouees'):
         return
+    
     profil.tentatives_echouees += 1
     if profil.tentatives_echouees >= SEUIL_TENTATIVES:
-        profil.bloque_jusqu_a = timezone.now() + DUREE_BLOCAGE
-    profil.save(update_fields=['tentaives_echouees', 'bloque__jusqu_a'])
-
+        if hasattr(profil, 'bloque_jusqu_a'):
+            profil.bloque_jusqu_a = timezone.now() + DUREE_BLOCAGE
+            profil.save(update_fields=['tentatives_echouees', 'bloque_jusqu_a'])
+            return
+            
+    profil.save(update_fields=['tentatives_echouees'])
 
 def reinitialiser_tentatives(profil):
     if not profil:
         return
-    profil.tentatives_echouees = 0
-    profil.bloque__jusqu_a = None
-    profil.save(update_fields=['tentatives_echouees', 'bloque__jusqu_a'])
+    
+    fields_to_update = []
+    if hasattr(profil, 'tentatives_echouees'):
+        profil.tentatives_echouees = 0
+        fields_to_update.append('tentatives_echouees')
+        
+    if hasattr(profil, 'bloque_jusqu_a'):
+        profil.bloque_jusqu_a = None
+        fields_to_update.append('bloque_jusqu_a')
+        
+    if fields_to_update:
+        profil.save(update_fields=fields_to_update)

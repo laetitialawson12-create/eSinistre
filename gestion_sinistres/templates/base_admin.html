@@ -80,6 +80,7 @@
             <a href="{% url 'liste_chefs' %}" class="{% if request.resolver_match.url_name == 'liste_chefs' or request.resolver_match.url_name == 'modifier_chef_admin' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Chefs de service</a>
             <a href="{% url 'liste_assures' %}" class="{% if request.resolver_match.url_name == 'liste_assures' %}active{% endif %}"><i class="bi bi-person-lines-fill me-2"></i> Assurés</a>
             <a href="{% url 'liste_contrats' %}" class="{% if request.resolver_match.url_name == 'liste_contrats' %}active{% endif %}"><i class="bi bi-file-text me-2"></i> Voir les contrats</a>
+            <a href="{% url 'gestion_localisation' %}" class="{% if request.resolver_match.url_name == 'gestion_localisation' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Régions / Villes / Préfectures</a>
             <a href="{% url 'importer_donnees' %}" class="{% if request.resolver_match.url_name == 'importer_donnees' %}active{% endif %}"><i class="bi bi-file-earmark-arrow-up me-2"></i> Importer contrats</a>
             <a href="{% url 'profil_admin' %}" class="{% if request.resolver_match.url_name == 'profil_admin' or request.resolver_match.url_name == 'modifier_profil_admin' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Mon profil</a>
         </div>

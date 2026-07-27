@@ -27,6 +27,23 @@
         </a>
     </div>
 
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-3">
+            <input type="text" name="police" value="{{ query_police }}" class="form-control" placeholder="N° de police">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="nom" value="{{ query_nom }}" class="form-control" placeholder="Nom / prénom">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'exporter_contrats' %}?police={{ query_police }}&nom={{ query_nom }}" class="btn btn-outline-success w-100">
+                <i class="bi bi-file-earmark-excel me-1"></i> Exporter
+            </a>
+        </div>
+    </form>
+    
     {% if messages %}
         {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">

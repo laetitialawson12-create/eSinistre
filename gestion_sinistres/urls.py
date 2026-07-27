@@ -7,7 +7,7 @@ urlpatterns = [
     # ==========================================
     # 1. AUTHENTIFICATION & ACTIVATION
     # ==========================================
-    path('login/', LoginView.as_view(template_name='login.html', authentication_form=EsinistreAuthenticationForm), name='login'),
+    path('login/', LoginView.as_view(template_name='login.html', authentication_form=EsinistreAuthentificationForm), name='login'),
     path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
     path('redirection/', views.redirection_login, name='redirection_login'),
     path('activer-compte/', views.activation_etape1, name='activation_etape1'),
