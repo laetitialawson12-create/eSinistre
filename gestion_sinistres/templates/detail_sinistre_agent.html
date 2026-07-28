@@ -19,7 +19,7 @@
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body">
         <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
-        <p><strong>N° Assuré :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
+        <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
         <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
         <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
         <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}

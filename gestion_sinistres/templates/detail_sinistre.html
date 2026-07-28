@@ -57,7 +57,7 @@
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white fw-bold">📝 Détails de la déclaration</div>
                 <div class="card-body">
-                    <p><strong>N° Assuré :</strong> {{ sinistre.numero_assure|default:"—" }}</p>
+                    <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
                     <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
                     <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
                     <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}

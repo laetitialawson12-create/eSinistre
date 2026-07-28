@@ -16,7 +16,6 @@ from django.utils import timezone
 from django.db.models import Q
 from django.urls import reverse
 from decimal import Decimal, InvalidOperation
-
 from .forms import (
     SinistreForm, ModifierProfilForm, AgentCreationForm, AssureAdminForm,
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
