@@ -112,6 +112,9 @@ urlpatterns = [
     # Administration — export contrats
     path('admin/contrats/exporter/', views.exporter_contrats_admin, name='exporter_contrats'),
 
+    # Création des agences
+    path('admin/agences/', views.gestion_agences, name='gestion_agences'),
+
     # ==========================================
     # 6. ATTESTATIONS & DOCUMENTS
     # ==========================================

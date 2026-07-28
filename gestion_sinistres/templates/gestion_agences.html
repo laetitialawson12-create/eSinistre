@@ -1,0 +1,75 @@
+{% extends 'base_admin.html' %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <h2 class="mb-4">Gestion des agences</h2>
+
+    <!-- Messages de notification -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Formulaire d'ajout -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header text-white" style="background-color: #0b2545;">Ajouter une agence</div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-2">
+                            <label class="form-label small text-muted">Nom de l'agence</label>
+                            {{ form.nom }}
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small text-muted">Ville</label>
+                            {{ form.ville }}
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau de la liste des agences -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header text-white" style="background-color: #0b2545;">Liste des agences</div>
+                <div class="card-body p-0">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nom de l'agence</th>
+                                <th>Ville</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agence in agences %}
+                            <tr>
+                                <td>{{ agence.nom }}</td>
+                                <td>{{ agence.ville.nom|default:"--" }}</td>
+                                <td class="text-end">
+                                    <a href="#" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette agence ?');">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                               <td colspan="3" class="text-muted text-center py-3">Aucune agence enregistrée</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

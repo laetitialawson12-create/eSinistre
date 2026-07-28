@@ -22,12 +22,12 @@ from .forms import (
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
     ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm,
     ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
-    RegionForm, VilleForm, CommuneForm, RetraitChequeForm
+    RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
     Assure, Agent, Agence, ChefDepartement, Quittance, Vehicule, Cheque,
-    Paiement, Region, Commune, Ville
+    Paiement, Region, Commune, Ville, Agence
 )
 
 
@@ -1386,10 +1386,10 @@ def gestion_localisation(request):
     return render(request, 'gestion_localisation.html', {
         'region_form': region_form,
         'ville_form': ville_form,
-        'Commune_form': commune_form,
+        'commune_form': commune_form,
         'regions': Region.objects.all().order_by('nom'),
-        'commune': Commune.objects.select_related('region').order_by('nom'),
-        'ville': Ville.objects.select_related('commune').order_by('nom'),
+        'communes': Commune.objects.select_related('region').order_by('nom'),
+        'villes': Ville.objects.select_related('commune').order_by('nom'),
     })
 
 
@@ -1456,8 +1456,8 @@ def exporter_contrats_admin(request):
         quittances = quittances.filter(contrat__numero_police__icontains=query_police)
     if query_nom:
         quittances = quittances.filter(
-            Q(contrat__user__last_name__incontains=query_nom) |
-            Q(contrat__user__last_name__incontains=query_nom)
+            Q(contrat__user__last_name__icontains=query_nom) |
+            Q(contrat__user__last_name__icontains=query_nom)
         )
 
     wb = openpyxl.Workbook()
@@ -1473,7 +1473,8 @@ def exporter_contrats_admin(request):
         cell.font = Font(bold=True)
 
     for q in quittances:
-        vehicules = ", ".join(f"{v.immatriculation} ({v.marque})" for v in q.vehicule.all())
+        vehicules_liste = getattr(q.contrat, 'vehicules', None)
+        vehicules = ", ".join(f"{v.immatriculation} ({v.marque})" for v in vehicules_liste.all()) if vehicules_liste else ''
         ws.append([
             q.contrat.numero_police,
             q.contrat.user.last_name,
@@ -1826,3 +1827,21 @@ def ma_vue_de_connexion(request):
             messages.error(request, "Identifiant ou mot de passe incorrect.")
             
     return render(request, 'login.html')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def gestion_agences(request):
+    if request.method == 'POST':
+        form = AgenceForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Agence ajoutée avec succès.")
+            return redirect('gestion_agences')
+    else:
+        form = AgenceForm()
+
+    return render(request, 'gestion_agences.html',{
+        'form': form,
+        'agences': Agence.objects.select_related('ville').order_by('nom')
+    })

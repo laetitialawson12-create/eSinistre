@@ -432,3 +432,18 @@ class RetraitChequeForm(forms.Form):
         label="Scan/Photo de la pièce",
         widget= forms.ClearableFileInput(attrs={'class': 'form-control'}),
     )
+
+
+class AgenceForm(forms.ModelForm):
+    ville = forms.ModelChoiceField(
+        queryset=Ville.objects.all(),
+        label="Ville",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    class Meta:
+        model = Agence
+        fields = ['nom', 'ville']
+        widgets = {
+            'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Nom de l'agence"}),
+        }

@@ -255,11 +255,11 @@ class Message(models.Model):
     
 
 class Agence(models.Model):
-    nom = models.CharField(max_length=100)
-    code = models.CharField(max_length=10, unique=True)  # ex: "001"
+    nom = models.CharField(max_length=100, unique=True)
+    ville = models.ForeignKey('Ville', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.nom} ({self.code})"
+        return self.nom
     
 
 class Assure(models.Model):
