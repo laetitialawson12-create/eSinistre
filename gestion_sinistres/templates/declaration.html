@@ -1,112 +1,154 @@
-{% extends 'base_assure.html' %}
+{% extends "base_assure.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h3 class="mb-4">Nouvelle Déclaration de Sinistre</h3>
+    <div class="container mt-4">
+        <h3 class="mb-4">Déclaration de sinistre</h3>
 
-    <form method="post" enctype="multipart/form-data" class="shadow-sm p-4 bg-white rounded">
-        {% csrf_token %}
+        <form method="post" enctype="multipart/form-data" class="shadow-sm p-4 bg-white rounded">
+            {% csrf_token %}
 
-        {% if form.errors %}
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                {% for field in form %}
-                    {% for error in field.errors %}
-                        <li><strong>{{ field.label }}</strong> : {{ error }}</li>
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    {% for field in form%}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}</strong> : {{ error }}</li>
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
-                {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <label class="form-label">N° de Police</label>
-                <input type="text" class="form-control" value="{{ request.user.assure.numero_police }}" disabled readonly>
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">Nom du conducteur</label>
-                {{ form.nom_conducteur }}
+            {% endif %}
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">N° de Police</label>
+                    <input type="text" class="form-control" value="{{ request.user.assure.numero_police }}" disabled readonly>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nom du conducteur</label>
+                    {{ form.nom_conducteur }}
+                </div>
+                <div class="col-md-4">
+                    {{ form.vehicule.label_tag }}
+                    {{ form.vehicule }}
+                </div>
             </div>
-            <div class="col-md-4">
-                {{ form.vehicule.label_tag }}
-                {{ form.vehicule }}
+
+            <div class="row mb-3">
+                <div class="col-md-4">{{ form.date_survenance.label_tag }} {{ form.date_survenance }}</div>
+                <div class="col-md-4">{{ form.heure_approximative.label_tag }} {{form.heure_approximative }}</div>
+                <div class="col-md-4">{{form.nature.label_tag }} {{ form.nature }}</div>
             </div>
-        </div>
 
-        <div class="row mb-3">
-            <div class="col-md-4">{{ form.date_survenance.label_tag }} {{ form.date_survenance }}</div>
-            <div class="col-md-4">{{ form.heure_approximative.label_tag }} {{ form.heure_approximative }}</div>
-            <div class="col-md-4">{{ form.nature.label_tag }} {{ form.nature }}</div>
-        </div>
-
-        <div class="row mb-3">
-            <div class="col-md-3">{{ form.region.label_tag }} {{ form.region }}</div>
-            <div class="col-md-3">{{ form.ville.label_tag }} {{ form.ville }}</div>
-            <div class="col-md-3">{{ form.commune.label_tag }} {{ form.commune }}</div>
-            <div class="col-md-3">{{ form.quartier.label_tag }} {{ form.quartier }}</div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Circonstances</label>
-            {{ form.circonstances }}
-        </div>
-
-        <div class="mb-3" id="derogation-container" style="display: none;">
-            {{ form.lettre_derogation.label_tag }}
-            {{ form.lettre_derogation }}
-            <small class="text-muted">À fournir car le sinistre date de plus de 5 jours.</small>
-        </div>
-
-        <div class="mb-4" id="pieces-container">
-            <h5 class="mt-4">Pièces justificatives</h5>
-            <div class="card p-3 border-0 shadow-sm bg-light">
-                {{ form.fichiers_justificatifs }}
-                <small class="text-muted mt-2">Vous pouvez sélectionner plusieurs fichiers.</small>
+            <div class="row mb-3" id="victimes-container" style="display: none;">
+                <div class="col-md-6">{{ form.nombre_blesses.label_tag }} {{ form.nombre_blesses }}</div>
+                <div class="col-md-6">{{ form.nombre_morts.label_tag }} {{ form.nombre_morts }}</div>
             </div>
-        </div>
 
-        <div class="d-flex gap-3">
-            <button type="submit" class="btn btn-primary flex-grow-1">Soumettre la déclaration</button>
-            <a href="{% url 'annuler_declaration' %}" class="btn btn-outline-secondary flex-grow-1 text-center">Annuler</a>
-        </div>
-    </form>
-</div>
+            <div class="row mb-3">
+                <div class="col-md-3">{{ form.region.label_tag }} {{ form.region }}</div>
+                <div class="col-md-3">{{ form.commune.label_tag }} {{ form.commune }}</div>
+                <div class="col-md-3">{{ form.ville.label_tag }} {{ form.ville }}</div>
+                <div class="col-md-3">{{ form.quartier.label_tag }} {{ form.quartier }}</div>
+            </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const dateField = document.querySelector('input[name="date_survenance"]');
-    const derogationContainer = document.getElementById('derogation-container');
+            <div class="mb-3">
+                <label class="form-label">Circonstances</label>
+                {{ form.circonstances }}
+            </div>
 
-    function checkDate() {
-        if (!dateField.value) {
-            derogationContainer.style.display = 'none';
-            return;
-        }
+            <div class="mb-3 form-check">
+                {{ form.autre_vehicule_implique }}
+                <label class="form-check-label" for="id_autre_vehicule"> Un autre véhicule est-il impliqué ?</label>
+            </div>
 
-        const selectedDate = new Date(dateField.value);
-        const today = new Date();
+            <div id="vehicule-adverse-container" style="display: none;">
+                <div class="row mb-3">
+                    <div class="col-md-6">{{ form.vehicule_adverse_immatriculation.label_tag }} {{ form.vehicule_adverse_immatriculation }}</div>
+                    <div class="col-md-6">{{ form.vehicule_adverse_marque.label_tag }} {{ form.vehicule_adverse_marque }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">{{ form.vehicule_adverse_modele.label_tag }} {{ form.vehicule_adverse_modele }}</div>
+                    <div class="col-md-6">{{ form.vehicule_adverse_compagnie.label_tag }} {{ form.vehicule_adverse_compagnie }}</div>
+                </div>
+            </div>
 
-        const diffTime = today - selectedDate;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            <div class="mb-3" id="derogation-container" style="display: none;">
+                {{ form.lettre_derogation.label_tag }}
+                {{ form.lettre_derogation }}
+                <small class="text-muted">À fournir car le sinistre date de plus de 5 jours.</small>
+            </div>
 
-        if (diffDays > 5) {
-            derogationContainer.style.display = 'block';
-        } else {
-            derogationContainer.style.display = 'none';
-        }
-    }
+            <div class="mb-4" id="pieces-container">
+                <h5 class="mt-4">Pièces justificatives</h5>
+                <div class="card p-3 border-0 shadow-sm bg-light">
+                    {{ form.fichiers_justificatifs }}
+                    <small class="text-muted mt-2">Vous pouvez sélectionner plusieurs fichiers.</small>
+                </div>
+            </div>
 
-    if (dateField && dateField.value) {
-        checkDate();
-    }
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-primary flex-grow-1">Soumettre la déclaration</button>
+                <a href="{% url 'annuler_declaration' %}" class="btn btn-outline-secondary flex-grow-1 text-center">Annuler</a>
+            </div>
+        </form>
+    </div>
 
-    if (dateField) {
-        dateField.addEventListener('change', checkDate);
-    }
-});
-</script>
-{% endblock %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const dateField = document.querySelector('input[name="date_survenance"]');
+            const derogationContainer = document.getElementById('derogation-container');
+
+            function checkDate() {
+                if (!dateField.value) {
+                    derogationContainer.style.display = 'none';
+                    return;
+                }
+
+                const selectedDate = new Date(dateField.value);
+                const today = new Date();
+
+                const diffTime = today - selectedDate;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays > 5){
+                    derogationContainer.style.display = 'block';
+                }else{
+                    derogationContainer.style.display = 'none';
+                }
+            }
+
+            if (dateField && dateField.value){
+                checkDate();
+            }
+
+            if (dateField){
+                dateField.addEventListener('change', checkDate);
+            }
+
+            const autreVehiculeCheckBox = document.getElementById('id_autre_vehicule');
+            const vehiculeAdverseContainer = document.getElementById('vehicule-adverse-container');
+            function toggleVehiculeAdverse() {
+                vehiculeAdverseContainer.style.display = autreVehiculeCheckBox.checked ? 'block' : 'none';
+            }
+            if (autreVehiculeCheckBox) {
+                toggleVehiculeAdverse();
+                autreVehiculeCheckBox.addEventListener('change', toggleVehiculeAdverse);
+            }
+
+            const natureField = document.querySelector('select[name="nature"]');
+            const victimesContainer = document.getElementById('victimes-container');
+            function toggleVictimes() {
+                victimesContainer.style.display = ['C', 'X'].includes(natureField.value) ? 'flex' : 'none';
+            }
+            if (natureField) {
+                toggleVictimes();
+                natureField.addEventListener('change', toggleVictimes);
+            }
+        });
+    </script>
+{% endblock  %}

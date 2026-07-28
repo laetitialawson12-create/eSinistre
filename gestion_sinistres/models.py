@@ -107,7 +107,6 @@ class Sinistre(models.Model):
     numero_sinistre = models.CharField(max_length=20, unique=True)
     statut = models.CharField(max_length=30, choices=STATUS_CHOICES, default='SOUMIS')
     agent_traitant = models.CharField(max_length=100, blank=True, null=True)
-    numero_assure = models.CharField(max_length=50, unique=True, null=True, blank=True, verbose_name="Numéro d'assuré")
     
     montant_estime = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
@@ -148,6 +147,7 @@ class Sinistre(models.Model):
     vehicule_adverse_immatriculation = models.CharField(max_length=50, blank=True, null=True)
     vehicule_adverse_marque = models.CharField(max_length=50, blank=True, null=True)
     vehicule_adverse_modele = models.CharField(max_length=50, blank=True, null=True)
+    vehicule_adverse_compagnie = models.CharField(max_length=100, blank=True, null=True, verbose_name="Compagnie d'assurance (véhicule adverse)")
     nombre_blesses = models.PositiveSmallIntegerField(default=0)
     nombre_morts = models.PositiveSmallIntegerField(default=0)
 

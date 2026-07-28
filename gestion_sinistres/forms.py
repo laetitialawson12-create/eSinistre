@@ -56,6 +56,7 @@ class SinistreForm(forms.ModelForm):
             'vehicule_adverse_immatriculation',
             'vehicule_adverse_marque',
             'vehicule_adverse_modele',
+            'vehicule_adverse_compagnie',
             'nombre_blesses',
             'nombre_morts',
         ]
@@ -77,8 +78,9 @@ class SinistreForm(forms.ModelForm):
             'vehicule_adverse_immatriculation': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Immatriculation du véhicule adverse'}),
             'vehicule_adverse_marque': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Marque'}),
             'vehicule_adverse_modele': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Modèle'}),
+            'vehicule_adverse_compagnie': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Compagnie d'assurance du véhicule adverse"}),
             'nombre_blesses': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
-            'nombres_morts': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'nombre_morts': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
         }
 
     def clean_prix_retenu(self):

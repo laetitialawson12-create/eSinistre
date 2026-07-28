@@ -50,7 +50,41 @@
             {% endif %}
         </div>
     </div>
-    
+
+    <!-- Détails de la déclaration -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white fw-bold">📝 Détails de la déclaration</div>
+                <div class="card-body">
+                    <p><strong>N° Assuré :</strong> {{ sinistre.numero_assure|default:"—" }}</p>
+                    <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
+                    <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
+                    <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}
+                        {% if sinistre.heure_approximative %} à {{ sinistre.heure_approximative|time:"H:i" }}{% endif %}
+                    </p>
+                    <p><strong>Lieu :</strong>
+                        {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} ({{ sinistre.region }})
+                    </p>
+                    <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
+
+                    {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
+                    <p><strong>Victimes :</strong> {{ sinistre.nombre_blesses }} blessé(s), {{ sinistre.nombre_morts }} mort(s)</p>
+                    {% endif %}
+
+                    {% if sinistre.autre_vehicule_implique %}
+                    <p><strong>Véhicule adverse :</strong>
+                        {{ sinistre.vehicule_adverse_immatriculation|default:"—" }} —
+                        {{ sinistre.vehicule_adverse_marque|default:"—" }} {{ sinistre.vehicule_adverse_modele|default:"—" }}
+                        ({{ sinistre.vehicule_adverse_compagnie|default:"—" }})
+                    </p>
+                    {% endif %}
+
+                    <p class="mb-0"><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Corps principal : Chèques puis Historique à gauche, Documents et Messagerie à droite -->
     <div class="row">
@@ -175,4 +209,3 @@
     </div>
 </div>
 {% endblock %}
-```[cite: 3]

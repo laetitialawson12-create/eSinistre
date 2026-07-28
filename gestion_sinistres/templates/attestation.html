@@ -2,10 +2,10 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Attestation — {{ sinistre.numero_sinistre }}</title>
+    <title>Attestation de Déclaration de Sinistre — {{ sinistre.numero_sinistre }}</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Inclusion de jsPDF pur pour un téléchargement direct et net -->
+    <!-- Inclusion de jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body { 
@@ -15,32 +15,43 @@
         }
         .attestation-box { 
             width: 100%; 
-            max-width: 700px; 
+            max-width: 800px; 
             margin: auto; 
-            border: 2px solid #003366; 
-            padding: 40px; 
+            border: 1.5px solid #002D62; 
+            padding: 30px; 
             background: #ffffff; 
             box-sizing: border-box; 
         }
         .attestation-header { 
             text-align: center; 
-            color: #003366; 
-            border-bottom: 2px solid #003366; 
-            padding-bottom: 15px; 
-            margin-bottom: 25px; 
+            color: #002D62; 
+            border-bottom: 2px solid #002D62; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
         }
-        .table-details td {
-            padding: 8px 4px;
-            background-color: transparent !important;
-            vertical-align: top;
+        .section-box {
+            border: 1px solid #ced4da;
+            margin-bottom: 15px;
+            font-size: 13px;
         }
-        .label-col {
+        .section-header {
+            background-color: #f1f3f5;
             font-weight: bold;
+            padding: 5px 10px;
             color: #333;
-            width: 180px;
+            border-bottom: 1px solid #ced4da;
+            text-align: center;
         }
-        .value-col {
-            color: #555;
+        .table-custom td {
+            padding: 6px 10px;
+            background-color: transparent !important;
+            vertical-align: middle;
+            font-size: 13px;
+        }
+        .footer-legal {
+            font-size: 11px;
+            text-align: justify;
+            line-height: 1.4;
         }
         @media print { 
             .no-print { display: none; } 
@@ -49,49 +60,125 @@
 </head>
 <body>
     <div class="attestation-box" id="attestation-content">
+        <!-- En-tête -->
         <div class="attestation-header">
-            <h3 class="fw-bold m-0" style="color: #003366;">FIDÉLIA ASSURANCES</h3>
-            <p class="mb-0 text-muted" style="font-size: 14px;">Attestation de prise en charge de déclaration de sinistre</p>
+            <h4 class="fw-bold m-0" style="color: #002D62; letter-spacing: 1px;">FIDÉLIA ASSURANCES</h4>
+            <p class="text-muted mb-0" style="font-size: 12px;">Attestation de prise en charge de déclaration de sinistre</p>
         </div>
         
-        <p class="mb-4" style="text-align: justify; line-height: 1.5;">
-            Nous soussignés, Fidélia Assurances, attestons avoir enregistré et validé la déclaration de sinistre suivante :
-        </p>
-        
-        <table class="table table-borderless table-details mb-4">
-            <tr>
-                <td class="label-col">N° Sinistre :</td>
-                <td class="value-col">{{ sinistre.numero_sinistre }}</td>
-            </tr>
-            <tr>
-                <td class="label-col">Assuré :</td>
-                <td class="value-col">{{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</td>
-            </tr>
-            <tr>
-                <td class="label-col">Nature du sinistre :</td>
-                <td class="value-col">{{ sinistre.get_nature_display }}</td>
-            </tr>
-            <tr>
-                <td class="label-col">Date de survenance :</td>
-                <td class="value-col">{{ sinistre.date_survenance|date:"d/m/Y" }}</td>
-            </tr>
-            <tr>
-                <td class="label-col">Date de validation :</td>
-                <td class="value-col">{{ sinistre.date_attestation|date:"d/m/Y H:i" }}</td>
-            </tr>
-        </table>
-        
-        <p class="mt-4 mb-5" style="text-align: justify; line-height: 1.5;">
-            Cette attestation confirme la prise en charge du dossier par nos services et son passage en phase d'instruction active.
-        </p>
-        
-        <p class="text-end mb-4" style="font-weight: 500;">
-            Fait à Lomé, le {{ sinistre.date_attestation|date:"d/m/Y" }}
-        </p>
-        
-        <!-- Bouton de téléchargement direct -->
+        <h5 class="text-center fw-bold mb-4" style="text-decoration: underline; font-size: 16px; color: #002D62;">
+            ATTESTATION DE DÉCLARATION DE SINISTRE
+        </h5>
+
+        <!-- Références de la Déclaration -->
+        <div class="section-box">
+            <div class="section-header">Références de la Déclaration & de la Police</div>
+            <table class="table table-borderless table-custom mb-0">
+                <tr>
+                    <td class="fw-bold" style="width: 30%;">N° de Sinistre :</td>
+                    <td><span class="text-primary fw-bold">{{ sinistre.numero_sinistre }}</span></td>
+                    <td class="fw-bold" style="width: 30%;">N° de Police :</td>
+                    <td>{{ sinistre.assure.assure.numero_police|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Assuré :</td>
+                    <td>{{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Effet : </td>
+                    <td>{{ sinistre.quittance.date_debut|date:"d/m/Y"|default:"-" }}</td>
+                    <td class="fw-bold">Echéance : </td>
+                    <td>{{ sinistre.quittance.date_fin|date:"d/m/Y"|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Conducteur :</td>
+                    <td colspan="3">{{ sinistre.nom_conducteur }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Date de Survenance :</td>
+                    <td>{{ sinistre.date_survenance|date:"d/m/Y" }} à {{ sinistre.heure_approximative|time:"H:i" }}</td>
+                    <td class="fw-bold">Date de Déclaration :</td>
+                    <td>{{ sinistre.date_attestation|date:"d/m/Y" }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Localisation & Véhicule Assuré -->
+        <div class="section-box">
+            <div class="section-header">Localisation & Véhicule Assuré</div>
+            <table class="table table-borderless table-custom mb-0">
+                <tr>
+                    <td class="fw-bold" style="width: 30%;">Véhicule(s) assuré(s) :</td>
+                    <td colspan="3"><strong>{{ sinistre.vehicule }}</strong></td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Nature du sinistre :</td>
+                    <td colspan="3">{{ sinistre.get_nature_display }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Localisation :</td>
+                    <td colspan="3">Quartier {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} (Région {{ sinistre.region }})</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Victimes si Corporel -->
+        {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
+        <div class="section-box">
+            <div class="section-header">Bilan Corporel (Victimes)</div>
+            <table class="table table-borderless table-custom mb-0">
+                <tr>
+                    <td class="fw-bold" style="width: 30%;">Nombre de blessés :</td>
+                    <td>{{ sinistre.nombre_blesses|default:"0" }}</td>
+                    <td class="fw-bold" style="width: 30%;">Nombre de morts :</td>
+                    <td>{{ sinistre.nombre_morts|default:"0" }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Véhicule Tiers / Adverse -->
+        {% if sinistre.autre_vehicule_implique %}
+        <div class="section-box">
+            <div class="section-header">Véhicule Adverse / Tiers (Contre)</div>
+            <table class="table table-borderless table-custom mb-0">
+                <tr>
+                    <td class="fw-bold" style="width: 30%;">Immatriculation :</td>
+                    <td>{{ sinistre.vehicule_adverse_immatriculation|default:"—" }}</td>
+                    <td class="fw-bold" style="width: 30%;">Compagnie d'assurance :</td>
+                    <td>{{ sinistre.vehicule_adverse_compagnie|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold">Marque :</td>
+                    <td>{{ sinistre.vehicule_adverse_marque|default:"—" }}</td>
+                    <td class="fw-bold">Modèle :</td>
+                    <td>{{ sinistre.vehicule_adverse_modele|default:"—" }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+
+        <!-- Circonstances -->
+        <div class="section-box p-3">
+            <div class="fw-bold mb-1">Circonstances déclarées :</div>
+            <p class="mb-0 text-secondary" style="font-size: 12.5px;">{{ sinistre.circonstances }}</p>
+        </div>
+
+        <!-- Mentions légales -->
+        <div class="footer-legal text-muted mb-4">
+            <p class="mb-2"><em>Cette attestation ne présente qu'un caractère administratif et ne constitue en rien une quelconque reconnaissance de responsabilité totale ou partielle de la compagnie <strong>FIDELIA ASSURANCES SA</strong>.</em></p>
+            <p class="mb-0"><em>Cette prise de déclaration de sinistre vaut demande de rapport d'accident avec croquis et du procès verbal de constat.</em></p>
+        </div>
+
+        <!-- Signature -->
+        <div class="text-end mb-4 fw-bold" style="font-size: 13px;">
+            Fait à LOME, le {{ sinistre.date_attestation|date:"d/m/Y" }}
+            <div class="mt-4 text-muted" style="font-size: 12px; text-decoration: underline;">Pour la Compagnie</div>
+        </div>
+
+        <!-- Bouton Téléchargement PDF -->
         <div class="no-print text-center mt-4">
-            <button onclick="telechargerPDFDirect()" class="btn btn-primary px-4 py-2">📥 Télécharger l'attestation en PDF</button>
+            <button onclick="telechargerPDFDirect()" class="btn btn-primary px-4 py-2">📥 Télécharger l'attestation officielle (PDF)</button>
         </div>
     </div>
 
@@ -104,74 +191,105 @@
                 format: 'a4'
             });
 
-            // Dimensions de la page A4 : 210 x 297 mm
-            // Cadre extérieur de l'attestation
-            doc.setDrawColor(0, 51, 102); // #003366 (Bleu Fidélia)
-            doc.setLineWidth(0.5);
-            doc.rect(15, 15, 180, 267);
+            doc.setDrawColor(0, 45, 98);
+            doc.setLineWidth(0.4);
+            doc.rect(10, 10, 190, 277);
 
-            // En-tête
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(18);
-            doc.setTextColor(0, 51, 102);
-            doc.text("FIDÉLIA ASSURANCES", 105, 30, { align: "center" });
+            doc.setFontSize(14);
+            doc.setTextColor(0, 45, 98);
+            doc.text("FIDÉLIA ASSURANCES", 105, 18, { align: "center" });
 
             doc.setFont("helvetica", "normal");
-            doc.setFontSize(10);
+            doc.setFontSize(8);
             doc.setTextColor(100, 100, 100);
-            doc.text("Attestation de prise en charge de déclaration de sinistre", 105, 36, { align: "center" });
+            doc.text("Attestation de prise en charge de déclaration de sinistre", 105, 23, { align: "center" });
 
-            // Ligne de séparation de l'en-tête
-            doc.setDrawColor(0, 51, 102);
-            doc.line(25, 42, 185, 42);
+            doc.setDrawColor(0, 45, 98);
+            doc.line(20, 26, 190, 26);
 
-            // Texte d'introduction
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(11);
-            doc.setTextColor(50, 50, 50);
-            doc.text("Nous soussignés, Fidélia Assurances, attestons avoir enregistré et validé la déclaration de sinistre suivante :", 25, 55, { maxWidth: 160 });
-
-            // Détails du sinistre (Champs)
-            let startY = 75;
-            const lineHeight = 10;
-            const data = [
-                { label: "N° Sinistre :", value: "{{ sinistre.numero_sinistre }}" },
-                { label: "Assuré :", value: "{{ sinistre.assure.get_full_name|default:sinistre.assure.username }}" },
-                { label: "Nature du sinistre :", value: "{{ sinistre.get_nature_display }}" },
-                { label: "Date de survenance :", value: "{{ sinistre.date_survenance|date:'d/m/Y' }}" },
-                { label: "Date de validation :", value: "{{ sinistre.date_attestation|date:'d/m/Y H:i' }}" }
-            ];
-
-            data.forEach(function(item) {
-                doc.setFont("helvetica", "bold");
-                doc.text(item.label, 25, startY);
-                doc.setFont("helvetica", "normal");
-                doc.text(item.value, 75, startY);
-                startY += lineHeight;
-            });
-
-            // Paragraphe de fin
-            startY += 10;
-            doc.text("Cette attestation confirme la prise en charge du dossier par nos services et son passage en phase d'instruction active.", 25, startY, { maxWidth: 160 });
-
-            // Date et signature
-            startY += 25;
             doc.setFont("helvetica", "bold");
-            doc.text("Fait à Lomé, le {{ sinistre.date_attestation|date:'d/m/Y' }}", 185, startY, { align: "right" });
+            doc.setFontSize(11);
+            doc.setTextColor(0, 45, 98);
+            doc.text("ATTESTATION DE DÉCLARATION DE SINISTRE", 105, 33, { align: "center" });
 
-            // Téléchargement direct du fichier PDF
+            let startY = 42;
+            const lineHeight = 6;
+
+            function addLine(label, value) {
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(50, 50, 50);
+                doc.text(label, 18, startY);
+                doc.setFont("helvetica", "normal");
+                doc.text(String(value || "—"), 65, startY, { maxWidth: 125 });
+                startY += lineHeight;
+            }
+
+            function addSection(title) {
+                startY += 4;
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.setTextColor(0, 45, 98);
+                doc.text(title, 18, startY);
+                startY += 5;
+            }
+
+            addSection("REFERENCES DE LA DECLARATION");
+            addLine("N° de Sinistre :", "{{ sinistre.numero_sinistre }}");
+            addLine("Effet :", "{{ sinistre.quittance.date_debut|date:'d/m/Y'|default:'-'}}");
+            addLine("Échéance :", "{{ sinistre.quittance.date_fin|date:'d/m/Y'|default:'-'}}");
+            addLine("Assuré :", "{{ sinistre.assure.get_full_name|default:sinistre.assure.username|escapejs }}");
+            addLine("Conducteur :", "{{ sinistre.nom_conducteur }}");
+            addLine("Date de Survenance :", "{{ sinistre.date_survenance|date:'d/m/Y' }} à {{ sinistre.heure_approximative|time:'H:i' }}");
+
+            addSection("LOCALISATION & VEHICULE ASSURE");
+            addLine("Véhicule(s) assuré(s) :", "{{ sinistre.vehicule }}");
+            addLine("Nature du sinistre :", "{{ sinistre.get_nature_display }}");
+            addLine("Localisation :", "Quartier {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }}");
+
+            {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
+            addSection("BILAN CORPOREL (VICTIMES)");
+            addLine("Nombre de blessés :", "{{ sinistre.nombre_blesses|default:'0' }}");
+            addLine("Nombre de morts :", "{{ sinistre.nombre_morts|default:'0' }}");
+            {% endif %}
+
+            {% if sinistre.autre_vehicule_implique %}
+            addSection("VEHICULE ADVERSE / TIERS (CONTRE)");
+            addLine("Immatriculation :", "{{ sinistre.vehicule_adverse_immatriculation|default:'—' }}");
+            addLine("Marque / Modèle :", "{{ sinistre.vehicule_adverse_marque|default:'—' }} {{ sinistre.vehicule_adverse_modele }}");
+            addLine("Compagnie d'assurance :", "{{ sinistre.vehicule_adverse_compagnie|default:'—' }}");
+            {% endif %}
+
+            addSection("CIRCONSTANCES");
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(80, 80, 80);
+            const circText = "{{ sinistre.circonstances|escapejs }}";
+            const splitCirc = doc.splitTextToSize(circText, 170);
+            doc.text(splitCirc, 18, startY);
+            startY += (splitCirc.length * 5) + 6;
+
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(7.5);
+            doc.text("Cette attestation ne présente qu'un caractère administratif et ne constitue en rien une quelconque", 18, startY);
+            startY += 4;
+            doc.text("reconnaissance de responsabilité totale ou partielle de la compagnie FIDELIA ASSURANCES SA.", 18, startY);
+            startY += 6;
+            doc.text("Cette prise de déclaration de sinistre vaut demande de rapport d'accident avec croquis et du procès verbal de constat.", 18, startY);
+
+            startY += 14;
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(0, 45, 98);
+            doc.text("Fait à LOME, le {{ sinistre.date_attestation|date:'d/m/Y' }}", 190, startY, { align: "right" });
+            startY += 4;
+            doc.setFont("helvetica", "italic");
+            doc.setFontSize(8);
+            doc.text("Pour la Compagnie", 190, startY, { align: "right" });
+
             doc.save('Attestation_Sinistre_{{ sinistre.numero_sinistre }}.pdf');
         }
-
-        // Déclenchement automatique optionnel
-        </script>
-
-        {% if download_pdf %}
-        <script>
-            window.addEventListener('load', function() {
-                setTimeout(telechargerPDFDirect, 500);
-            });
-        </script>
-        {% endif %}
+    </script>
 </body>
 </html>
