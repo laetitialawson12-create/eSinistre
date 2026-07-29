@@ -2,6 +2,12 @@
 {% block title %}Dossier {{ sinistre.numero_sinistre }}{% endblock %}
 
 {% block content %}
+<a href="{% url 'dossiers_en_cours' %}" class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
+   style="border: 1px solid #003366; color: #003366; font-weight: 500; border-radius: 6px; padding: 6px 14px; transition: all 0.15s;"
+   onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
+   onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
+    <i class="bi bi-arrow-left"></i> Retour
+</a>
 <h4 class="mb-3">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
 
 <!-- Affichage des messages de notification / erreurs de validation -->

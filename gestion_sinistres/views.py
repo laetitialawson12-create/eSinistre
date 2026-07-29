@@ -1728,10 +1728,10 @@ def marquer_cheque_retire(request, paiement_id):
             )
             messages.success(request, f"Chèque {paiement.numero_cheque} marqué comme retiré.")
             return redirect('detail_sinistre_agent', sinistre_id=paiement.sinistre.pk)
-        else:
-            form = RetraitChequeForm()
+    else:
+         form = RetraitChequeForm()
 
-        return render(request, 'marquer_cheque_retire.html', {'form': form, 'paiement': paiement})
+    return render(request, 'marquer_cheque_retire.html', {'form': form, 'paiement': paiement})
 
 
 def mot_de_passe_oublie_etape1(request):

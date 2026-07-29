@@ -19,7 +19,12 @@ def jours_ouvres_entre(date_debut, date_fin):
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
 
+    def value_from_datadict(self, data, files, name):
+        if hasattr(files, 'getlist'):
+            return files.getlist(name)
+        return files.get(name)
 
+    
 class MultipleFileField(forms.FileField):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("widget", MultipleFileInput(attrs={'class': 'form-control', 'multiple': True}))
@@ -59,6 +64,7 @@ class SinistreForm(forms.ModelForm):
             'vehicule_adverse_compagnie',
             'nombre_blesses',
             'nombre_morts',
+            'lettre_derogation',
         ]
         widgets = {
             'vehicule': forms.Select(attrs={'class': 'form-control'}),
@@ -81,6 +87,7 @@ class SinistreForm(forms.ModelForm):
             'vehicule_adverse_compagnie': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Compagnie d'assurance du véhicule adverse"}),
             'nombre_blesses': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'nombre_morts': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'lettre_derogation': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
     def clean_prix_retenu(self):

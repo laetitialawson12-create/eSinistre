@@ -2,6 +2,12 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
+    <a href="{% url 'suivi_sinistres' %}" class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
+   style="border: 1px solid #003366; color: #003366; font-weight: 500; border-radius: 6px; padding: 6px 14px; transition: all 0.15s;"
+   onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
+   onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
+    <i class="bi bi-arrow-left"></i> Retour
+</a>
     <!-- Titre principal -->
     <h3 class="mb-4">📋 Suivi du sinistre : {{ sinistre.numero_sinistre }}</h3>
 
