@@ -218,10 +218,12 @@ def fournir_complements(request, sinistre_id):
 
     if request.method == 'POST':
         sinistre.precision = request.POST.get('precisions')
-        if request.FILES.get('document'):
-            sinistre.lettre_derogation = request.FILES['document']
         sinistre.statut = 'SOUMIS'
         sinistre.save()
+
+        fichiers = request.FILES.getlist('documents')
+        for f in fichiers:
+            PieceJointe.objects.create(sinistre=sinistre, fichier=f)
 
         messages.success(request, f"Vos compléments pour le dossier {sinistre.numero_sinistre} ont été transmis.")
         return redirect('suivi_sinistres')
@@ -606,6 +608,40 @@ def dossiers_clotures(request):
         return redirect('accueil_assure')
     sinistres = Sinistre.objects.filter(statut__in=['CLOTURE', 'SANS_SUITE']).order_by('-date_declaration')
     return render(request, 'dossiers_clotures.html', {'agent': agent, 'sinistres': sinistres})
+
+
+@login_required
+def tous_sinistres_agent(request):
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
+        return redirect('accueil_assure')
+
+    sinistres = Sinistre.objects.select_related('assure', 'vehicule', 'region').order_by('-date_declaration')
+
+    statut = request.GET.get('statut', '')
+    nature = request.GET.get('nature', '')
+    recherche = request.GET.get('q', '').strip()
+
+    if statut:
+        sinistres = sinistres.filter(statut=statut)
+    if nature:
+        sinistres = sinistres.filter(nature=nature)
+    if recherche:
+        sinistres = sinistres.filter(
+            Q(numero_sinistre__icontains=recherche) | Q(n_police__icontains=recherche)
+        )
+
+    context = {
+        'agent' : agent,
+        'sinistres' : sinistres,
+        'statut_choices' : Sinistre.STATUS_CHOICES,
+        'nature_choices' : Sinistre.NATURE_CHOICES,
+        'statut_selectionne' : statut,
+        'nature_selectionnee' : nature,
+        'recherche' : recherche,
+    }
+
+    return render(request, 'tous_sinistres_agent.html', context)
 
 
 @login_required
