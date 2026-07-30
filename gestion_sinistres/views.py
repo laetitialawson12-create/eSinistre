@@ -402,12 +402,20 @@ def detail_sinistre_agent(request, sinistre_id):
 
             nouveau_prix = request.POST.get('prix_retenu')
             if nouveau_prix:
+                prix_existant = sinistre.prix_retenu
+
                 sinistre.prix_retenu = nouveau_prix
                 sinistre.save()
+
+                if prix_existant is None:
+                    commentaire = f"Prix retenu à la saisie : {nouveau_prix} FCFA)."
+                else:
+                    commentaire = f"Prix modifié : {nouveau_prix} FCFA (ancien prix : {prix_existant} FCFA)."
+
                 HistoriqueSinistre.objects.create(
                     sinistre=sinistre,
                     statut=sinistre.statut,
-                    commentaires=f"Mise à jour du prix retenu : {nouveau_prix} FCFA.",
+                    commentaires=commentaire,
                     auteur=request.user,
                 )
                 messages.success(request, "Le prix retenu a été mis à jour avec succès.")

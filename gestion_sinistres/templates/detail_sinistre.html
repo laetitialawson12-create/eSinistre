@@ -187,19 +187,18 @@
                 <div class="card-header bg-white fw-bold">💬 Messagerie</div>
                 <div class="p-3" style="height: 350px; overflow-y: auto; background: #f8f9fa;">
                     {% for msg in sinistre.messages.all %}
-                        {% if msg.auteur == request.user %}
-                            <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
-                                <div class="p-2 px-3 rounded shadow-sm d-inline-block 
-                            {% if msg.auteur == request.user %}bg-primary text-white{% else %}bg-white border{% endif %}">
-                            {{ msg.contenu }}
+                        <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
+                            <div class="p-2 px-3 rounded shadow-sm d-inline-block 
+                                {% if msg.auteur == request.user %}bg-primary text-white{% else %}bg-white border{% endif %}">
+                                {{ msg.contenu }}
+                            </div>
+                            <small class="d-block text-muted mt-1" style="font-size: 0.7rem;">
+                                {{ msg.date_envoi|date:"d/m/Y H:i" }}
+                            </small>
                         </div>
-                        <small class="d-block text-muted mt-1" style="font-size: 0.7rem;">
-                            {{ msg.date_envoi|date:"H:i" }}
-                        </small>
-                    </div>
-                    {% empty %}
-                    <p class="text-muted text-center mt-4">Aucun message pour le moment.</p>
-                    {% endfor %}
+                        {% empty %}
+                            <p class="text-muted text-center mt-4">Aucun message pour le moment.</p>
+                        {% endfor %}
                 </div>
                 <!-- Zone de saisie -->
                 <div class="card-footer bg-white border-top-0">

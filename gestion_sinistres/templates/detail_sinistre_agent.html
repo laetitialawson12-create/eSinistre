@@ -270,10 +270,13 @@
     <div class="card-header bg-white fw-bold">💬 Messages</div>
     <div class="card-body">
         {% for m in discussion %}
-            <div class="mb-2 p-2 rounded bg-light">
-                <strong>{{ m.auteur.get_full_name|default:m.auteur.username }}</strong> 
-                <small class="text-muted">({{ m.date_envoi|date:"d/m/Y H:i" }})</small> : 
-                <span>{{ m.contenu }}</span>
+            <div class="mb-2 {% if m.auteur == request.user %}text-end{% endif %}">
+                <div class="d-inline-block p-2 px-3 rounded shadow-sm
+                    {% if m.auteur == request.user %}bg-primary text-white{% else %}bg--white border{% endif %}">
+                    <strong class="d-block" style="font-size:0.75rem;">{{ m.auteur.get_full_name|default:m.auteur.username }}</strong>
+                    {{ m.contenu }}
+                </div>
+                <small class="d-block text-muted mt-1" style="font-size:0.7rem;">{{ m.date_envoi|date:"d/m/Y H:i" }}</small>
             </div>
         {% empty %}
             <p class="text-muted">Aucun message pour le moment.</p>
