@@ -101,12 +101,12 @@
                                    step="0.01" 
                                    min="0" 
                                    {% if sinistre.quittance and sinistre.quittance.prime %}max="{{ sinistre.quittance.prime }}"{% endif %}
-                                   value="{{ sinistre.prix_retenu|default:'' }}" 
+                                   value="{{ sinistre.prix_retenu|default_if_none:'' }}" 
                                    style="width: 200px;" 
                                    required>
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm">
-                            {% if sinistre.prix_retenu %}<i class="bi bi-pencil-square me-1"></i> Mettre à jour le prix{% else %}<i class="bi bi-save me-1"></i> Enregistrer le prix{% endif %}
+                            {% if sinistre.prix_retenu is not None %}<i class="bi bi-pencil-square me-1"></i> Mettre à jour le prix{% else %}<i class="bi bi-save me-1"></i> Enregistrer le prix{% endif %}
                         </button>
                     </form>
                 </div>
@@ -143,7 +143,7 @@
         {% endif %}
 
         <!-- Redirection vers la page dédiée d'émission de chèque (Conditionnée par la validation du chef) -->
-        {% if sinistre.statut == 'EN_COURS' and sinistre.prix_retenu and sinistre.indemnisation_validee and sinistre.reste_a_payer > 0 %}
+        {% if sinistre.prix_retenu is not None and sinistre.indemnisation_validee and sinistre.reste_a_payer > 0 %}
             <div class="mt-3">
                 <a href="{% url 'emettre_cheque' sinistre.id %}" class="btn btn-success btn-sm">
                     <i class="bi bi-cash-stack me-1"></i> Émettre un chèque (Reste : {{ sinistre.reste_a_payer }} FCFA)

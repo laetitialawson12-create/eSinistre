@@ -158,9 +158,9 @@ class Sinistre(models.Model):
     @property
     def reste_a_payer(self):
         """Calcule le montant restant à verser par rapport au prix retenu"""
-        if not self.prix_retenu:
+        if self.prix_retenu is None:
             return 0
-        return self.prix_retenu - self.total_paye
+        return self.prix_retenu - self.montant_deja_paye
 
     def clean(self):
         super().clean()
