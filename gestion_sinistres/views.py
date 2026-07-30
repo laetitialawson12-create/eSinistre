@@ -14,6 +14,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
+from django.db import IntegrityError
 from django.urls import reverse
 from decimal import Decimal, InvalidOperation
 from .forms import (
@@ -186,13 +187,19 @@ def detail_sinistre(request, sinistre_id):
         messages.success(request, "Message envoyé avec succès.")
         return redirect('detail_sinistre', sinistre_id=sinistre.id)
 
-    # Filtrage de l'historique pour exclure les lignes contenant des prix ou des indemnisations
-    historique_filetre = list(
+   
+    historique_brut = list(
         sinistre.historique.exclude(commentaires__icontains="Prix").order_by('date_changement')
     )
-    for h in historique_filetre:
-        if 'idemnisation' in h.commentaires.lower():
-            h.commentaires = "Idenmination saisie et validé par le chef de département."
+
+    historique_filetre = []
+    for h in historique_brut:
+        if 'indemnisation' in h.commentaires.lower():
+            if sinistre.indemnisation_validee:
+                h.commentaires = "Idenmination saisie et validé par le chef de département."
+                historique_filetre.append(h)
+        else:
+            historique_filetre.append(h)
 
     context = {
         'sinistre': sinistre,
@@ -467,6 +474,14 @@ def lier_quittance_agent(request, sinistre_id):
 @login_required
 def marquer_conforme(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    if not sinistre.quittance:
+        messages.error(
+            request,
+            "Impossible d'envoyer le dossier au Chef: aucune quittance n'est liée à ce sinistre."
+            "Veuillez d'abord lier une quittance."
+        )
+        return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
     
     # On vérifie si le dossier revient d'une correction de prix
     if sinistre.statut == 'A_CORRIGER':
@@ -1705,9 +1720,18 @@ def emettre_cheque(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, pk=sinistre_id)
     
     if request.method == 'POST':
-        numero_cheque = request.POST.get('numero_cheque')
+        numero_cheque = request.POST.get('numero_cheque', '').strip()
         banque_cheque = request.POST.get('banque_cheque')
         montant = request.POST.get('montant')
+
+        # Le numéro vient du chèque papier déjà remis à l'agent : on vérifie juste l'unicité
+        if Paiement.objects.filter(numero_cheque=numero_cheque).exists():
+            messages.error(
+                request,
+                f"Le numéro de chèque « {numero_cheque} » est déjà enregistré dans le système. "
+                "Vérifiez le numéro inscrit sur le chèque."
+            )
+            return redirect('emettre_cheque', sinistre_id=sinistre.id)
         beneficiaire_nom = request.POST.get('beneficiaire_nom')
         beneficiaire_prenoms = request.POST.get('beneficiaire_prenoms')
         beneficiaire_telephone = request.POST.get('beneficiaire_telephone')
@@ -1729,17 +1753,24 @@ def emettre_cheque(request, sinistre_id):
             return redirect('emettre_cheque', sinistre_id=sinistre.id)
 
         # 1. Enregistrement du paiement / chèque avec son statut initial
-        paiement = Paiement.objects.create(
-            sinistre=sinistre,
-            numero_cheque=numero_cheque,
-            banque_cheque=banque_cheque,
-            montant=montant_decimal,
-            beneficiaire_nom=beneficiaire_nom,
-            beneficiaire_prenoms=beneficiaire_prenoms,
-            beneficiaire_telephone=beneficiaire_telephone,
-            date_emission=date_emission,
-            statut='EMIS'  # ← Statut initial ajouté ici
-        )
+        try:
+            paiement = Paiement.objects.create(
+                sinistre=sinistre,
+                numero_cheque=numero_cheque,
+                banque_cheque=banque_cheque,
+                montant=montant_decimal,
+                beneficiaire_nom=beneficiaire_nom,
+                beneficiaire_prenoms=beneficiaire_prenoms,
+                beneficiaire_telephone=beneficiaire_telephone,
+                date_emission=date_emission,
+                statut='EMIS'
+            )
+        except IntegrityError:
+            messages.error(
+                request,
+                f"Le numéro de chèque « {numero_cheque} » est déjà enregistré (doublon)."
+            )
+            return redirect('emettre_cheque', sinistre_id=sinistre.id)
         
         # 2. Mise à jour éventuelle du statut du sinistre
         sinistre.statut = 'CHEQUE_EMIS'

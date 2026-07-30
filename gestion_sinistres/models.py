@@ -205,7 +205,7 @@ class Paiement(models.Model):
     ]
 
     sinistre = models.ForeignKey(Sinistre, on_delete=models.CASCADE, related_name='paiements')
-    numero_cheque = models.CharField(max_length=100)
+    numero_cheque = models.CharField(max_length=100, unique=True)
     banque_cheque = models.CharField(max_length=100)
     montant = models.DecimalField(max_digits=12, decimal_places=2)
     beneficiaire_nom = models.CharField(max_length=100)
