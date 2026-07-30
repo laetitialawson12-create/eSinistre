@@ -187,11 +187,12 @@ def detail_sinistre(request, sinistre_id):
         return redirect('detail_sinistre', sinistre_id=sinistre.id)
 
     # Filtrage de l'historique pour exclure les lignes contenant des prix ou des indemnisations
-    historique_filetre = sinistre.historique.exclude(
-        commentaires__icontains="Prix"
-    ).exclude(
-        commentaires__icontains="Indemnisation"
-    ).order_by('date_changement')
+    historique_filetre = list(
+        sinistre.historique.exclude(commentaires__icontains="Prix").order_by('date_changement')
+    )
+    for h in historique_filetre:
+        if 'idemnisation' in h.commentaires.lower():
+            h.commentaires = "Idenmination saisie et validé par le chef de département."
 
     context = {
         'sinistre': sinistre,
@@ -408,7 +409,7 @@ def detail_sinistre_agent(request, sinistre_id):
                 sinistre.save()
 
                 if prix_existant is None:
-                    commentaire = f"Prix retenu à la saisie : {nouveau_prix} FCFA)."
+                    commentaire = f"Prix retenu : {nouveau_prix} FCFA."
                 else:
                     commentaire = f"Prix modifié : {nouveau_prix} FCFA (ancien prix : {prix_existant} FCFA)."
 
@@ -553,21 +554,26 @@ def saisir_prix_retenu(request, sinistre_id):
     if request.method == 'POST':
         nouveau_prix = request.POST.get('prix_retenu')
         if nouveau_prix:
+            prix_existant = sinistre.prix_retenu
+
             sinistre.prix_retenu = nouveau_prix
             sinistre.save()
 
-            # Enregistrement dans l'historique du dossier
+            if prix_existant is None:
+                commentaire = f"Prix retenu à la saisie : {nouveau_prix} FCFA."
+            else:
+                commentaire = f"Prix modifié : {nouveau_prix} FCFA (ancien prix : {prix_existant} FCFA)."
+
             HistoriqueSinistre.objects.create(
                 sinistre=sinistre,
                 statut=sinistre.statut,
-                commentaires=f"Mise à jour du prix retenu à {nouveau_prix} FCFA.",
+                commentaires=commentaire,
                 auteur=request.user,
             )
-            messages.success(request, "Le prix retenu a été enregistré avec succès.")
+            messages.success(request, "Le prix retenu a été enrégistré avec succès.")
+        return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
 
-    return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
-
-
+    
 @login_required
 def saisir_indemnisation(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
@@ -812,19 +818,22 @@ def renvoyer_a_agent(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['ATTENTE_VALIDATION', 'EN_COURS'])
 
     if request.method == 'POST':
-        # Récupère le motif depuis le champ 'commentaires' ou 'motif'
-        commentaires = request.POST.get('commentaires') or request.POST.get('motif') or "Demande de révision."
+        commentaires = request.POST.get('commentaires') or request.POST.get('motif') or "Demander la révision."
+        statut_precedent = sinistre.statut
 
-        # Passages des statuts
         sinistre.statut = 'A_CORRIGER'
         sinistre.indemnisation_validee = False
         sinistre.save()
 
-        # Inscription dans l'historique
+        if statut_precedent == 'EN_COURS':
+            commentaire_historique = f"Prix à réviser - {commentaires}"
+        else:
+            commentaire_historique = commentaires
+
         HistoriqueSinistre.objects.create(
             sinistre=sinistre,
             statut='A_CORRIGER',
-            commentaires=commentaires,
+            commentaires=commentaire_historique,
             auteur=request.user,
         )
 

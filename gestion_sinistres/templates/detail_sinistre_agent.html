@@ -272,7 +272,7 @@
         {% for m in discussion %}
             <div class="mb-2 {% if m.auteur == request.user %}text-end{% endif %}">
                 <div class="d-inline-block p-2 px-3 rounded shadow-sm
-                    {% if m.auteur == request.user %}bg-primary text-white{% else %}bg--white border{% endif %}">
+                    {% if m.auteur == request.user %}bg-primary text-white{% else %}bg-white border{% endif %}">
                     <strong class="d-block" style="font-size:0.75rem;">{{ m.auteur.get_full_name|default:m.auteur.username }}</strong>
                     {{ m.contenu }}
                 </div>
