@@ -12,7 +12,7 @@
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding: 20px; 
+            padding: 10px; 
             background-color: #f8f9fa; 
         }
         .attestation-box { 
@@ -20,7 +20,7 @@
             max-width: 800px; 
             margin: auto; 
             border: 1.5px solid #002D62; 
-            padding: 30px; 
+            padding: 20px 25px; 
             background: #ffffff; 
             box-sizing: border-box; 
         }
@@ -28,39 +28,40 @@
             text-align: center; 
             color: #002D62; 
             border-bottom: 2px solid #002D62; 
-            padding-bottom: 10px; 
-            margin-bottom: 20px; 
+            padding-bottom: 8px; 
+            margin-bottom: 15px; 
         }
         .section-box {
             border: 1px solid #ced4da;
-            margin-bottom: 15px;
-            font-size: 13px;
+            margin-bottom: 10px;
+            font-size: 12px;
         }
         .section-header {
             background-color: #f1f3f5;
             font-weight: bold;
-            padding: 5px 10px;
+            padding: 4px 8px;
             color: #333;
             border-bottom: 1px solid #ced4da;
             text-align: center;
         }
         .table-custom td {
-            padding: 6px 10px;
+            padding: 4px 8px;
             background-color: transparent !important;
             vertical-align: middle;
-            font-size: 13px;
+            font-size: 12px;
         }
         .footer-legal {
-            font-size: 11px;
+            font-size: 10px;
             text-align: justify;
-            line-height: 1.4;
+            line-height: 1.3;
+            margin-bottom: 10px !important;
         }
         @media print { 
             .no-print { display: none; } 
 
             @page {
                 size: A4;
-                margin: 8mm;
+                margin: 5mm;
             }
 
             body {
@@ -71,30 +72,7 @@
             .attestation-box {
                 max-width: 100%;
                 border: 1px solid #002D62;
-                padding: 12px;
-            }
-
-            .section-box {
-                font-size: 11px;
-                margin-bottom: 8px;
-                page-break-inside: avoid;
-            }
-
-            .section-header {
-                padding: 3px 8px;
-            }
-
-            .table-custom td {
-                padding: 3px 8px;
-                font-size: 11px;
-            }
-
-            .footer-legal {
-                font-size: 9px;
-            }
-
-            .attestation-header img {
-                height: 40px !important;
+                padding: 10px 15px;
             }
         }
     </style>
@@ -102,28 +80,26 @@
 <body>
     <div class="attestation-box" id="attestation-content">
         <!-- En-tête -->
-            <div class="d-flex align-items-center gap-2" style="border-bottom: 2px solid #002D62; padding-bottom: 10px; margin-bottom: 20px;">
-                <img src="{% static 'Logo Fidelia.jpeg' %}" alt="Logo Fidélia Assurances" style="height: 50px; width: auto;">
-                <div>
-                    <div class="fw-bold" style="color: #002D62; font-size: 22px; line-height: 1.1; font-style: italic;">Fidélia</div>
-                    <div class="fw-bold" style="color: #002D62; font-size: 22px; line-height: 1.1; font-style: italic;">assurances</div>
-                </div>
+        <div class="d-flex align-items-center gap-2" style="border-bottom: 2px solid #002D62; padding-bottom: 8px; margin-bottom: 15px;">
+            <img src="{% static 'Logo Fidelia.jpeg' %}" alt="Logo Fidélia Assurances" style="height: 40px; width: auto;">
+            <div>
+                <div class="fw-bold" style="color: #002D62; font-size: 18px; line-height: 1.1; font-style: italic;">Fidélia</div>
+                <div class="fw-bold" style="color: #002D62; font-size: 18px; line-height: 1.1; font-style: italic;">assurances</div>
             </div>
+        </div>
         
-        
-        <h5 class="text-center fw-bold mb-4" style="text-decoration: underline; font-size: 16px; color: #002D62;">
+        <h5 class="text-center fw-bold mb-3" style="text-decoration: underline; font-size: 15px; color: #002D62;">
             ATTESTATION DE DÉCLARATION DE SINISTRE
         </h5>
-        
 
         <!-- Références de la Déclaration -->
         <div class="section-box">
             <div class="section-header">Références de la Déclaration & de la Police</div>
             <table class="table table-borderless table-custom mb-0">
                 <tr>
-                    <td class="fw-bold" style="width: 30%;">N° de Sinistre :</td>
+                    <td class="fw-bold" style="width: 28%;">N° de Sinistre :</td>
                     <td><span class="text-primary fw-bold">{{ sinistre.numero_sinistre }}</span></td>
-                    <td class="fw-bold" style="width: 30%;">N° de Police :</td>
+                    <td class="fw-bold" style="width: 28%;">N° de Police :</td>
                     <td>{{ sinistre.assure.assure.numero_police|default:"—" }}</td>
                 </tr>
                 <tr>
@@ -152,7 +128,7 @@
             <div class="section-header">Localisation & Véhicule Assuré</div>
             <table class="table table-borderless table-custom mb-0">
                 <tr>
-                    <td class="fw-bold" style="width: 30%;">Véhicule(s) assuré(s) :</td>
+                    <td class="fw-bold" style="width: 28%;">Véhicule(s) assuré(s) :</td>
                     <td colspan="3"><strong>{{ sinistre.vehicule }}</strong></td>
                 </tr>
                 <tr>
@@ -172,9 +148,9 @@
             <div class="section-header">Bilan Corporel (Victimes)</div>
             <table class="table table-borderless table-custom mb-0">
                 <tr>
-                    <td class="fw-bold" style="width: 30%;">Nombre de blessés :</td>
+                    <td class="fw-bold" style="width: 28%;">Nombre de blessés :</td>
                     <td>{{ sinistre.nombre_blesses|default:"0" }}</td>
-                    <td class="fw-bold" style="width: 30%;">Nombre de morts :</td>
+                    <td class="fw-bold" style="width: 28%;">Nombre de morts :</td>
                     <td>{{ sinistre.nombre_morts|default:"0" }}</td>
                 </tr>
             </table>
@@ -187,9 +163,9 @@
             <div class="section-header">Véhicule Adverse / Tiers (Contre)</div>
             <table class="table table-borderless table-custom mb-0">
                 <tr>
-                    <td class="fw-bold" style="width: 30%;">Immatriculation :</td>
+                    <td class="fw-bold" style="width: 28%;">Immatriculation :</td>
                     <td>{{ sinistre.vehicule_adverse_immatriculation|default:"—" }}</td>
-                    <td class="fw-bold" style="width: 30%;">Compagnie d'assurance :</td>
+                    <td class="fw-bold" style="width: 28%;">Compagnie d'assurance :</td>
                     <td>{{ sinistre.vehicule_adverse_compagnie|default:"—" }}</td>
                 </tr>
                 <tr>
@@ -203,25 +179,25 @@
         {% endif %}
 
         <!-- Circonstances -->
-        <div class="section-box p-3">
+        <div class="section-box p-2">
             <div class="fw-bold mb-1">Circonstances déclarées :</div>
-            <p class="mb-0 text-secondary" style="font-size: 12.5px;">{{ sinistre.circonstances }}</p>
+            <p class="mb-0 text-secondary" style="font-size: 11.5px;">{{ sinistre.circonstances }}</p>
         </div>
 
         <!-- Mentions légales -->
-        <div class="footer-legal text-muted mb-4">
-            <p class="mb-2"><em>Cette attestation ne présente qu'un caractère administratif et ne constitue en rien une quelconque reconnaissance de responsabilité totale ou partielle de la compagnie <strong>FIDELIA ASSURANCES SA</strong>.</em></p>
+        <div class="footer-legal text-muted">
+            <p class="mb-1"><em>Cette attestation ne présente qu'un caractère administratif et ne constitue en rien une quelconque reconnaissance de responsabilité totale ou partielle de la compagnie <strong>FIDELIA ASSURANCES SA</strong>.</em></p>
             <p class="mb-0"><em>Cette prise de déclaration de sinistre vaut demande de rapport d'accident avec croquis et du procès verbal de constat.</em></p>
         </div>
 
         <!-- Signature -->
-        <div class="text-end mb-4 fw-bold" style="font-size: 13px;">
+        <div class="text-end mb-2 fw-bold" style="font-size: 12px;">
             Fait à LOME, le {{ sinistre.date_attestation|date:"d/m/Y" }}
-            <div class="mt-4 text-muted" style="font-size: 12px; text-decoration: underline;">Pour la Compagnie</div>
+            <div class="mt-2 text-muted" style="font-size: 11px; text-decoration: underline;">Pour la Compagnie</div>
         </div>
 
         <!-- Bouton Téléchargement PDF -->
-        <div class="no-print text-center mt-4">
+        <div class="no-print text-center mt-3">
             <button onclick="telechargerPDFDirect()" class="btn btn-primary px-4 py-2">📥 Télécharger l'attestation officielle (PDF)</button>
         </div>
     </div>
@@ -229,6 +205,8 @@
     <script>
         function telechargerPDFDirect() {
             const element = document.getElementById('attestation-content');
+            const boutonPrint = document.querySelector('.no-print');
+            if (boutonPrint) boutonPrint.style.display = 'none';
 
             html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
                 const { jsPDF } = window.jspdf;
@@ -241,11 +219,25 @@
                 });
 
                 const pageWidth = 210;
-                const imgWidth = pageWidth - 20; // marges de 10mm de chaque côté
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                const pageHeight = 297;
+                const margin = 8;
+                
+                const imgWidth = pageWidth - (margin * 2);
+                let imgHeight = (canvas.height * imgWidth) / canvas.width;
+                const maxHeight = pageHeight - (margin * 2);
 
-                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+                // Ajustement dynamique si la hauteur dépasse la page A4
+                if (imgHeight > maxHeight) {
+                    imgHeight = maxHeight;
+                }
+
+                pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
                 pdf.save('Attestation_Sinistre_{{ sinistre.numero_sinistre }}.pdf');
+
+                if (boutonPrint) boutonPrint.style.display = 'block';
+            }).catch(error => {
+                if (boutonPrint) boutonPrint.style.display = 'block';
+                console.error("Erreur lors de la génération du PDF", error);
             });
         }
     </script>
