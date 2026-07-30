@@ -94,7 +94,6 @@ class Sinistre(models.Model):
         ('ATTENTE_VALIDATION', 'En attente de validation'),
         ('A_CORRIGER', 'A corriger'),
         ('EN_COURS', 'En cours'),
-        ('CHEQUE_EMIS', 'Chèque émis'),
         ('CLOTURE', 'Clôturé'),
         ('SANS_SUITE', 'Sans suite'),
         ('REOUVERT', 'Réouvert'),

@@ -626,7 +626,7 @@ def dossiers_en_cours(request):
     agent = getattr(request.user, 'agent', None)
     if not agent:
         return redirect('accueil_assure')
-    sinistres = Sinistre.objects.filter(statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'CHEQUE_EMIS', 'REOUVERT']).order_by('-date_declaration')
+    sinistres = Sinistre.objects.filter(statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'REOUVERT']).order_by('-date_declaration')
     return render(request, 'dossiers_en_cours.html', {'agent': agent, 'sinistres': sinistres})
 
 
@@ -954,7 +954,7 @@ def dossiers_en_cours_chef(request):
     chef = getattr(request.user, 'chef', None)
     if not chef:
         return redirect('accueil_assure')
-    sinistres = Sinistre.objects.filter(statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'CHEQUE_EMIS', 'REOUVERT']).order_by('-date_declaration')
+    sinistres = Sinistre.objects.filter(statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'REOUVERT']).order_by('-date_declaration')
     return render(request, 'dossiers_en_cours_chef.html', {'chef': chef, 'sinistres': sinistres})
 
 
@@ -1019,7 +1019,7 @@ def voir_attestation(request, sinistre_id):
     sinistre = get_object_or_404(
         Sinistre, 
         id=sinistre_id, 
-        statut__in=['EN_COURS', 'CHEQUE_EMIS', 'CLOTURE', 'SANS_SUITE']
+        statut__in=['EN_COURS', 'CLOTURE', 'SANS_SUITE']
     )
     is_owner = (getattr(sinistre, 'assure', None) == request.user or getattr(sinistre, 'assure_id', None) == request.user.id)
     
@@ -1752,7 +1752,6 @@ def emettre_cheque(request, sinistre_id):
             )
             return redirect('emettre_cheque', sinistre_id=sinistre.id)
 
-        # 1. Enregistrement du paiement / chèque avec son statut initial
         try:
             paiement = Paiement.objects.create(
                 sinistre=sinistre,
@@ -1772,11 +1771,7 @@ def emettre_cheque(request, sinistre_id):
             )
             return redirect('emettre_cheque', sinistre_id=sinistre.id)
         
-        # 2. Mise à jour éventuelle du statut du sinistre
-        sinistre.statut = 'CHEQUE_EMIS'
-        sinistre.save()
-        
-        # 3. Ajout dans l'historique du sinistre
+       
         HistoriqueSinistre.objects.create(
             sinistre=sinistre,
             statut='Chèque émis',
