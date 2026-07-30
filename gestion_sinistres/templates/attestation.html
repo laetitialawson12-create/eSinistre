@@ -6,23 +6,25 @@
     <title>Attestation de Déclaration de Sinistre — {{ sinistre.numero_sinistre }}</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Inclusion de jsPDF-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding: 10px; 
             background-color: #f8f9fa; 
+            margin: 0;
+            padding: 20px;
         }
         .attestation-box { 
-            width: 100%; 
-            max-width: 800px; 
+            width: 210mm;
+            min-height: 297mm;
+            max-width: 100%;
             margin: auto; 
-            border: 1.5px solid #002D62; 
-            padding: 20px 25px; 
+            padding: 15mm 20mm; 
             background: #ffffff; 
             box-sizing: border-box; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .attestation-header { 
             text-align: center; 
@@ -57,11 +59,11 @@
             margin-bottom: 10px !important;
         }
         @media print { 
-            .no-print { display: none; } 
+            .no-print { display: none !important; } 
 
             @page {
                 size: A4;
-                margin: 5mm;
+                margin: 0;
             }
 
             body {
@@ -70,176 +72,144 @@
             }
 
             .attestation-box {
-                max-width: 100%;
-                border: 1px solid #002D62;
-                padding: 10px 15px;
+                width: 210mm;
+                height: 297mm;
+                max-width: none;
+                box-shadow: none;
+                margin: 0;
+                padding: 12mm 15mm;
             }
         }
     </style>
 </head>
 <body>
     <div class="attestation-box" id="attestation-content">
-        <!-- En-tête -->
-        <div class="d-flex align-items-center gap-2" style="border-bottom: 2px solid #002D62; padding-bottom: 8px; margin-bottom: 15px;">
-            <img src="{% static 'Logo Fidelia.jpeg' %}" alt="Logo Fidélia Assurances" style="height: 40px; width: auto;">
-            <div>
-                <div class="fw-bold" style="color: #002D62; font-size: 18px; line-height: 1.1; font-style: italic;">Fidélia</div>
-                <div class="fw-bold" style="color: #002D62; font-size: 18px; line-height: 1.1; font-style: italic;">assurances</div>
+        <div>
+            <!-- En-tête -->
+            <div class="d-flex align-items-center gap-2" style="border-bottom: 2px solid #002D62; padding-bottom: 8px; margin-bottom: 15px;">
+                <img src="{% static 'Logo Fidelia.jpeg' %}" alt="Logo Fidélia Assurances" style="height: 40px; width: auto;">
+                <div>
+                    <div class="fw-bold" style="color: #002D62; font-size: 18px; line-height: 1.1; font-style: italic;">Fidélia</div>
+                    <div class="fw-bold" style="color: #002D62; font-size: 18px; line-height: 1.1; font-style: italic;">assurances</div>
+                </div>
+            </div>
+            
+            <h5 class="text-center fw-bold mb-3" style="text-decoration: underline; font-size: 15px; color: #002D62;">
+                ATTESTATION DE DÉCLARATION DE SINISTRE
+            </h5>
+
+            <!-- Références de la Déclaration -->
+            <div class="section-box">
+                <div class="section-header">Références de la Déclaration & de la Police</div>
+                <table class="table table-borderless table-custom mb-0">
+                    <tr>
+                        <td class="fw-bold" style="width: 28%;">N° de Sinistre :</td>
+                        <td><span class="text-primary fw-bold">{{ sinistre.numero_sinistre }}</span></td>
+                        <td class="fw-bold" style="width: 28%;">N° de Police :</td>
+                        <td>{{ sinistre.assure.assure.numero_police|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Assuré :</td>
+                        <td>{{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</td>
+                        <td class="fw-bold">Effet : </td>
+                        <td>{{ sinistre.quittance.date_debut|date:"d/m/Y"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Conducteur :</td>
+                        <td>{{ sinistre.nom_conducteur }}</td>
+                        <td class="fw-bold">Echéance : </td>
+                        <td>{{ sinistre.quittance.date_fin|date:"d/m/Y"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Date de Survenance :</td>
+                        <td>{{ sinistre.date_survenance|date:"d/m/Y" }} à {{ sinistre.heure_approximative|time:"H:i" }}</td>
+                        <td class="fw-bold">Date de Déclaration :</td>
+                        <td>{{ sinistre.date_attestation|date:"d/m/Y" }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Localisation & Véhicule Assuré -->
+            <div class="section-box">
+                <div class="section-header">Localisation & Véhicule Assuré</div>
+                <table class="table table-borderless table-custom mb-0">
+                    <tr>
+                        <td class="fw-bold" style="width: 28%;">Véhicule(s) assuré(s) :</td>
+                        <td colspan="3"><strong>{{ sinistre.vehicule }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Nature du sinistre :</td>
+                        <td colspan="3">{{ sinistre.get_nature_display }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Localisation :</td>
+                        <td colspan="3">Quartier {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} (Région {{ sinistre.region }})</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Victimes si Corporel -->
+            {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
+            <div class="section-box">
+                <div class="section-header">Bilan Corporel (Victimes)</div>
+                <table class="table table-borderless table-custom mb-0">
+                    <tr>
+                        <td class="fw-bold" style="width: 28%;">Nombre de blessés :</td>
+                        <td>{{ sinistre.nombre_blesses|default:"0" }}</td>
+                        <td class="fw-bold" style="width: 28%;">Nombre de morts :</td>
+                        <td>{{ sinistre.nombre_morts|default:"0" }}</td>
+                    </tr>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- Véhicule Tiers / Adverse -->
+            {% if sinistre.autre_vehicule_implique %}
+            <div class="section-box">
+                <div class="section-header">Véhicule Adverse / Tiers (Contre)</div>
+                <table class="table table-borderless table-custom mb-0">
+                    <tr>
+                        <td class="fw-bold" style="width: 28%;">Immatriculation :</td>
+                        <td>{{ sinistre.vehicule_adverse_immatriculation|default:"—" }}</td>
+                        <td class="fw-bold" style="width: 28%;">Compagnie d'assurance :</td>
+                        <td>{{ sinistre.vehicule_adverse_compagnie|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Marque :</td>
+                        <td>{{ sinistre.vehicule_adverse_marque|default:"—" }}</td>
+                        <td class="fw-bold">Modèle :</td>
+                        <td>{{ sinistre.vehicule_adverse_modele|default:"—" }}</td>
+                    </tr>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- Circonstances -->
+            <div class="section-box p-2">
+                <div class="fw-bold mb-1">Circonstances déclarées :</div>
+                <p class="mb-0 text-secondary" style="font-size: 11.5px;">{{ sinistre.circonstances }}</p>
             </div>
         </div>
-        
-        <h5 class="text-center fw-bold mb-3" style="text-decoration: underline; font-size: 15px; color: #002D62;">
-            ATTESTATION DE DÉCLARATION DE SINISTRE
-        </h5>
 
-        <!-- Références de la Déclaration -->
-        <div class="section-box">
-            <div class="section-header">Références de la Déclaration & de la Police</div>
-            <table class="table table-borderless table-custom mb-0">
-                <tr>
-                    <td class="fw-bold" style="width: 28%;">N° de Sinistre :</td>
-                    <td><span class="text-primary fw-bold">{{ sinistre.numero_sinistre }}</span></td>
-                    <td class="fw-bold" style="width: 28%;">N° de Police :</td>
-                    <td>{{ sinistre.assure.assure.numero_police|default:"—" }}</td>
-                </tr>
-                <tr>
-                    <td class="fw-bold">Assuré :</td>
-                    <td>{{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</td>
-                    <td class="fw-bold">Effet : </td>
-                    <td>{{ sinistre.quittance.date_debut|date:"d/m/Y"|default:"-" }}</td>
-                </tr>
-                <tr>
-                    <td class="fw-bold">Conducteur :</td>
-                    <td>{{ sinistre.nom_conducteur }}</td>
-                    <td class="fw-bold">Echéance : </td>
-                    <td>{{ sinistre.quittance.date_fin|date:"d/m/Y"|default:"-" }}</td>
-                </tr>
-                <tr>
-                    <td class="fw-bold">Date de Survenance :</td>
-                    <td>{{ sinistre.date_survenance|date:"d/m/Y" }} à {{ sinistre.heure_approximative|time:"H:i" }}</td>
-                    <td class="fw-bold">Date de Déclaration :</td>
-                    <td>{{ sinistre.date_attestation|date:"d/m/Y" }}</td>
-                </tr>
-            </table>
-        </div>
+        <div style="margin-top: -30px;">
+            <!-- Mentions légales -->
+            <hr style="border: none; border-top: 2px solid#002D62; opacity: 1; margin: 15px 0 10px 0;">
+            <div class="footer-legal text-muted">
+                <p class="mb-1"><em>Cette attestation ne présente qu'un caractère administratif et ne constitue en rien une quelconque reconnaissance de responsabilité totale ou partielle de la compagnie <strong>FIDELIA ASSURANCES SA</strong>.</em></p>
+                <p class="mb-0"><em>Cette prise de déclaration de sinistre vaut demande de rapport d'accident avec croquis et du procès verbal de constat.</em></p>
+            </div>
 
-        <!-- Localisation & Véhicule Assuré -->
-        <div class="section-box">
-            <div class="section-header">Localisation & Véhicule Assuré</div>
-            <table class="table table-borderless table-custom mb-0">
-                <tr>
-                    <td class="fw-bold" style="width: 28%;">Véhicule(s) assuré(s) :</td>
-                    <td colspan="3"><strong>{{ sinistre.vehicule }}</strong></td>
-                </tr>
-                <tr>
-                    <td class="fw-bold">Nature du sinistre :</td>
-                    <td colspan="3">{{ sinistre.get_nature_display }}</td>
-                </tr>
-                <tr>
-                    <td class="fw-bold">Localisation :</td>
-                    <td colspan="3">Quartier {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} (Région {{ sinistre.region }})</td>
-                </tr>
-            </table>
-        </div>
+            <!-- Signature -->
+            <div class="text-end mb-2 fw-bold" style="font-size: 12px;">
+                Fait à LOME, le {{ sinistre.date_attestation|date:"d/m/Y" }}
+                <div class="mt-2 text-muted" style="font-size: 11px; text-decoration: underline;">Pour la Compagnie</div>
+            </div>
 
-        <!-- Victimes si Corporel -->
-        {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
-        <div class="section-box">
-            <div class="section-header">Bilan Corporel (Victimes)</div>
-            <table class="table table-borderless table-custom mb-0">
-                <tr>
-                    <td class="fw-bold" style="width: 28%;">Nombre de blessés :</td>
-                    <td>{{ sinistre.nombre_blesses|default:"0" }}</td>
-                    <td class="fw-bold" style="width: 28%;">Nombre de morts :</td>
-                    <td>{{ sinistre.nombre_morts|default:"0" }}</td>
-                </tr>
-            </table>
-        </div>
-        {% endif %}
-
-        <!-- Véhicule Tiers / Adverse -->
-        {% if sinistre.autre_vehicule_implique %}
-        <div class="section-box">
-            <div class="section-header">Véhicule Adverse / Tiers (Contre)</div>
-            <table class="table table-borderless table-custom mb-0">
-                <tr>
-                    <td class="fw-bold" style="width: 28%;">Immatriculation :</td>
-                    <td>{{ sinistre.vehicule_adverse_immatriculation|default:"—" }}</td>
-                    <td class="fw-bold" style="width: 28%;">Compagnie d'assurance :</td>
-                    <td>{{ sinistre.vehicule_adverse_compagnie|default:"—" }}</td>
-                </tr>
-                <tr>
-                    <td class="fw-bold">Marque :</td>
-                    <td>{{ sinistre.vehicule_adverse_marque|default:"—" }}</td>
-                    <td class="fw-bold">Modèle :</td>
-                    <td>{{ sinistre.vehicule_adverse_modele|default:"—" }}</td>
-                </tr>
-            </table>
-        </div>
-        {% endif %}
-
-        <!-- Circonstances -->
-        <div class="section-box p-2">
-            <div class="fw-bold mb-1">Circonstances déclarées :</div>
-            <p class="mb-0 text-secondary" style="font-size: 11.5px;">{{ sinistre.circonstances }}</p>
-        </div>
-
-        <!-- Mentions légales -->
-        <div class="footer-legal text-muted">
-            <p class="mb-1"><em>Cette attestation ne présente qu'un caractère administratif et ne constitue en rien une quelconque reconnaissance de responsabilité totale ou partielle de la compagnie <strong>FIDELIA ASSURANCES SA</strong>.</em></p>
-            <p class="mb-0"><em>Cette prise de déclaration de sinistre vaut demande de rapport d'accident avec croquis et du procès verbal de constat.</em></p>
-        </div>
-
-        <!-- Signature -->
-        <div class="text-end mb-2 fw-bold" style="font-size: 12px;">
-            Fait à LOME, le {{ sinistre.date_attestation|date:"d/m/Y" }}
-            <div class="mt-2 text-muted" style="font-size: 11px; text-decoration: underline;">Pour la Compagnie</div>
-        </div>
-
-        <!-- Bouton Téléchargement PDF -->
-        <div class="no-print text-center mt-3">
-            <button onclick="telechargerPDFDirect()" class="btn btn-primary px-4 py-2">📥 Télécharger l'attestation officielle (PDF)</button>
+            <!-- Bouton Téléchargement PDF -->
+            <div class="no-print text-center mt-3">
+                <button onclick="window.print()" class="btn btn-primary px-4 py-2">📥 Imprimer / Enregistrer en PDF</button>
+            </div>
         </div>
     </div>
-
-    <script>
-        function telechargerPDFDirect() {
-            const element = document.getElementById('attestation-content');
-            const boutonPrint = document.querySelector('.no-print');
-            if (boutonPrint) boutonPrint.style.display = 'none';
-
-            html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
-                const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/png');
-
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-
-                const pageWidth = 210;
-                const pageHeight = 297;
-                const margin = 8;
-                
-                const imgWidth = pageWidth - (margin * 2);
-                let imgHeight = (canvas.height * imgWidth) / canvas.width;
-                const maxHeight = pageHeight - (margin * 2);
-
-                // Ajustement dynamique si la hauteur dépasse la page A4
-                if (imgHeight > maxHeight) {
-                    imgHeight = maxHeight;
-                }
-
-                pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
-                pdf.save('Attestation_Sinistre_{{ sinistre.numero_sinistre }}.pdf');
-
-                if (boutonPrint) boutonPrint.style.display = 'block';
-            }).catch(error => {
-                if (boutonPrint) boutonPrint.style.display = 'block';
-                console.error("Erreur lors de la génération du PDF", error);
-            });
-        }
-    </script>
 </body>
 </html>

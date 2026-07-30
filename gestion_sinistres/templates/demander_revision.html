@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Demander une révision de prix — {{ sinistre.numero_sinistre }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="card shadow-sm mx-auto" style="max-width: 600px; border: 1.5px solid #002D62;">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <img src="{% static 'Logo Fidelia.jpeg' %}" alt="Logo" style="height: 35px; width: auto;">
+                <span class="fw-bold fs-5 text-primary" style="font-style: italic;">Fidélia Assurances</span>
+            </div>
+
+            <h3 class="fw-bold text-primary mb-3" style="border-bottom: 2px solid #002D62; padding-bottom: 8px; font-size: 1.25rem;">
+                Demande de révision de prix
+            </h3>
+            
+            <p class="text-muted mb-3">
+                Sinistre N° : <strong class="text-dark">{{ sinistre.numero_sinistre }}</strong><br>
+                Prix retenu actuel : <strong class="text-dark">{{ sinistre.prix_retenu|default:"0" }} FCFA</strong>
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="commentaire" class="form-label fw-bold">Motif / Commentaire de la demande de révision :</label>
+                    <textarea name="commentaire" id="commentaire" rows="4" class="form-control" required placeholder="Expliquez pourquoi une révision de l'indemnisation est demandée..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <a href="{% url 'detail_sinistre_chef' sinistre.id %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-send me-1"></i> Soumettre la révision
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

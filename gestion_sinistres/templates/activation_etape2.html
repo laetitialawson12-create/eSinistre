@@ -37,7 +37,12 @@
                 {% csrf_token %}
                 <div class="mb-3">
                     <label class="form-label fw-bold">Nouveau mot de passe</label>
-                    <input type="password" name="new_password1" id="pwd1" class="form-control" required>
+                    <div class="input-group">
+                        <input type="password" name="new_password1" id="pwd1" class="form-control" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword1">
+                            <i class="bi bi-eye" id="toggleIcon1"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <ul class="list-unstyled small mb-3">
@@ -49,7 +54,12 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Confirmation du mot de passe</label>
-                    <input type="password" name="new_password2" id="pwd2" class="form-control" required>
+                    <div class="input-group">
+                        <input type="password" name="new_password2" id="pwd2" class="form-control" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword2">
+                            <i class="bi bi-eye" id="toggleIcon2"></i>
+                        </button>
+                    </div>
                     <small class="text-muted">Saisissez le même mot de passe que précédemment.</small>
                 </div>
 
@@ -74,6 +84,22 @@
             regleLongueur.classList.toggle('ok', val.length >= 8);
             regleNumerique.classList.toggle('ok', val.length > 0 && !/^\d+$/.test(val));
         });
+
+        function setupToggle(toggleId, inputId, iconId) {
+            const btn = document.getElementById(toggleId);
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (btn && input) {
+                btn.addEventListener('click', function () {
+                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                    input.setAttribute('type', type);
+                    icon.classList.toggle('bi-eye');
+                    icon.classList.toggle('bi-eye-slash');
+                });
+            }
+        }
+        setupToggle('togglePassword1', 'pwd1', 'toggleIcon1');
+        setupToggle('togglePassword2', 'pwd2', 'toggleIcon2');
     </script>
 </body>
 </html>
