@@ -51,6 +51,9 @@
             <a href="{% url 'dossiers_en_cours_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_en_cours_chef' %}active{% endif %}">
                 <i class="bi bi-arrow-repeat me-2"></i> En cours
             </a>
+            <a href="{% url 'dossiers_a_corriger_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_corriger_chef' %}active{% endif %}">
+                <i class="bi bi-exclamation-triangle-fill"></i>  À corriger
+            </a>
             <a href="{% url 'dossiers_clotures_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_clotures_chef' %}active{% endif %}">
                 <i class="bi bi-folder2 me-2"></i> Clôturés
             </a>

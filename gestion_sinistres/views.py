@@ -322,7 +322,7 @@ def accueil_agent(request):
             date_cloture__month=timezone.now().month,
             date_cloture__year=timezone.now().year,
         ).count(),
-        'derniers_a_instruire': sinistres_agence.filter(statut='SOUMIS').order_by('-date_declaration')[:5],
+        'derniers_sinistres': sinistres_agence.order_by('-date_declaration')[:5],
     }
     return render(request, 'accueil_agent.html', context)
 
@@ -611,6 +611,20 @@ def dossiers_clotures(request):
 
 
 @login_required
+def dossiers_a_corriger_agent(request):
+    chef = getattr(request.user, 'agent', None)
+    if not chef:
+        return redirect('accueil_assure')
+    sinistres_a_corriger = Sinistre.objects.filter(statut="A_CORRIGER").order_by('date_declaration')
+
+    context = {
+        'sinistres_a_corriger' : sinistres_a_corriger,
+    }
+
+    return render(request, 'dossiers_a_corriger_agent.html', context)
+
+
+@login_required
 def tous_sinistres_agent(request):
     agent = getattr(request.user, 'agent', None)
     if not agent:
@@ -708,7 +722,7 @@ def accueil_chef(request):
             date_declaration__month=timezone.now().month,
             date_declaration__year=timezone.now().year,
         ).count(),
-        'derniers_a_valider': sinistres.filter(statut='ATTENTE_VALIDATION').order_by('-date_declaration')[:5],
+        'derniers_sinistres': sinistres.order_by('-date_declaration')[:5],
     }
     return render(request, 'accueil_chef.html', context)
 
@@ -720,6 +734,20 @@ def dossiers_a_valider(request):
         return redirect('accueil_assure')
     sinistres = Sinistre.objects.filter(statut='ATTENTE_VALIDATION').order_by('date_declaration')
     return render(request, 'dossiers_a_valider.html', {'chef': chef, 'sinistres': sinistres})
+
+
+@login_required
+def dossiers_a_corriger_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+    sinistres_a_corriger = Sinistre.objects.filter(statut="A_CORRIGER").order_by('date_declaration')
+
+    context = {
+        'sinistres_a_corriger' : sinistres_a_corriger,
+    }
+
+    return render(request, 'dossiers_a_corriger_chef.html', context)
 
 
 @login_required

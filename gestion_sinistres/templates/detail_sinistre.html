@@ -170,7 +170,7 @@
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-white fw-bold">📁 Documents joints</div>
                 <ul class="list-group list-group-flush">
-                    {% for piece in sinistre.pieces.all %}
+                    {% for piece in documents %}
                     <li class="list-group-item">
                         <a href="{{ piece.fichier.url }}" target="_blank">
                             {{ piece.fichier.name|cut:"sinistres/documents/" }}
@@ -187,8 +187,9 @@
                 <div class="card-header bg-white fw-bold">💬 Messagerie</div>
                 <div class="p-3" style="height: 350px; overflow-y: auto; background: #f8f9fa;">
                     {% for msg in sinistre.messages.all %}
-                    <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
-                        <div class="p-2 px-3 rounded shadow-sm d-inline-block 
+                        {% if msg.auteur == request.user %}
+                            <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
+                                <div class="p-2 px-3 rounded shadow-sm d-inline-block 
                             {% if msg.auteur == request.user %}bg-primary text-white{% else %}bg-white border{% endif %}">
                             {{ msg.contenu }}
                         </div>

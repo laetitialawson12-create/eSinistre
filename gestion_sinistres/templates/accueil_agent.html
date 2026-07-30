@@ -25,12 +25,12 @@
 </div>
 
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white fw-bold">📥 Dossiers à instruire</div>
+    <div class="card-header bg-white fw-bold">📥 Derniers Sinistres</div>
     <div class="card-body p-0">
         <table class="table mb-0">
             <thead><tr><th>N° Sinistre</th><th>Date</th><th>Assuré</th><th>Nature</th><th>Statut</th><th></th></tr></thead>
             <tbody>
-                {% for s in derniers_a_instruire %}
+                {% for s in derniers_sinistres %}
                 <tr>
                     <td><strong>{{ s.numero_sinistre }}</strong></td>
                     <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
