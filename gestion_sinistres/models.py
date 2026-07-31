@@ -261,6 +261,12 @@ class Agence(models.Model):
         return self.nom
     
 
+class Admin(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    tentatives_echouees = models.PositiveSmallIntegerField(default=0)
+    bloque_jusqu_a = models.DateTimeField(null=True, blank=True)
+    
+    
 class Assure(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='assure')
     numero_police = models.CharField(max_length=50, unique=True)

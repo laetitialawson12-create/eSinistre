@@ -4,11 +4,11 @@ import openpyxl
 from openpyxl.styles import Font
 from django.http import HttpResponse
 from datetime import date
-from .auth_utils import get_profil_par_identifiant, reinitialiser_tentatives
+from .auth_utils import get_profil_par_identifiant, reinitialiser_tentatives, profil_est_bloque, enregistrer_echec
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import login, update_session_auth_hash, authenticate
 from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
