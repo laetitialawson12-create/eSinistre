@@ -82,7 +82,8 @@ urlpatterns = [
     path('admin/profil/modifier/', views.modifier_profil_admin, name='modifier_profil_admin'),
     path('admin/importer-donnees/', views.importer_donnees_admin, name='importer_donnees'),
     path('admin/sinistres/', views.supervision_sinistres, name='supervision_sinistres'),
-    
+    path('admin/profil/changer-mot-de-passe_en_cours_admin/', views.changer_mot_de_passe_en_cours_admin, name='changer_mot_de_passe_en_cours_admin'),
+
     # Gestion des Agents par Admin
     path('admin/agents/', views.liste_agents, name='liste_agents'),
     path('admin/agents/creer/', views.creer_agent, name='creer_agent'),
@@ -126,5 +127,10 @@ urlpatterns = [
 
     # Authentification - mot de passe oublié
     path('mot-de-passe-oublie/', views.mot_de_passe_oublie_etape1, name='mot_de_passe_oublie_etape1'),
-    path('mot-de-passe-oublie/nouveau/', views.mot_de_passe_oublie_etape2, name='mot_de_passe_oublie_etape2')
+    path('mot-de-passe-oublie/nouveau/', views.mot_de_passe_oublie_etape2, name='mot_de_passe_oublie_etape2'),
+    
+    # ==========================================
+    # 6. GENERAL
+    # ==========================================
+
 ]

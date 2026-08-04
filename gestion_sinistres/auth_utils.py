@@ -1,6 +1,7 @@
 from django.utils import timezone
 from datetime import timedelta
 from .models import Assure, Agent, ChefDepartement, Admin
+from django.contrib.auth.models import User
 
 DUREE_BLOCAGE = timedelta(minutes=5)
 SEUIL_TENTATIVES = 3
@@ -21,9 +22,10 @@ def get_profil_par_identifiant(identifiant):
     if chef:
         return chef
 
-    admin = Admin.objects.filter(username=identifiant, is_staff=True).first()
-    if admin:
-        profil_admin, _ = Admin.objects.get_or_create(user=admin)
+
+    user_staff = User.objects.filter(username=identifiant, is_staff=True).first()
+    if user_staff:
+        profil_admin, _ = Admin.objects.get_or_create(user=user_staff)
         return profil_admin
     
     return None 

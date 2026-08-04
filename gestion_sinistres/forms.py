@@ -3,9 +3,18 @@ from django.utils import timezone
 from datetime import timedelta
 from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque, Region, Ville, Commune, Paiement
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from .auth_utils import get_profil_par_identifiant, profil_est_bloque, enregistrer_echec, reinitialiser_tentatives
 
+
+class StylePasswordChangeForm(PasswordChangeForm):
+    def __init__(self, user, *args, **kwargs):
+        super().__init__(user, *args, **kwargs)
+        self.fields['old_password'].widget.attrs.update({'class': 'form-control'})
+        self.fields['new_password1'].widget.attrs.update({'class': 'form-control'})
+        self.fields['new_password2'].widget.attrs.update({'class': 'form-control'})
+        
+        
 # CALCUL DES JOURS
 def jours_ouvres_entre(date_debut, date_fin):
     # jours = Jours ouvrés
@@ -128,9 +137,13 @@ class SinistreForm(forms.ModelForm):
 
 
 class ModifierProfilForm(forms.ModelForm):
+    email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    telephone = forms.CharField(label='Téléphone', max_length=20, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))        
+        
+        
+class ModifierProfilAdminForm(forms.ModelForm):
     class Meta:
         model = User
-        # Permet de modifier uniquement quelques informations de l'utilisateur
         fields = ['first_name', 'last_name', 'email']
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -138,10 +151,12 @@ class ModifierProfilForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
         }
         labels = {
-            'email': 'Email',
+            'first_name' : 'Prénom(s)',
+            'last_name' : 'Nom',
+            'email': 'Email'
         }
         
-
+        
 class AgentCreationForm(forms.Form):
     # Champ de création d'un agent
     matricule = forms.CharField(max_length=20, label="Matricule", widget=forms.TextInput(attrs={'class': 'form-control'}))

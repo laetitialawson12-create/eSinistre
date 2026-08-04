@@ -22,7 +22,8 @@ from .forms import (
     DemanderComplementsForm, MarquerConformeForm, IndemnisationForm,
     ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm,
     ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
-    RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm
+    RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm,
+    ModifierProfilAdminForm, StylePasswordChangeForm
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
@@ -342,15 +343,21 @@ def profil_assure(request):
 # Permet à l'assuré de modifier ses informations personnelles
 @login_required
 def modifier_profil(request):
+    assure = getattr(request.user, 'assure', None)
+    return redirect('accueil_assure')
+
     if request.method == 'POST':
-        form = ModifierProfilForm(request.POST, instance=request.user)
+        form = ModifierProfilForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Vos informations ont été mises à jour.")
+            request.user.email = form.cleaned_data['email']
+            request.user.save(update_fields=['email'])
+            assure.telephone = form.cleaned_data['telephone']
+            assure.save(update_fields=['telephone'])
+            messages.success(request, "Vos informations on été mis à jour avec succès.")
             return redirect('profil_assure')
     else:
-        form = ModifierProfilForm(instance=request.user)
-    return render(request, 'modifier_profil.html', {'form': form})
+        form = ModifierProfilForm(initial={'email':request.user.email, 'telephone':assure.telephone})
+    return render(request, 'modifier_profil.html', {'form':form})
 
 
 # Permet à l'assuré de voir ses différents contrats
@@ -384,7 +391,7 @@ def accueil_agent(request):
     if not agent:
         return redirect('accueil_assure')
 
-    sinistres_agence = Sinistre.objects.all()
+    sinistres_agence = Sinistre.objects.filter(assure__assure_agence=agent.agence)
 
     context = {
         'agent': agent,
@@ -401,12 +408,13 @@ def accueil_agent(request):
 
 
 # Tableau de bord alternatif affichant les sinistres en cours
-@login_required
+"""@login_required
 def tableau_bord_agent(request):
-    if not request.user.groups.filter(name='Agent').exists():
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
         return redirect('accueil_assure')
-    sinistres_a_traiter = Sinistre.objects.filter(statut='EN_COURS')
-    return render(request, 'agent/dashboard.html', {'sinistres': sinistres_a_traiter})
+    sinistres_a_traiter = Sinistre.objects.filter(statut='EN_COURS', assure__assure__agence=agent.agence)
+    return render(request, 'accueil_agent.html', {'sinistres': sinistres_a_traiter})"""
 
 
 # Tableau de bord alternatif affichant les sinistres à instruire
@@ -417,7 +425,8 @@ def dossiers_a_instruire(request):
         return redirect('accueil_assure')
 
     sinistres = Sinistre.objects.filter(
-        statut__in=['SOUMIS', 'ATTENTE_COMPLEMENTS', 'A_CORRIGER']
+        statut__in=['SOUMIS', 'ATTENTE_COMPLEMENTS', 'A_CORRIGER'],
+        assure_assure_agence=agent.agence,
     ).order_by('date_declaration')
 
     return render(request, 'agent_a_instruire.html', {'agent': agent, 'sinistres': sinistres})
@@ -698,7 +707,10 @@ def dossiers_en_cours(request):
     agent = getattr(request.user, 'agent', None)
     if not agent:
         return redirect('accueil_assure')
-    sinistres = Sinistre.objects.filter(statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'REOUVERT']).order_by('-date_declaration')
+    sinistres = Sinistre.objects.filter(
+        statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'REOUVERT'],
+        assure__assure__agence=agent.agence,
+    ).order_by('-date_declaration')
     return render(request, 'dossiers_en_cours.html', {'agent': agent, 'sinistres': sinistres})
 
 
@@ -708,17 +720,23 @@ def dossiers_clotures(request):
     agent = getattr(request.user, 'agent', None)
     if not agent:
         return redirect('accueil_assure')
-    sinistres = Sinistre.objects.filter(statut__in=['CLOTURE', 'SANS_SUITE']).order_by('-date_declaration')
+    sinistres = Sinistre.objects.filter(
+        statut__in=['CLOTURE', 'SANS_SUITE'],
+        assure__assure__agence=agent.agence,
+    ).order_by('-date_declaration')
     return render(request, 'dossiers_clotures.html', {'agent': agent, 'sinistres': sinistres})
 
 
 # Fonction affichant à l'agent les dossiers de sinistres avec le statut à corriger
 @login_required
 def dossiers_a_corriger_agent(request):
-    chef = getattr(request.user, 'agent', None)
-    if not chef:
+    agent = getattr(request.user, 'agent', None)
+    if not agent:
         return redirect('accueil_assure')
-    sinistres_a_corriger = Sinistre.objects.filter(statut="A_CORRIGER").order_by('date_declaration')
+    sinistres_a_corriger = Sinistre.objects.filter(
+        statut="A_CORRIGER",
+        assure__assure__agence=agent.agence,    
+    ).order_by('date_declaration')
 
     context = {
         'sinistres_a_corriger' : sinistres_a_corriger,
@@ -734,7 +752,9 @@ def tous_sinistres_agent(request):
     if not agent:
         return redirect('accueil_assure')
 
-    sinistres = Sinistre.objects.select_related('assure', 'vehicule', 'region').order_by('-date_declaration')
+    sinistres = Sinistre.objects.select_related('assure', 'vehicule', 'region').filter(
+        assure__assure__agence=agent.agence
+    ).order_by('-date_declaration')
 
     statut = request.GET.get('statut', '')
     nature = request.GET.get('nature', '')
@@ -746,7 +766,7 @@ def tous_sinistres_agent(request):
         sinistres = sinistres.filter(nature=nature)
     if recherche:
         sinistres = sinistres.filter(
-            Q(numero_sinistre__icontains=recherche) | Q(n_police__icontains=recherche)
+            Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
         )
 
     context = {
@@ -800,15 +820,19 @@ def modifier_profil_agent(request):
     agent = getattr(request.user, 'agent', None)
     if not agent:
         return redirect('accueil_assure')
+    
     if request.method == 'POST':
-        form = ModifierProfilForm(request.POST, instance=request.user)
+        form = ModifierProfilForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Vos informations ont été mises à jour.")
+            request.user.email = form.cleaned_data['email']
+            request.user.save(update_fields=['email'])
+            agent.telephone = form.cleaned_data['telephone']
+            agent.save(update_fields=['telephone'])
+            messages.success(request, "Vos informations on été mis à jour avec succès.")
             return redirect('profil_agent')
     else:
-        form = ModifierProfilForm(instance=request.user)
-    return render(request, 'modifier_profil_agent.html', {'form': form})
+        form = ModifierProfilForm(initial={'email':request.user.email, 'telephone':agent.telephone})
+    return render(request, 'modifier_profil_agent.html', {'form':form})
 
 
 #-------------------------------------------------------------------
@@ -823,7 +847,7 @@ def accueil_chef(request):
     if not chef:
         return redirect('accueil_assure')
 
-    sinistres = Sinistre.objects.all()
+    sinistres = Sinistre.objects.filter(assure_assure__agence=chef.agence)
     context = {
         'chef': chef,
         'a_valider': sinistres.filter(statut='ATTENTE_VALIDATION').count(),
@@ -844,7 +868,10 @@ def dossiers_a_valider(request):
     chef = getattr(request.user, 'chef', None)
     if not chef:
         return redirect('accueil_assure')
-    sinistres = Sinistre.objects.filter(statut='ATTENTE_VALIDATION').order_by('date_declaration')
+    sinistres = Sinistre.objects.filter(
+        statut='ATTENTE_VALIDATION',
+        assure__assure__agence=chef.agence,    
+    ).order_by('date_declaration')
     return render(request, 'dossiers_a_valider.html', {'chef': chef, 'sinistres': sinistres})
 
 
@@ -854,7 +881,10 @@ def dossiers_a_corriger_chef(request):
     chef = getattr(request.user, 'chef', None)
     if not chef:
         return redirect('accueil_assure')
-    sinistres_a_corriger = Sinistre.objects.filter(statut="A_CORRIGER").order_by('date_declaration')
+    sinistres_a_corriger = Sinistre.objects.filter(
+        statut="A_CORRIGER",
+        assure__assure__agence=chef.agence,
+    ).order_by('date_declaration')
 
     context = {
         'sinistres_a_corriger' : sinistres_a_corriger,
@@ -1135,15 +1165,19 @@ def modifier_profil_chef(request):
     chef = getattr(request.user, 'chef', None)
     if not chef:
         return redirect('accueil_assure')
+    
     if request.method == 'POST':
-        form = ModifierProfilForm(request.POST, instance=request.user)
+        form = ModifierProfilForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Vos informations ont été mises à jour.")
+            request.user.email = form.cleaned_data['email']
+            request.user.save(update_fields=['email'])
+            chef.telephone = form.cleaned_data['telephone']
+            chef.save(update_fields=['telephone'])
+            messages.success(request, "Vos informations on été mis à jour avec succès.")
             return redirect('profil_chef')
     else:
-        form = ModifierProfilForm(instance=request.user)
-    return render(request, 'modifier_profil_chef.html', {'form': form})
+        form = ModifierProfilForm(initial={'email':request.user.email, 'telephone':chef.telephone})
+    return render(request, 'modifier_profil_chef.html', {'form':form})
 
 
 #-------------------------------------------------------------------
@@ -1451,7 +1485,7 @@ def supervision_sinistres(request):
         sinistres = sinistres.filter(nature=nature)
     if recherche:
         sinistres = sinistres.filter(
-            Q(numero_sinistre__icontains=recherche) | Q(n_police__icontains=recherche)
+            Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
         )
 
     context = {
@@ -1477,16 +1511,16 @@ def profil_admin(request):
 @user_passes_test(lambda u: u.is_staff)
 def modifier_profil_admin(request):
     if request.method == 'POST':
-        form = ModifierProfilForm(request.POST, instance=request.user)
+        form = ModifierProfilAdminForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Vos informations ont été mises à jour.")
             return redirect('profil_admin')
     else:
-        form = ModifierProfilForm(instance=request.user)
+        form = ModifierProfilAdminForm(instance=request.user)
     return render(request, 'modifier_profil_admin.html', {'form': form})
-
-
+   
+        
 # Fonction permettant à l'administrateur d'importer des contrats via un fichier Excel
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -2056,3 +2090,23 @@ def mot_de_passe_oublie_etape2(request):
         form = SetPasswordForm(user)
 
     return render(request, 'mot_de_passe_oublie_etape2.html', {'form': form})
+
+
+#-------------------------------------------------------------------
+#                   GENERAL
+#-------------------------------------------------------------------
+
+
+# Fonction permettant à tous les utilisateurs de modifier leur mot de passe
+@login_required
+def changer_mot_de_passe_en_cours_admin(request):
+    if request.method == 'POST':
+        form = StylePasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user)
+            messages.success(request, "Mot de passe modifié avec succès.")
+            return redirect('redirection_login')
+    else:
+        form = StylePasswordChangeForm(request.user)
+    return render(request, 'changer_mot_de_passe_en_cours_admin.html', {'form': form})

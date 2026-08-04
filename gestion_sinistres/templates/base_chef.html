@@ -37,6 +37,9 @@
     <!-- Barre latérale / Sidebar -->
     <nav class="sidebar">
         <div class="d-flex align-items-center justify-content-between py-4 px-3 border-bottom border-light border-opacity-25">
+            <div>
+                <img src="{% static 'Logo2.jpeg' %}" alt="Logo2" style="height: 60px; width: auto; padding: 4px; border-radius: 6px;">
+            </div>
             <h5 class="mb-0">Fidélia eSinistre</h5>
             <!-- Bouton de fermeture de la sidebar sur mobile -->
             <button class="sidebar-toggle d-lg-none text-white" id="sidebarClose" style="font-size: 1.25rem;"><i class="bi bi-x-lg"></i></button>
@@ -78,7 +81,7 @@
             <div class="d-flex align-items-center">
                 <!-- Bouton Burger pour ouvrir la sidebar sur mobile -->
                 <button class="sidebar-toggle me-3" id="sidebarToggle"><i class="bi bi-list"></i></button>
-                <h5 class="mb-0"><i class="bi bi-person-fill"></i> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
+                <h5 class="mb-0"> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
             </div>
             <a href="{% url 'profil_chef' %}" class="user-badge text-decoration-none">
                 {{ request.user.first_name|first|default:"C" }}{{ request.user.last_name|first|default:"D" }}
