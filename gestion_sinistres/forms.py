@@ -6,44 +6,57 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from .auth_utils import get_profil_par_identifiant, profil_est_bloque, enregistrer_echec, reinitialiser_tentatives
 
+# CALCUL DES JOURS
 def jours_ouvres_entre(date_debut, date_fin):
+    # jours = Jours ouvrés
     jours = 0
     date_courante = date_debut
     while date_courante < date_fin:
         date_courante += timedelta(days=1)
+        # Vérifie si le jour de la semaine (weekday) est inférieur à 5 (Lundi=0; Vendredi=4)
         if date_courante.weekday() < 5:
             jours += 1
     return jours
 
 
+# GESTION DES FICHIERS MULTIPLES
 class MultipleFileInput(forms.ClearableFileInput):
+    # Autorise l'attribut HTML 'multiple' pour sélectionner plusieurs fichiers dans un champ
     allow_multiple_selected = True
 
     def value_from_datadict(self, data, files, name):
+        # Récupère la liste complète des fichiers envoyés via la requête HTTP grâce à "getlist"
         if hasattr(files, 'getlist'):
             return files.getlist(name)
+        # On utilise "get" en cas d'ajout d'un seul fichier
         return files.get(name)
 
     
 class MultipleFileField(forms.FileField):
     def __init__(self, *args, **kwargs):
+        # Force l'utilisation du widget d'ajout des fichiers personnalisé et active l'attribut multiple par défaut
         kwargs.setdefault("widget", MultipleFileInput(attrs={'class': 'form-control', 'multiple': True}))
         super().__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
+        # Si plusieurs fichiers on active la validation unitaire standard de Django à chacun d'eux
         single_file_clean = super().clean
         if isinstance(data, (list, tuple)):
             result = [single_file_clean(d, initial) for d in data]
+        # Si un seul fichier on le valide normalement
         else:
             result = single_file_clean(data, initial)
         return result
 
-    
+
+# FORMULAIRE DE GESTION DES SINISTRES    
 class SinistreForm(forms.ModelForm):
+    # Champ personnalisé permettant d'uploader plusieurs fichiers ou pièces justificatives au même moment
     fichiers_justificatifs = MultipleFileField(required=False, label="Pièces justificatives")
 
     class Meta:
         model = Sinistre
+        # Liste des champs du modèle sinistre inclus dans le formulaire de déclaration
         fields = [
             'vehicule', 
             'nom_conducteur',
@@ -66,6 +79,8 @@ class SinistreForm(forms.ModelForm):
             'nombre_morts',
             'lettre_derogation',
         ]
+        
+        # Définition des widgets HTML (Classes CSS, Bootstrap, types de champs) pour chaque élément du formulaire
         widgets = {
             'vehicule': forms.Select(attrs={'class': 'form-control'}),
             'nom_conducteur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du conducteur'}),
@@ -91,18 +106,12 @@ class SinistreForm(forms.ModelForm):
         }
 
     def clean_prix_retenu(self):
+        # Récupère la valeur du prix saisi par le rédacteur sinistre
         prix_retenu = self.cleaned_data.get('prix_retenu')
         
-        # Récupération de l'instance du sinistre en cours d'édition
+        # Vérifie si le sinistre existe déjà en base et s'il est rattaché à une quittance
         if self.instance and self.instance.quittance:
             quittance = self.instance.quittance
-            
-            if prix_retenu is not None and quittance.prime is not None:
-                if prix_retenu > quittance.prime:
-                    raise forms.ValidationError(
-                        f"Le prix retenu ({prix_retenu} FCFA) ne peut pas dépasser la prime de la quittance ({quittance.prime} FCFA)."
-                    )
-        
         return prix_retenu
     
     def __init__(self, *args, **kwargs):
@@ -114,12 +123,14 @@ class SinistreForm(forms.ModelForm):
         if user is not None and hasattr(user, 'vehicules'):
             self.fields['vehicule'].queryset = Vehicule.objects.filter(proprietaire=user)
         
+        # Texte par défaut dans le menu déroulant des véhicules
         self.fields['vehicule'].empty_label = "Sélectionnez votre véhicule"
 
 
 class ModifierProfilForm(forms.ModelForm):
     class Meta:
         model = User
+        # Permet de modifier uniquement quelques informations de l'utilisateur
         fields = ['first_name', 'last_name', 'email']
         widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control'}),
@@ -132,6 +143,7 @@ class ModifierProfilForm(forms.ModelForm):
         
 
 class AgentCreationForm(forms.Form):
+    # Champ de création d'un agent
     matricule = forms.CharField(max_length=20, label="Matricule", widget=forms.TextInput(attrs={'class': 'form-control'}))
     nom = forms.CharField(max_length=100, label="Nom", widget=forms.TextInput(attrs={'class': 'form-control'}))
     prenom = forms.CharField(max_length=100, label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
@@ -141,12 +153,14 @@ class AgentCreationForm(forms.Form):
 
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
+        # Vérifie si le matricule est déjà attribué à un autre agent
         if Agent.objects.filter(matricule=matricule).exists():
             raise forms.ValidationError("Ce matricule existe déjà.")
         return matricule
 
 
 class ChefCreationForm(forms.Form):
+    # Champ de création d'un chef
     matricule = forms.CharField(max_length=20, label="Matricule", widget=forms.TextInput(attrs={'class': 'form-control'}))
     nom = forms.CharField(max_length=100, label="Nom", widget=forms.TextInput(attrs={'class': 'form-control'}))
     prenom = forms.CharField(max_length=100, label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
@@ -156,6 +170,7 @@ class ChefCreationForm(forms.Form):
 
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
+        # Vérifie si le matricule est déjà attribué à un autre chef
         if ChefDepartement.objects.filter(matricule=matricule).exists():
             raise forms.ValidationError("Ce matricule existe déjà.")
         return matricule
@@ -164,6 +179,7 @@ class ChefCreationForm(forms.Form):
 class ModifierAgentAdminForm(forms.ModelForm):
     class Meta:
         model = Agent
+        # Champ modifiable par l'administrateur pour un agent
         fields = ['matricule', 'telephone', 'agence']
         widgets = {
             'matricule': forms.TextInput(attrs={'class': 'form-control'}),
@@ -175,6 +191,7 @@ class ModifierAgentAdminForm(forms.ModelForm):
 class ModifierChefAdminForm(forms.ModelForm):
     class Meta:
         model = ChefDepartement
+        # Champ modifiable par l'administrateur pour un chef
         fields = ['matricule', 'telephone', 'agence']
         widgets = {
             'matricule': forms.TextInput(attrs={'class': 'form-control'}),
@@ -184,6 +201,7 @@ class ModifierChefAdminForm(forms.ModelForm):
 
         
 class DemanderComplementsForm(forms.Form):
+    # Champ de texte pour rédiger le motif des pièces manquantes à réclamer à l'assuré
     motif = forms.CharField(
         label="Précisez les éléments manquants",
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
@@ -191,6 +209,7 @@ class DemanderComplementsForm(forms.Form):
 
 
 class MarquerConformeForm(forms.Form):
+    # Champ permettant de valider le prix retenu lors du marquage conforme d'un sinistre
     prix_retenu = forms.DecimalField(
         label="Prix retenu (FCFA)",
         max_digits=12, decimal_places=2,
@@ -199,35 +218,14 @@ class MarquerConformeForm(forms.Form):
 
 
 class IndemnisationForm(forms.Form):
-    beneficiaire_nom = forms.CharField(
-        label="Nom du bénéficiaire",
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    beneficiaire_prenoms = forms.CharField(
-        label="Prénoms du bénéficiaire",
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    beneficiaire_telephone = forms.CharField(
-        label="Téléphone du bénéficiaire",
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    numero_cheque = forms.CharField(
-        label="Numéro de chèque",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: CHK-2026-001'}),
-    )
-    banque_cheque = forms.CharField(
-        label="Banque émettrice",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Ecobank'}),
-    )
-    montant_cheque = forms.DecimalField(
-        label="Montant versé (FCFA)",
-        max_digits=12, decimal_places=2,
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
-    )
-    date_emission_cheque = forms.DateField(
-        label="Date d'émission du chèque",
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-    )
+    # Recense les informations du bénéficiaire et du chèque d'indemnisation
+    beneficiaire_nom = forms.CharField(label="Nom du bénéficiaire",widget=forms.TextInput(attrs={'class': 'form-control'}))
+    beneficiaire_prenoms = forms.CharField(label="Prénoms du bénéficiaire",widget=forms.TextInput(attrs={'class': 'form-control'}))
+    beneficiaire_telephone = forms.CharField(label="Téléphone du bénéficiaire",widget=forms.TextInput(attrs={'class': 'form-control'}))
+    numero_cheque = forms.CharField(label="Numéro de chèque",widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: CHK-2026-001'}))
+    banque_cheque = forms.CharField(label="Banque émettrice",widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Ecobank'}))
+    montant_cheque = forms.DecimalField(label="Montant versé (FCFA)",max_digits=12, decimal_places=2,widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}))
+    date_emission_cheque = forms.DateField(label="Date d'émission du chèque",widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
 
     def __init__(self, *args, **kwargs):
         # Récupération du sinistre passé depuis la vue
@@ -241,6 +239,7 @@ class IndemnisationForm(forms.Form):
 
     def clean_montant_cheque(self):
         montant = self.cleaned_data.get('montant_cheque')
+        # Vérifie que le montant du chèque ne dépasse pas la valeur du prix retenu sur le sinistre
         if self.sinistre and self.sinistre.prix_retenu:
             if montant > self.sinistre.prix_retenu:
                 raise forms.ValidationError(
@@ -250,6 +249,7 @@ class IndemnisationForm(forms.Form):
     
 
 class SansSuiteForm(forms.Form):
+    # Champ permettant de rédiger le motif de classement d'un dossier sans suite
     motif = forms.CharField(
         label="Motif du classement sans suite",
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
@@ -257,11 +257,12 @@ class SansSuiteForm(forms.Form):
 
 
 class ImportExcelForm(forms.Form):
+    # Champ fichier unique pour téléverser un fichier Excel (.xlsx)
     fichier = forms.FileField(label="Fichier Excel des contrats (.xlsx)")
 
 
 class AssureAdminForm(forms.ModelForm):
-    # Champs de l'utilisateur lié
+    # Champs supplémentaires pour manipuler directement le profil utilisateur django lié à l'assuré
     first_name = forms.CharField(label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
     last_name = forms.CharField(label="Nom", widget=forms.TextInput(attrs={'class': 'form-control'}))
     email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
@@ -276,6 +277,7 @@ class AssureAdminForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # Pré-remplit les champs prénom, nom et email à partir de l'objet User associé à l'assuré
         if self.instance and self.instance.pk and self.instance.user:
             self.fields['first_name'].initial = self.instance.user.first_name
             self.fields['last_name'].initial = self.instance.user.last_name
@@ -283,6 +285,7 @@ class AssureAdminForm(forms.ModelForm):
 
     def save(self, commit=True):
         assure = super().save(commit=False)
+        # Met à jour et sauvegarde également l'objet utilisateur Django lié
         if assure.user:
             assure.user.first_name = self.cleaned_data['first_name']
             assure.user.last_name = self.cleaned_data['last_name']
@@ -295,6 +298,7 @@ class AssureAdminForm(forms.ModelForm):
 
 
 class ChequeForm(forms.ModelForm):
+    # Champ du modèle Cheque
     class Meta:
         model = Cheque
         fields = [
@@ -320,11 +324,11 @@ class ChequeForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.sinistre:
-            # 1. Pré-remplissage du montant avec le prix retenu du sinistre
+            # Pré-remplissage du montant avec le prix retenu du sinistre
             if not self.initial.get('montant') and self.sinistre.prix_retenu is not None:
                 self.fields['montant'].initial = self.sinistre.prix_retenu
 
-            # 2. Pré-remplissage du nom du bénéficiaire
+            # Pré-remplissage du nom du bénéficiaire
             if not self.initial.get('beneficiaire') and self.sinistre.assure:
                 user_assure = self.sinistre.assure
                 nom_complet = f"{user_assure.last_name} {user_assure.first_name}".strip()
@@ -332,7 +336,7 @@ class ChequeForm(forms.ModelForm):
 
     def clean_montant(self):
         montant = self.cleaned_data.get('montant')
-        # Vérification logique : le chèque ne doit pas dépasser le prix retenu du sinistre
+        # Le montant du chèque ne doit pas dépasser le prix retenu du sinistre
         if self.sinistre and self.sinistre.prix_retenu is not None:
             if montant > self.sinistre.prix_retenu:
                 raise forms.ValidationError(
@@ -349,7 +353,7 @@ class EsinistreAuthentificationForm(AuthenticationForm):
         if username:
             profil = get_profil_par_identifiant(username)
             
-            # 1. Vérifier si le compte est déjà bloqué
+            # Vérifier si le compte est déjà bloqué et bloquer immédiatement la tentative si oui
             if profil_est_bloque(profil):
                 raise forms.ValidationError(
                     "Vous avez atteint 3 tentatives infructueuses. Votre compte est bloqué. "
@@ -357,11 +361,11 @@ class EsinistreAuthentificationForm(AuthenticationForm):
                     code='compte_bloque',
                 )
 
-        # 2. Laisser Django effectuer sa validation normale
+        # Laisser Django effectuer sa validation normale (Vérfication du mot de passe)
         try:
             cleaned_data = super().clean()
         except forms.ValidationError:
-            # 3. Si Django refuse l'authentification (mauvais mot de passe), on enregistre l'échec
+            # Si Django refuse l'authentification (mauvais mot de passe), on enregistre l'échec et on incrémente les tentatives
             if username:
                 enregistrer_echec(username)
                 
@@ -375,7 +379,7 @@ class EsinistreAuthentificationForm(AuthenticationForm):
                     )
             raise
 
-        # 4. Si la connexion réussit, on remet le compteur à zéro
+        # Si la connexion réussit, on remet le compteur à zéro
         if username:
             profil = get_profil_par_identifiant(username)
             reinitialiser_tentatives(profil)
@@ -384,16 +388,12 @@ class EsinistreAuthentificationForm(AuthenticationForm):
             
 
 class MotDePasseOublieForm(forms.Form):
-    identifiant = forms.CharField(
-        label="N° de police / Identifiant",
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    telephone = forms.CharField(
-        label="Téléphone enregistré",
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
+    # Champs pour identifier l'utilisateur lors de la demande de réinitialisation de mot de passe
+    identifiant = forms.CharField(label="N° de police / Identifiant",widget=forms.TextInput(attrs={'class': 'form-control'}))
+    telephone = forms.CharField(label="Téléphone enregistré",widget=forms.TextInput(attrs={'class': 'form-control'}))
 
 
+# GESTION DE LA SITUATION GEOGRAPHIQUE
 class RegionForm(forms.ModelForm):
     class Meta:
         model = Region
@@ -404,6 +404,7 @@ class RegionForm(forms.ModelForm):
 class CommuneForm(forms.ModelForm):
     class Meta:
         model = Commune
+        # Rattache une commune à une région
         fields = ['region', 'nom']
         widgets = {
             'region':forms.Select(attrs={'class': 'form-select'}),
@@ -414,6 +415,7 @@ class CommuneForm(forms.ModelForm):
 class VilleForm(forms.ModelForm):
     class Meta:
         model = Ville
+        # Rattache une ville à une commune
         fields = ['commune', 'nom']
         widgets = {
             'commune': forms.Select(attrs={'class': 'form-select'}),
@@ -422,28 +424,16 @@ class VilleForm(forms.ModelForm):
 
 
 class RetraitChequeForm(forms.Form):
-    nom_retirant = forms.CharField(
-        label="Nom du retirant", required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Laisser vide si c'est le bénéficiaire"}),
-    )
-
-    type_piece_retirant = forms.ChoiceField(
-        label="Type de pièce", choices=Paiement.TYPE_PIECE_CHOICES,
-        widget= forms.Select(attrs={'class': 'form-select'}),
-    )
-
-    numero_piece_retirant = forms.CharField(
-        label="N° de la pièce",
-        widget= forms.TextInput(attrs={'class': 'form-control'}),
-    )
-
-    piece_identite_retirant = forms.FileField(
-        label="Scan/Photo de la pièce",
-        widget= forms.ClearableFileInput(attrs={'class': 'form-control'}),
-    )
+    
+    #Formulaire de tracabilité pour le retrait physique d'un chèque
+    nom_retirant = forms.CharField(label="Nom du retirant", required=False,widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Laisser vide si c'est le bénéficiaire"}))
+    type_piece_retirant = forms.ChoiceField(label="Type de pièce", choices=Paiement.TYPE_PIECE_CHOICES,widget= forms.Select(attrs={'class': 'form-select'}))
+    numero_piece_retirant = forms.CharField(label="N° de la pièce",widget= forms.TextInput(attrs={'class': 'form-control'}))
+    piece_identite_retirant = forms.FileField(label="Scan/Photo de la pièce",widget= forms.ClearableFileInput(attrs={'class': 'form-control'}))
 
 
 class AgenceForm(forms.ModelForm):
+    # Permet de lier une agence physique à une ville spécifique
     ville = forms.ModelChoiceField(
         queryset=Ville.objects.all(),
         label="Ville",

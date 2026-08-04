@@ -9,13 +9,13 @@ class Region(models.Model):
     nom = models.CharField(max_length=100)
     def __str__(self): return self.nom
 
-# Classe ville
+# Classe commune liée à une région
 class Commune(models.Model):
     region = models.ForeignKey(Region, on_delete=models.CASCADE)
     nom = models.CharField(max_length=100)
     def __str__(self): return self.nom
 
-# Classe commune
+# Classe ville  lié à une commune
 class Ville(models.Model):
     commune = models.ForeignKey(Commune, on_delete=models.CASCADE)
     nom = models.CharField(max_length=100)
@@ -35,6 +35,7 @@ class Vehicule(models.Model):
     
 
 class Quittance(models.Model):
+    # Contrat (Assuré) auquel cette quittance est rattachée
     contrat = models.ForeignKey('Assure', on_delete=models.CASCADE, related_name='quittances')
     numero_quittance = models.CharField(max_length=50, unique=True)
     type_contrat = models.CharField(max_length=100, blank=True, null=True)
@@ -47,26 +48,14 @@ class Quittance(models.Model):
     prix_valide = models.BooleanField(default=False)
     
     class Meta:
+        # Contraintes de la base de données
         constraints = [
-            models.CheckConstraint(
-                condition=models.Q(prix_retenu__lte=models.F('prime')),
-                name='check_prix_retenu_lte_prime'
-            ),
-            models.CheckConstraint(
-                condition=models.Q(date_debut__lte=models.F('date_fin')),
-                name='check_quittance_date_debut_lte_date_fin'
-            ),
+            models.CheckConstraint(condition=models.Q(prix_retenu__lte=models.F('prime')),name='check_prix_retenu_lte_prime'),
+            models.CheckConstraint(condition=models.Q(date_debut__lte=models.F('date_fin')),name='check_quittance_date_debut_lte_date_fin'),
         ]
 
     def clean(self):
         super().clean()
-
-        # Validation logique : prix_retenu <= prime
-        if self.prix_retenu is not None and self.prime is not None:
-            if self.prix_retenu > self.prime:
-                raise ValidationError({
-                    'prix_retenu': "Le prix retenu ne peut pas être supérieur à la prime."
-                })
 
         # Validation logique : date_debut <= date_fin
         if self.date_debut and self.date_fin and self.date_debut > self.date_fin:
@@ -87,7 +76,7 @@ class Quittance(models.Model):
 class Sinistre(models.Model):
     NATURE_CHOICES = [('C', 'Corporel'), ('M', 'Matériel'), ('X', 'Mixte')]
 
-    # STATUTS
+    # STATUTS POSSIBLES D'UN DOSSIER SINISTRE
     STATUS_CHOICES = [
         ('SOUMIS', 'Soumis'),
         ('ATTENTE_COMPLEMENTS', 'En attente de compléments'),
@@ -152,26 +141,26 @@ class Sinistre(models.Model):
 
     @property
     def total_paye(self):
-        """Calcule la somme totale des paiements/chèques émis pour ce sinistre"""
+        # Calcule la somme totale des paiements/chèques émis pour ce sinistre
         return sum(p.montant for p in self.paiements.all())
 
     @property
     def reste_a_payer(self):
-        """Calcule le montant restant à verser par rapport au prix retenu"""
+        # Calcule le montant restant à verser par rapport au prix retenu
         if self.prix_retenu is None:
             return 0
         return self.prix_retenu - self.montant_deja_paye
 
     def clean(self):
         super().clean()
-
+        # S'assure que le prix retenu n'est pas négatif
         if self.prix_retenu is not None and self.prix_retenu < 0:
             raise ValidationError({
                 'prix_retenu': f"Le prix retenu ({self.prix_retenu} FCFA) ne peut pas être négatif."
             })
 
     def save(self, *args, **kwargs):
-        # 1. Génération automatique du numéro de sinistre à la création
+        # Génération automatique du numéro de sinistre à la création
         if not self.numero_sinistre:
             annee = timezone.now().strftime('%Y')
             count = Sinistre.objects.filter(
@@ -180,7 +169,7 @@ class Sinistre(models.Model):
             ordre = str(count).zfill(6)
             self.numero_sinistre = f"{annee}{self.numero_point_vente}{self.nature}{ordre}"
 
-        # 2. Exécute la méthode clean() pour forcer la validation avant sauvegarde
+        # Exécute la méthode clean() pour forcer la validation avant sauvegarde
         self.full_clean()
 
         super().save(*args, **kwargs)
@@ -189,6 +178,7 @@ class Sinistre(models.Model):
         return f"Sinistre {self.numero_sinistre} - {self.nature}"
     
 
+# Statut possible d'un chèque
 class Paiement(models.Model):
     STATUT_PAIEMENT = [
             ('EMIS', 'Emis'),
@@ -310,7 +300,6 @@ class ChefDepartement(models.Model):
         return f"{self.user.get_full_name() or self.user.username} - Chef"
 
 
-# models.py
 class Cheque(models.Model):
     STATUT_CHEQUE = [
         ('EN_PREPARATION', 'En cours de préparation'),

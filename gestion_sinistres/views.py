@@ -31,8 +31,11 @@ from .models import (
 )
 
 
-# --- AUTHENTIFICATION & REDIRECTION ---
+#-------------------------------------------------------------------
+#                   AUTHENTIFICATION & REDIRECTION
+#-------------------------------------------------------------------
 
+# Regirige l'utilisateur connecté vers son tableau de bord
 @login_required
 def redirection_login(request):
     if request.user.is_staff:
@@ -46,6 +49,7 @@ def redirection_login(request):
     return redirect('login')
 
 
+# Activation du compte assuré via le numéro de police
 def activation_etape1(request):
     if request.method == 'POST':
         numero_police = request.POST.get('numero_police', '').strip()
@@ -58,6 +62,7 @@ def activation_etape1(request):
     return render(request, 'activation_etape1.html')
 
 
+# Définition du mot de passe lors de la première activation du compte
 def activation_etape2(request):
     assure_id = request.session.get('activation_assure_id')
     if not assure_id:
@@ -81,6 +86,7 @@ def activation_etape2(request):
     return render(request, 'activation_etape2.html', {'form': form, 'assure': assure})
 
 
+# Gère l'acceptation obligatoire de la politique de confidentialité par l'assuré
 @login_required
 def politique_confidentialite(request):
     assure = getattr(request.user, 'assure', None)
@@ -98,8 +104,40 @@ def politique_confidentialite(request):
     return render(request, 'politique_confidentialite.html')
 
 
-# --- ESPACE ASSURÉ ---
+# Gère la connexion personnalisée avec sécurité anti-brute-force (blocage temporaire).
+def ma_vue_de_connexion(request):
+    if request.method == 'POST':
+        identifiant = request.POST.get('username')
+        mot_de_passe = request.POST.get('password')
+        
+        # 1. Récupérer le profil pour vérifier s'il est bloqué
+        profil = get_profil_par_identifiant(identifiant)
+        
+        if profil_est_bloque(profil):
+            messages.error(request, "Votre compte est temporairement bloqué suite à 3 tentatives infructueuses. Veuillez patienter 5 minutes.")
+            return render(request, 'login.html') # Remplacez 'login.html' par le nom exact de votre fichier HTML ci-dessus
 
+        # 2. Tenter l'authentification Django
+        user = authenticate(request, username=identifiant, password=mot_de_passe)
+        
+        if user is not None:
+            login(request, user)
+            reinitialiser_tentatives(profil) # Remet les compteurs à zéro en cas de succès
+            return redirect('redirection_login') # Utilise votre vue de redirection existante pour dispatcher l'utilisateur
+        else:
+            # 3. Enregistrer l'échec en cas de mauvais mot de passe
+            enregistrer_echec(identifiant)
+            messages.error(request, "Identifiant ou mot de passe incorrect.")
+            
+    return render(request, 'login.html')
+
+
+#-------------------------------------------------------------------
+#                   ESPACE ASSURÉ
+#-------------------------------------------------------------------
+
+
+# Tableau de bord principal de l'assuré
 @login_required
 def accueil_assure(request):
     all_sinistres = Sinistre.objects.filter(assure=request.user)
@@ -111,6 +149,7 @@ def accueil_assure(request):
     return render(request, 'accueil_assure.html', context)
 
 
+# Déclarer un sinistre ou poursuivre sa déclaration
 @login_required
 def declarer_sinistre(request):
     sinistre_id = request.session.get('temp_sinistre_id')
@@ -173,9 +212,9 @@ def declarer_sinistre(request):
     return render(request, 'declaration.html', {'form': form, 'title': 'Déclarer un sinistre'})
 
 
+# Vue permettant à l'assuré de consulter son dossier.
 @login_required
 def detail_sinistre(request, sinistre_id):
-    """Vue permettant à l'assuré de consulter son dossier."""
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
     
     if request.method == 'POST' and 'contenu' in request.POST:
@@ -210,12 +249,14 @@ def detail_sinistre(request, sinistre_id):
     return render(request, 'detail_sinistre.html', context)
 
 
+# Consulter les détails d'un dossier sinistre côté assuré (suivi, messages, historique).
 @login_required
 def suivi_sinistres(request):
     sinistres = Sinistre.objects.filter(assure=request.user).order_by('-date_declaration')
     return render(request, 'suivi_sinistres.html', {'sinistres': sinistres})
 
 
+# Permet à l'assuré de répondre à une demande de pièces complémentaires.
 @login_required
 def fournir_complements(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
@@ -239,6 +280,7 @@ def fournir_complements(request, sinistre_id):
     return render(request, 'fournir_complements.html', {'sinistre': sinistre})
 
 
+# Permet à l'assuré d'annuler et supprimer la déclaration de sinistre en cours
 @login_required
 def annuler_declaration(request):
     sinistre_id = request.session.pop('temp_sinistre_id', None)
@@ -247,6 +289,7 @@ def annuler_declaration(request):
     return redirect('accueil_assure')
 
 
+# Page de récapitulatif avant la validation définitive de la déclaration.
 @login_required
 def confirmer_sinistre(request):
     sinistre_id = request.session.get('temp_sinistre_id')
@@ -260,6 +303,7 @@ def confirmer_sinistre(request):
     return render(request, 'confirmation.html', {'sinistre': sinistre, 'pieces': sinistre.pieces.all()})
 
 
+# Finalise la transmission du dossier de sinistre à l'agent
 @login_required
 def finaliser_envoi(request):
     if request.method == 'POST':
@@ -282,17 +326,20 @@ def finaliser_envoi(request):
     return redirect('confirmer_sinistre')
 
 
+# Affiche la liste de tous les documents rattachés aux sinistres de l'assuré.
 @login_required
 def documents_assure(request):
     pieces = PieceJointe.objects.filter(sinistre__assure=request.user)
     return render(request, 'documents_assure.html', {'pieces': pieces})
 
 
+# Affiche le profil de l'assuré
 @login_required
 def profil_assure(request):
     return render(request, 'profil_assure.html', {'user': request.user})
 
 
+# Permet à l'assuré de modifier ses informations personnelles
 @login_required
 def modifier_profil(request):
     if request.method == 'POST':
@@ -306,13 +353,31 @@ def modifier_profil(request):
     return render(request, 'modifier_profil.html', {'form': form})
 
 
+# Permet à l'assuré de voir ses différents contrats
 @login_required
 def mes_contrats(request):
     quittances = Quittance.objects.filter(contrat__user=request.user).prefetch_related('vehicules')
     return render(request, 'mes_contrats.html', {'quittances': quittances})
 
 
-# --- ESPACE AGENT ---
+# Permet à l'assuré de consulter le détail d'une quittance et ses véhicules rattachés à son contrat.
+@login_required
+def detail_contrat_assure(request, quittance_id):
+    quittance = get_object_or_404(Quittance, id=quittance_id, contrat__user=request.user)
+    vehicules = quittance.vehicules.all() if hasattr(quittance, 'vehicules') else []
+    
+    return render(request, 'detail_contrat_assure.html', {
+        'quittance': quittance,
+        'vehicules': vehicules,
+    })
+
+
+#-------------------------------------------------------------------
+#                   ESPACE AGENT
+#-------------------------------------------------------------------
+
+
+# Redirige l'utilisateur vers sa page d'acceuil
 @login_required
 def accueil_agent(request):
     agent = getattr(request.user, 'agent', None)
@@ -335,6 +400,7 @@ def accueil_agent(request):
     return render(request, 'accueil_agent.html', context)
 
 
+# Tableau de bord alternatif affichant les sinistres en cours
 @login_required
 def tableau_bord_agent(request):
     if not request.user.groups.filter(name='Agent').exists():
@@ -343,6 +409,7 @@ def tableau_bord_agent(request):
     return render(request, 'agent/dashboard.html', {'sinistres': sinistres_a_traiter})
 
 
+# Tableau de bord alternatif affichant les sinistres à instruire
 @login_required
 def dossiers_a_instruire(request):
     agent = getattr(request.user, 'agent', None)
@@ -356,6 +423,7 @@ def dossiers_a_instruire(request):
     return render(request, 'agent_a_instruire.html', {'agent': agent, 'sinistres': sinistres})
 
 
+# Permet à un agent de s'assigner la prise en charge d'un dossier soumis.
 @login_required
 def prendre_en_charge(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
@@ -378,6 +446,7 @@ def prendre_en_charge(request, sinistre_id):
     return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
 
 
+# Permet à l'assuré de voir les informations ou détails d'un sinistre
 @login_required
 def detail_sinistre_agent(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
@@ -446,6 +515,7 @@ def detail_sinistre_agent(request, sinistre_id):
     return render(request, 'detail_sinistre_agent.html', context)
 
 
+# Permet à l'agent d'associer manuellement une quittance à une déclaration si un numéro de police est lié à pluisieurs quittances
 @login_required
 def lier_quittance_agent(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
@@ -471,6 +541,7 @@ def lier_quittance_agent(request, sinistre_id):
     return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
 
 
+# Permet à l'agent de marquer un dossier comme conforme et l'envoyer au chef
 @login_required
 def marquer_conforme(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
@@ -510,6 +581,7 @@ def marquer_conforme(request, sinistre_id):
     return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
 
 
+# Permet à l'agent de demander des pièces ou informations manquantes ou complémentaires
 @login_required
 def demander_complements(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
@@ -539,6 +611,7 @@ def demander_complements(request, sinistre_id):
     return render(request, 'demander_complements.html', {'sinistre': sinistre, 'form': form})
 
 
+# Permet à l'agent de saisir le prix retenu par le département indemnisation après que le dossier soit passé à en cours
 @login_required
 def saisir_prix_retenu(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
@@ -546,10 +619,7 @@ def saisir_prix_retenu(request, sinistre_id):
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
-
-    # Le prix retenu peut être saisi une première fois en EN_COURS,
-    # ou révisé si le Chef a renvoyé le dossier en A_CORRIGER pour ce motif
-    # (dans ce cas, l'attestation a déjà été générée précédemment)
+    
     autorise = sinistre.statut == 'EN_COURS' or (
         sinistre.statut == 'A_CORRIGER' and sinistre.attestation_generee
     )
@@ -589,6 +659,7 @@ def saisir_prix_retenu(request, sinistre_id):
         return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
 
     
+# Permet à l'agent d'enregistrer les détails du paiement pour un sinistre clôturé
 @login_required
 def saisir_indemnisation(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
@@ -621,6 +692,7 @@ def saisir_indemnisation(request, sinistre_id):
     return render(request, 'saisir_indemnisation.html', {'sinistre': sinistre, 'form': form})
 
 
+# Fonction affichant à l'agent les dossiers de sinistres avec le statut en cours
 @login_required
 def dossiers_en_cours(request):
     agent = getattr(request.user, 'agent', None)
@@ -630,6 +702,7 @@ def dossiers_en_cours(request):
     return render(request, 'dossiers_en_cours.html', {'agent': agent, 'sinistres': sinistres})
 
 
+# Fonction affichant à l'agent les dossiers de sinistres avec le statut clôturé
 @login_required
 def dossiers_clotures(request):
     agent = getattr(request.user, 'agent', None)
@@ -639,6 +712,7 @@ def dossiers_clotures(request):
     return render(request, 'dossiers_clotures.html', {'agent': agent, 'sinistres': sinistres})
 
 
+# Fonction affichant à l'agent les dossiers de sinistres avec le statut à corriger
 @login_required
 def dossiers_a_corriger_agent(request):
     chef = getattr(request.user, 'agent', None)
@@ -653,6 +727,7 @@ def dossiers_a_corriger_agent(request):
     return render(request, 'dossiers_a_corriger_agent.html', context)
 
 
+# Fonction affichant à l'agent tous les dossiers de sinistres
 @login_required
 def tous_sinistres_agent(request):
     agent = getattr(request.user, 'agent', None)
@@ -687,6 +762,7 @@ def tous_sinistres_agent(request):
     return render(request, 'tous_sinistres_agent.html', context)
 
 
+# Permet à l'agent de modifier son mot de passe
 @login_required
 def changer_mot_de_passe_agent(request):
     agent = getattr(request.user, 'agent', None)
@@ -709,6 +785,7 @@ def changer_mot_de_passe_agent(request):
     return render(request, 'changer_mot_de_passe_agent.html', {'form': form})
 
 
+# Affiche le profil de l'agent
 @login_required
 def profil_agent(request):
     agent = getattr(request.user, 'agent', None)
@@ -717,6 +794,7 @@ def profil_agent(request):
     return render(request, 'profil_agent.html', {'agent': agent})
 
 
+# Permet à l'agent de modifier certaines de ses informations personnelles
 @login_required
 def modifier_profil_agent(request):
     agent = getattr(request.user, 'agent', None)
@@ -733,8 +811,12 @@ def modifier_profil_agent(request):
     return render(request, 'modifier_profil_agent.html', {'form': form})
 
 
-# --- ESPACE CHEF DE DÉPARTEMENT ---
+#-------------------------------------------------------------------
+#                   ESPACE CHEF DE DÉPARTEMENT
+#-------------------------------------------------------------------
 
+
+# Page d'acceuil du chef
 @login_required
 def accueil_chef(request):
     chef = getattr(request.user, 'chef', None)
@@ -756,6 +838,7 @@ def accueil_chef(request):
     return render(request, 'accueil_chef.html', context)
 
 
+# Fonction affichant les dossiers au statut à valider au chef
 @login_required
 def dossiers_a_valider(request):
     chef = getattr(request.user, 'chef', None)
@@ -765,6 +848,7 @@ def dossiers_a_valider(request):
     return render(request, 'dossiers_a_valider.html', {'chef': chef, 'sinistres': sinistres})
 
 
+# Fonction affichant les dossiers au statut à corriger au chef
 @login_required
 def dossiers_a_corriger_chef(request):
     chef = getattr(request.user, 'chef', None)
@@ -779,6 +863,7 @@ def dossiers_a_corriger_chef(request):
     return render(request, 'dossiers_a_corriger_chef.html', context)
 
 
+# Fonction affichant les détails ou informations des sinistres au chef
 @login_required
 def detail_sinistre_chef(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
@@ -801,6 +886,7 @@ def detail_sinistre_chef(request, sinistre_id):
     return render(request, 'detail_sinistre_chef.html', context)
 
 
+# Fonction permettant au chef de valider une déclaration conduisant à la génération automatique de l'attestation
 @login_required
 def valider_declaration(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
@@ -823,6 +909,7 @@ def valider_declaration(request, sinistre_id):
     return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
 
 
+# Procédure de retransmission d'un dossier sinistre à l'agent
 @login_required
 def renvoyer_a_agent(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
@@ -858,6 +945,7 @@ def renvoyer_a_agent(request, sinistre_id):
     return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
 
 
+# Procédure permettant au chef de  valider une indemnisation saisie par l'assuré
 @login_required
 def valider_indemnisation(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
@@ -882,6 +970,45 @@ def valider_indemnisation(request, sinistre_id):
     return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
 
 
+# Fonction permettant au chef de demander la révision du prix retenu
+@login_required
+def demander_revision_prix(request, sinistre_id):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    # Récupération du sinistre en attente de validation ou en cours
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['ATTENTE_VALIDATION', 'EN_COURS'])
+
+    if request.method == 'POST':
+        commentaires = request.POST.get('commentaires', '').strip()
+
+        # 1. Passer le dossier au statut 'A_CORRIGER'
+        sinistre.statut = 'A_CORRIGER'
+        sinistre.indemnisation_validee = False
+        sinistre.save()
+
+        # 2. Historiser le motif explicatif
+        HistoriqueSinistre.objects.create(
+            sinistre=sinistre,
+            statut='A_CORRIGER',
+            commentaires=commentaires or "Demande de révision envoyée à l'agent.",
+            auteur=request.user,
+        )
+
+        # 3. Notification de succès pour le chef
+        messages.success(
+            request, 
+            f"✅ Le dossier {sinistre.numero_sinistre} a bien été renvoyé dans la file d'attente de l'agent."
+        )
+
+        # Redirection vers la liste des dossiers à valider du chef
+        return redirect('dossiers_a_valider') 
+
+    return render(request, 'demander_revision.html', {'sinistre': sinistre})
+
+
+# Procédure permettant à l'agent de cloturé un sinistre
 @login_required
 def clore_sinistre(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
@@ -902,6 +1029,7 @@ def clore_sinistre(request, sinistre_id):
     return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
 
 
+# Procédure permettant à l'agent de classer un sinistre sans suite
 @login_required
 def classer_sans_suite(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
@@ -930,6 +1058,7 @@ def classer_sans_suite(request, sinistre_id):
     return render(request, 'classer_sans_suite.html', {'sinistre': sinistre, 'form': form})
 
 
+# Procédure permettant à l'agent de réouvrir un sinistre déjà clôturé ou classer sans suite
 @login_required
 def reouvrir_dossier(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
@@ -949,6 +1078,7 @@ def reouvrir_dossier(request, sinistre_id):
     return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
 
 
+# Fonction affichant au chef les sinistres en cours
 @login_required
 def dossiers_en_cours_chef(request):
     chef = getattr(request.user, 'chef', None)
@@ -958,6 +1088,7 @@ def dossiers_en_cours_chef(request):
     return render(request, 'dossiers_en_cours_chef.html', {'chef': chef, 'sinistres': sinistres})
 
 
+# Fonction affichant au chef les sinistres clôturés
 @login_required
 def dossiers_clotures_chef(request):
     chef = getattr(request.user, 'chef', None)
@@ -967,6 +1098,7 @@ def dossiers_clotures_chef(request):
     return render(request, 'dossiers_clotures_chef.html', {'chef': chef, 'sinistres': sinistres})
 
 
+# Fonction permettant de modifier son mot de passe
 @login_required
 def changer_mot_de_passe_chef(request):
     chef = getattr(request.user, 'chef', None)
@@ -988,6 +1120,7 @@ def changer_mot_de_passe_chef(request):
     return render(request, 'changer_mot_de_passe_chef.html', {'form': form})
 
 
+# Fonction affichant le profil du chef
 @login_required
 def profil_chef(request):
     chef = getattr(request.user, 'chef', None)
@@ -996,6 +1129,7 @@ def profil_chef(request):
     return render(request, 'profil_chef.html', {'chef': chef})
 
 
+# Fonction permettant au chef de modifier son profil
 @login_required
 def modifier_profil_chef(request):
     chef = getattr(request.user, 'chef', None)
@@ -1012,8 +1146,12 @@ def modifier_profil_chef(request):
     return render(request, 'modifier_profil_chef.html', {'form': form})
 
 
-# --- ATTESTATIONS ---
+#-------------------------------------------------------------------
+#                   ATTESTATIONS
+#-------------------------------------------------------------------
 
+
+# Fonction permettant d'ouvrir et de voir une attestation
 @login_required
 def voir_attestation(request, sinistre_id):
     sinistre = get_object_or_404(
@@ -1029,6 +1167,7 @@ def voir_attestation(request, sinistre_id):
     return redirect('accueil_assure')
 
 
+# Fonction permettant de télécharger une attestation
 @login_required
 def telecharger_attestation(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, attestation_generee=True)
@@ -1040,8 +1179,12 @@ def telecharger_attestation(request, sinistre_id):
     return render(request, 'attestation.html', {'sinistre': sinistre, 'download_pdf': True})
 
 
-# --- ESPACE ADMINISTRATEUR ---
+#-------------------------------------------------------------------
+#                   ESPACE ADMINISTRATEUR
+#-------------------------------------------------------------------
 
+
+# Page d'acceuil de l'administrateur
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def accueil_admin(request):
@@ -1062,6 +1205,7 @@ def accueil_admin(request):
     return render(request, 'accueil_admin.html', context)
 
 
+# Fonction permettant à l'administrateur de créer un agent
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def creer_agent(request):
@@ -1096,6 +1240,7 @@ def creer_agent(request):
     return render(request, 'creer_agent.html', {'form': form})
 
 
+# Fonction permettant à l'administrateur d'accéder à la liste des agents
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def liste_agents(request):
@@ -1103,6 +1248,7 @@ def liste_agents(request):
     return render(request, 'liste_agents.html', {'agents': agents})
 
 
+# Fonction permettant à l'administrateur de modifier les informations d'un agent
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def modifier_agent_admin(request, agent_id):
@@ -1123,6 +1269,7 @@ def modifier_agent_admin(request, agent_id):
     })
 
 
+# Fonction permettant à l'administrateur d'activer ou de désactiver le compte d'un agent
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def toggle_agent_actif(request, agent_id):
@@ -1133,6 +1280,7 @@ def toggle_agent_actif(request, agent_id):
     return redirect('liste_agents')
 
 
+# Fonction permettant à l'administrateur de réactiver le compte d'un agent
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def reinitialiser_mdp_agent(request, agent_id):
@@ -1145,6 +1293,7 @@ def reinitialiser_mdp_agent(request, agent_id):
     return redirect('liste_agents')
 
 
+# Fonction permettant à l'administrateur de supprimer le compte d'un agent
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def supprimer_agent(request, agent_id):
@@ -1162,6 +1311,7 @@ def supprimer_agent(request, agent_id):
     })
 
 
+# Fonction permettant à l'administrateur de créer le compte d'un chef
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def creer_chef(request):
@@ -1195,6 +1345,7 @@ def creer_chef(request):
     return render(request, 'creer_chef.html', {'form': form})
 
 
+# Fonction affichant à l'administrateur la liste des chefs
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def liste_chefs(request):
@@ -1202,6 +1353,7 @@ def liste_chefs(request):
     return render(request, 'liste_chefs.html', {'chefs': chefs})
 
 
+# Fonction permettant à l'administrateur de modifier les informations d'un chef
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def modifier_chef_admin(request, chef_id):
@@ -1222,6 +1374,7 @@ def modifier_chef_admin(request, chef_id):
     })
 
 
+# Fonction permettant à l'administrateur d'activer ou de désactiver le compte d'un chef
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def toggle_chef_actif(request, chef_id):
@@ -1232,6 +1385,7 @@ def toggle_chef_actif(request, chef_id):
     return redirect('liste_chefs')
 
 
+# Fonction permettant à l'administrateur de réactiver le compte d'un chef
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def reinitialiser_mdp_chef(request, chef_id):
@@ -1244,6 +1398,7 @@ def reinitialiser_mdp_chef(request, chef_id):
     return redirect('liste_chefs')
 
 
+# Fonction permettant à l'administrateur de supprimer le compte d'un chef
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def supprimer_chef(request, chef_id):
@@ -1261,6 +1416,7 @@ def supprimer_chef(request, chef_id):
     })
 
 
+# Fonction affichant à l'administrateur la liste des assurés
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def liste_assures(request):
@@ -1268,6 +1424,7 @@ def liste_assures(request):
     return render(request, 'liste_assures.html', {'assures': assures})
 
 
+# Fonction permettant à l'administrateur d'activer ou de désactiver le compte d'un assuré
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def toggle_assure_actif(request, assure_id):
@@ -1278,6 +1435,7 @@ def toggle_assure_actif(request, assure_id):
     return redirect('liste_assures')
 
 
+# Supervision globale de tous les sinistres pour l'administrateur.
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def supervision_sinistres(request):
@@ -1307,12 +1465,14 @@ def supervision_sinistres(request):
     return render(request, 'supervision_sinistres.html', context)
 
 
+# Fonction affichant le profil de l'administrateur
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def profil_admin(request):
     return render(request, 'profil_admin.html')
 
 
+# Fonction permettant à l'administrateur de modifier son profil
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def modifier_profil_admin(request):
@@ -1327,6 +1487,7 @@ def modifier_profil_admin(request):
     return render(request, 'modifier_profil_admin.html', {'form': form})
 
 
+# Fonction permettant à l'administrateur d'importer des contrats via un fichier Excel
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def importer_donnees_admin(request):
@@ -1448,6 +1609,7 @@ def importer_donnees_admin(request):
     return render(request, 'importer_donnees.html', {'form': form})
 
 
+# Fonction permettant à l'administrateur de gérer les localisations ajout des: régions, commune et ville
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def gestion_localisation(request):
@@ -1488,6 +1650,7 @@ def gestion_localisation(request):
     })
 
 
+# Fonction permettant à l'administrateur de supprimer une région
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def supprimer_region(request, region_id):
@@ -1496,6 +1659,7 @@ def supprimer_region(request, region_id):
     return redirect('gestion_localisation')
 
 
+# Fonction permettant à l'administrateur de supprimer une ville
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def supprimer_ville(request, ville_id):
@@ -1504,6 +1668,7 @@ def supprimer_ville(request, ville_id):
     return redirect('gestion_localisation')
 
 
+# Fonction permettant à l'administrateur de supprimer une commune
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def supprimer_Commune(request, Commune_id):
@@ -1512,6 +1677,7 @@ def supprimer_Commune(request, Commune_id):
     return redirect('gestion_localisation')
 
 
+# Fonction permettant à l'administrateur de voir la liste des contrats
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def liste_contrats_admin(request):
@@ -1540,6 +1706,7 @@ def liste_contrats_admin(request):
     })
 
 
+# Fonction permettant à l'administrateur d'exporter des contrats avec des filtres
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def exporter_contrats_admin(request):
@@ -1594,6 +1761,7 @@ def exporter_contrats_admin(request):
     return response
 
 
+# Fonction permettant à l'administrateur de modifier un contrat
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def modifier_contrat_admin(request, assure_id):
@@ -1610,6 +1778,7 @@ def modifier_contrat_admin(request, assure_id):
     return render(request, 'modifier_contrat.html', {'form': form, 'assure': assure})
 
 
+# Fonction permettant à l'administrateur de supprimer un contrat
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def supprimer_contrat_admin(request, assure_id):
@@ -1629,43 +1798,31 @@ def supprimer_contrat_admin(request, assure_id):
     })
 
 
+# Fonction permettant à l'administrateur de gérer les différentes agences
 @login_required
-def demander_revision_prix(request, sinistre_id):
-    chef = getattr(request.user, 'chef', None)
-    if not chef:
-        return redirect('accueil_assure')
-
-    # Récupération du sinistre en attente de validation ou en cours
-    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['ATTENTE_VALIDATION', 'EN_COURS'])
-
+@user_passes_test(lambda u: u.is_staff)
+def gestion_agences(request):
     if request.method == 'POST':
-        commentaires = request.POST.get('commentaires', '').strip()
+        form = AgenceForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Agence ajoutée avec succès.")
+            return redirect('gestion_agences')
+    else:
+        form = AgenceForm()
 
-        # 1. Passer le dossier au statut 'A_CORRIGER'
-        sinistre.statut = 'A_CORRIGER'
-        sinistre.indemnisation_validee = False
-        sinistre.save()
-
-        # 2. Historiser le motif explicatif
-        HistoriqueSinistre.objects.create(
-            sinistre=sinistre,
-            statut='A_CORRIGER',
-            commentaires=commentaires or "Demande de révision envoyée à l'agent.",
-            auteur=request.user,
-        )
-
-        # 3. Notification de succès pour le chef
-        messages.success(
-            request, 
-            f"✅ Le dossier {sinistre.numero_sinistre} a bien été renvoyé dans la file d'attente de l'agent."
-        )
-
-        # Redirection vers la liste des dossiers à valider du chef
-        return redirect('dossiers_a_valider') 
-
-    return render(request, 'demander_revision.html', {'sinistre': sinistre})
+    return render(request, 'gestion_agences.html',{
+        'form': form,
+        'agences': Agence.objects.select_related('ville').order_by('nom')
+    })
+    
+    
+#-------------------------------------------------------------------
+#                   INDEMNISATION
+#-------------------------------------------------------------------
 
 
+# Gère l'enregistrement de l'indemnisation d'un sinistre.
 @login_required
 def indemniser_sinistre(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
@@ -1715,6 +1872,7 @@ def indemniser_sinistre(request, sinistre_id):
     })
 
 
+# Fonction permettant l'émission d'un chèque
 @login_required
 def emettre_cheque(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, pk=sinistre_id)
@@ -1784,6 +1942,7 @@ def emettre_cheque(request, sinistre_id):
     return render(request, 'emettre_cheque.html', {'sinistre': sinistre})
 
 
+# Fonction permettant la modification du statut d'un chèque
 @login_required
 def modifier_statut_cheque(request, paiement_id):
     paiement = get_object_or_404(Paiement, pk=paiement_id)
@@ -1809,6 +1968,7 @@ def modifier_statut_cheque(request, paiement_id):
     return redirect('detail_sinistre_agent', sinistre_id=paiement.sinistre.pk)
 
 
+# Fonction permettant de définir l'état définitif d'un chèque
 @login_required
 def marquer_cheque_retire(request, paiement_id):
     paiement = get_object_or_404(Paiement, pk=paiement_id)
@@ -1841,6 +2001,7 @@ def marquer_cheque_retire(request, paiement_id):
     return render(request, 'marquer_cheque_retire.html', {'form': form, 'paiement': paiement})
 
 
+# Première étape de récupération du mot de passe (vérification identifiant/téléphone).
 def mot_de_passe_oublie_etape1(request):
     if request.method == 'POST':
         form = MotDePasseOublieForm(request.POST)
@@ -1859,6 +2020,7 @@ def mot_de_passe_oublie_etape1(request):
     return render(request, 'mot_de_passe_oublie_etape1.html', {'form': form})
 
 
+# Deuxième étape : Saisie du nouveau mot de passe après vérification.
 def mot_de_passe_oublie_etape2(request):
     user_id = request.session.get('reset_user_id')
     if not user_id:
@@ -1894,60 +2056,3 @@ def mot_de_passe_oublie_etape2(request):
         form = SetPasswordForm(user)
 
     return render(request, 'mot_de_passe_oublie_etape2.html', {'form': form})
-
-
-@login_required
-def detail_contrat_assure(request, quittance_id):
-    """Vue permettant à l'assuré de consulter les détails d'une quittance / d'un contrat."""
-    quittance = get_object_or_404(Quittance, id=quittance_id, contrat__user=request.user)
-    vehicules = quittance.vehicules.all() if hasattr(quittance, 'vehicules') else []
-    
-    return render(request, 'detail_contrat_assure.html', {
-        'quittance': quittance,
-        'vehicules': vehicules,
-    })
-
-
-def ma_vue_de_connexion(request):
-    if request.method == 'POST':
-        identifiant = request.POST.get('username')
-        mot_de_passe = request.POST.get('password')
-        
-        # 1. Récupérer le profil pour vérifier s'il est bloqué
-        profil = get_profil_par_identifiant(identifiant)
-        
-        if profil_est_bloque(profil):
-            messages.error(request, "Votre compte est temporairement bloqué suite à 3 tentatives infructueuses. Veuillez patienter 5 minutes.")
-            return render(request, 'login.html') # Remplacez 'login.html' par le nom exact de votre fichier HTML ci-dessus
-
-        # 2. Tenter l'authentification Django
-        user = authenticate(request, username=identifiant, password=mot_de_passe)
-        
-        if user is not None:
-            login(request, user)
-            reinitialiser_tentatives(profil) # Remet les compteurs à zéro en cas de succès
-            return redirect('redirection_login') # Utilise votre vue de redirection existante pour dispatcher l'utilisateur
-        else:
-            # 3. Enregistrer l'échec en cas de mauvais mot de passe
-            enregistrer_echec(identifiant)
-            messages.error(request, "Identifiant ou mot de passe incorrect.")
-            
-    return render(request, 'login.html')
-
-
-@login_required
-@user_passes_test(lambda u: u.is_staff)
-def gestion_agences(request):
-    if request.method == 'POST':
-        form = AgenceForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Agence ajoutée avec succès.")
-            return redirect('gestion_agences')
-    else:
-        form = AgenceForm()
-
-    return render(request, 'gestion_agences.html',{
-        'form': form,
-        'agences': Agence.objects.select_related('ville').order_by('nom')
-    })
