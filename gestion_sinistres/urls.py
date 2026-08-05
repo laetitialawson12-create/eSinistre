@@ -30,6 +30,7 @@ urlpatterns = [
     path('profil/', views.profil_assure, name='profil_assure'),
     path('profil/modifier/', views.modifier_profil, name='modifier_profil'),
     path('mes-contrats/<int:quittance_id>/', views.detail_contrat_assure, name='detail_contrat_assure'),
+    path('agent/profil/changer-mot-de-passe_en_cours_assure/', views.changer_mot_de_passe_en_cours_assure, name='changer_mot_de_passe_en_cours_assure'),
 
     # ==========================================
     # 3. ESPACE AGENT
@@ -53,6 +54,8 @@ urlpatterns = [
     path('agent/dossier/<int:sinistre_id>/emettre-cheque/', views.emettre_cheque, name='emettre_cheque'),
     path('paiement/<int:paiement_id>/modifier-statut/', views.modifier_statut_cheque, name='modifier_statut_cheque'),
     path('paiement/<int:paiement_id>/retrait/', views.marquer_cheque_retire, name='marquer_cheque_retire'),
+    path('agent/profil/changer-mot-de-passe_en_cours_agent/', views.changer_mot_de_passe_en_cours_agent, name='changer_mot_de_passe_en_cours_agent'),
+
 
     # ==========================================
     # 4. ESPACE CHEF DE DÉPARTEMENT
@@ -73,6 +76,7 @@ urlpatterns = [
     path('chef/dossier/<int:sinistre_id>/sans-suite/', views.classer_sans_suite, name='classer_sans_suite'),
     path('chef/dossier/<int:sinistre_id>/reouvrir/', views.reouvrir_dossier, name='reouvrir_dossier'),
     path('chef/sinistre/<int:sinistre_id>/demander-revision/', views.demander_revision_prix, name='demander_revision_prix'),
+    path('agent/profil/changer-mot-de-passe_en_cours_chef/', views.changer_mot_de_passe_en_cours_chef, name='changer_mot_de_passe_en_cours_chef'),
 
     # ==========================================
     # 5. ESPACE ADMINISTRATION
@@ -128,9 +132,5 @@ urlpatterns = [
     # Authentification - mot de passe oublié
     path('mot-de-passe-oublie/', views.mot_de_passe_oublie_etape1, name='mot_de_passe_oublie_etape1'),
     path('mot-de-passe-oublie/nouveau/', views.mot_de_passe_oublie_etape2, name='mot_de_passe_oublie_etape2'),
-    
-    # ==========================================
-    # 6. GENERAL
-    # ==========================================
 
 ]

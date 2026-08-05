@@ -136,7 +136,7 @@ class SinistreForm(forms.ModelForm):
         self.fields['vehicule'].empty_label = "Sélectionnez votre véhicule"
 
 
-class ModifierProfilForm(forms.ModelForm):
+class ModifierProfilForm(forms.Form):
     email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
     telephone = forms.CharField(label='Téléphone', max_length=20, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))        
         

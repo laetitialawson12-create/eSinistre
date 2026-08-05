@@ -344,7 +344,6 @@ def profil_assure(request):
 @login_required
 def modifier_profil(request):
     assure = getattr(request.user, 'assure', None)
-    return redirect('accueil_assure')
 
     if request.method == 'POST':
         form = ModifierProfilForm(request.POST)
@@ -391,7 +390,7 @@ def accueil_agent(request):
     if not agent:
         return redirect('accueil_assure')
 
-    sinistres_agence = Sinistre.objects.filter(assure__assure_agence=agent.agence)
+    sinistres_agence = Sinistre.objects.filter(assure__assure__agence=agent.agence)
 
     context = {
         'agent': agent,
@@ -426,7 +425,7 @@ def dossiers_a_instruire(request):
 
     sinistres = Sinistre.objects.filter(
         statut__in=['SOUMIS', 'ATTENTE_COMPLEMENTS', 'A_CORRIGER'],
-        assure_assure_agence=agent.agence,
+        assure__assure__agence=agent.agence,
     ).order_by('date_declaration')
 
     return render(request, 'agent_a_instruire.html', {'agent': agent, 'sinistres': sinistres})
@@ -847,7 +846,7 @@ def accueil_chef(request):
     if not chef:
         return redirect('accueil_assure')
 
-    sinistres = Sinistre.objects.filter(assure_assure__agence=chef.agence)
+    sinistres = Sinistre.objects.filter(assure__assure__agence=chef.agence)
     context = {
         'chef': chef,
         'a_valider': sinistres.filter(statut='ATTENTE_VALIDATION').count(),
@@ -1288,7 +1287,7 @@ def liste_agents(request):
 def modifier_agent_admin(request, agent_id):
     agent = get_object_or_404(Agent, id=agent_id)
     if request.method == 'POST':
-        user_form = ModifierProfilForm(request.POST, instance=agent.user)
+        user_form = ModifierProfilAdminForm(request.POST, instance=agent.user)
         agent_form = ModifierAgentAdminForm(request.POST, instance=agent)
         if user_form.is_valid() and agent_form.is_valid():
             user_form.save()
@@ -1296,7 +1295,7 @@ def modifier_agent_admin(request, agent_id):
             messages.success(request, "Agent mis à jour.")
             return redirect('liste_agents')
     else:
-        user_form = ModifierProfilForm(instance=agent.user)
+        user_form = ModifierProfilAdminForm(instance=agent.user)
         agent_form = ModifierAgentAdminForm(instance=agent)
     return render(request, 'modifier_agent_admin.html', {
         'user_form': user_form, 'agent_form': agent_form, 'agent': agent,
@@ -2110,3 +2109,46 @@ def changer_mot_de_passe_en_cours_admin(request):
     else:
         form = StylePasswordChangeForm(request.user)
     return render(request, 'changer_mot_de_passe_en_cours_admin.html', {'form': form})
+
+
+
+@login_required
+def changer_mot_de_passe_en_cours_agent(request):
+    if request.method == 'POST':
+        form = StylePasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user)
+            messages.success(request, "Mot de passe modifié avec succès.")
+            return redirect('redirection_login')
+    else:
+        form = StylePasswordChangeForm(request.user)
+    return render(request, 'changer_mot_de_passe_en_cours_agent.html', {'form': form})
+
+
+@login_required
+def changer_mot_de_passe_en_cours_chef(request):
+    if request.method == 'POST':
+        form = StylePasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user)
+            messages.success(request, "Mot de passe modifié avec succès.")
+            return redirect('redirection_login')
+    else:
+        form = StylePasswordChangeForm(request.user)
+    return render(request, 'changer_mot_de_passe_en_cours_chef.html', {'form': form})
+
+
+@login_required
+def changer_mot_de_passe_en_cours_assure(request):
+    if request.method == 'POST':
+        form = StylePasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user)
+            messages.success(request, "Mot de passe modifié avec succès.")
+            return redirect('redirection_login')
+    else:
+        form = StylePasswordChangeForm(request.user)
+    return render(request, 'changer_mot_de_passe_en_cours_assure.html', {'form': form})

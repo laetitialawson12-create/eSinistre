@@ -7,15 +7,12 @@
     <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">
         Modifier {{ agent.user.get_full_name|default:agent.user.username }}
     </h3>
-    <a href="{% url 'liste_agents' %}" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-arrow-left me-1"></i> Retour à la liste
-    </a>
 </div>
 
 <form method="post" class="shadow-sm p-4 bg-white rounded">
     {% csrf_token %}
 
-    <h6 class="text-uppercase text-secondary small mb-3">Informations personnelles</h6>
+    <h6 class="text-uppercase text-secondary small mb-3">Informations personnelles et professionnelles</h6>
     <div class="row">
         {% for field in user_form %}
         <div class="col-md-4 mb-3">
@@ -26,9 +23,7 @@
         {% endfor %}
     </div>
 
-    <hr class="my-4">
 
-    <h6 class="text-uppercase text-secondary small mb-3">Informations professionnelles</h6>
     <div class="row">
         {% for field in agent_form %}
         <div class="col-md-4 mb-3">
@@ -39,8 +34,11 @@
         {% endfor %}
     </div>
 
-    <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">
-        Enregistrer
-    </button>
+    <div>
+        <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">
+            Enregistrer
+        </button>
+        <a href="{% url 'liste_agents' %}" class="btn" style="background: var(--fidelia-blue); color: white;">Annuler</a>
+    </div>
 </form>
 {% endblock %}

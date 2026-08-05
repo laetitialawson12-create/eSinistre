@@ -1,9 +1,20 @@
-{% extends 'base_assure.html' %}
+{% extends "base_assure.html" %}
+{% block title %}Modifier mon profil{% endblock %}
 {% block content %}
-<h3 class="mb-4" style="color: #003366;">Modifier mes informations</h3>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Enregistrer</button>
-</form>
+<h4 class="mb-4">Modifier mes informations</h4>
+<div class="card shadow-sm border-0" style="max-width: 500px;">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">{{ field.label }}</label>
+                {{ field }}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">Enregistrer</button>
+            <a href="{% url 'profil_agent' %}" class="btn" style="background: var(--fidelia-blue); color: white;">Annuler</a>
+        </form>
+    </div>
+</div>
 {% endblock %}
