@@ -1,0 +1,32 @@
+{% extends 'base_agent.html' %}
+
+{% block title %}Modifier le numéro - Dossier {{ sinistre.numero_sinistre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 600px;">
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0 fs-6">Modifier le numéro du sinistre (Dossier actuel : {{ sinistre.numero_sinistre }})</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    {{ form.numero_sinistre.label_tag }}
+                    {{ form.numero_sinistre }}
+                    {% if form.numero_sinistre.errors %}
+                        <div class="text-danger small mt-1">{{ form.numero_sinistre.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{% url 'detail_sinistre_agent' sinistre.pk %}" class="btn btn-secondary btn-sm">Annuler</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Enregistrer les modifications</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

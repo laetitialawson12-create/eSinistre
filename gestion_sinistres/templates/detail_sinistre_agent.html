@@ -8,7 +8,13 @@
    onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
     <i class="bi bi-arrow-left"></i> Retour
 </a>
-<h4 class="mb-3">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+    <a href="{% url 'modifier_numero_sinistre' sinistre.pk %}" class="btn" style="background: var(--fidelia-blue); color: white;">
+        <i class="bi bi-pencil-square"></i> Modifier le numéro
+    </a>
+</div>
 
 <!-- Affichage des messages de notification / erreurs de validation -->
 {% if messages %}
@@ -70,7 +76,7 @@
                             </option>
                         {% endfor %}
                     </select>
-                    <button type="submit" class="btn btn-sm btn-primary">Lier la quittance</button>
+                    <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">Lier la quittance</button>
                 </form>
             {% endif %}
         </div>
@@ -284,7 +290,7 @@
         <form method="post" class="mt-3">
             {% csrf_token %}
             <textarea name="contenu" class="form-control mb-2" rows="2" placeholder="Écrire un message à l'assuré..." required></textarea>
-            <button type="submit" class="btn btn-primary btn-sm">
+            <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">
                 <i class="bi bi-send me-1"></i> Envoyer
             </button>
         </form>

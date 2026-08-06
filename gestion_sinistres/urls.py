@@ -45,6 +45,7 @@ urlpatterns = [
     path('agent/clotures/', views.dossiers_clotures, name='dossiers_clotures'),
     path('agent/sinistres/', views.tous_sinistres_agent, name='tous_sinistres_agent'),
     path('agent/dossier/<int:sinistre_id>/', views.detail_sinistre_agent, name='detail_sinistre_agent'),
+    path('agent/dossier/<int:sinistre_id>/modifier-numero-sinistre', views.modifier_numero_sinistre, name='modifier_numero_sinistre'),
     path('agent/dossier/<int:sinistre_id>/prendre/', views.prendre_en_charge, name='prendre_en_charge'),
     path('agent/dossier/<int:sinistre_id>/conforme/', views.marquer_conforme, name='marquer_conforme'),
     path('agent/dossier/<int:sinistre_id>/complements/', views.demander_complements, name='demander_complements'),

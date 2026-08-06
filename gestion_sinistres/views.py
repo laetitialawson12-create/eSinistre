@@ -23,7 +23,7 @@ from .forms import (
     ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm,
     ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
     RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm,
-    ModifierProfilAdminForm, StylePasswordChangeForm
+    ModifierProfilAdminForm, StylePasswordChangeForm, ModifierNumeroSinistreForm,
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
@@ -390,18 +390,18 @@ def accueil_agent(request):
     if not agent:
         return redirect('accueil_assure')
 
-    sinistres_agence = Sinistre.objects.filter(assure__assure__agence=agent.agence)
+    sinistres = Sinistre.objects.all().order_by('date_survenance')
 
     context = {
         'agent': agent,
-        'a_instruire': sinistres_agence.filter(statut='SOUMIS').count(),
-        'attente_complements': sinistres_agence.filter(statut='ATTENTE_COMPLEMENTS').count(),
-        'valides_ce_mois': sinistres_agence.filter(
+        'a_instruire': sinistres.filter(statut='SOUMIS').count(),
+        'attente_complements': sinistres.filter(statut='ATTENTE_COMPLEMENTS').count(),
+        'valides_ce_mois': sinistres.filter(
             statut='CLOTURE',
             date_cloture__month=timezone.now().month,
             date_cloture__year=timezone.now().year,
         ).count(),
-        'derniers_sinistres': sinistres_agence.order_by('-date_declaration')[:5],
+        'derniers_sinistres': sinistres.order_by('-date_declaration')[:5],
     }
     return render(request, 'accueil_agent.html', context)
 
@@ -454,7 +454,7 @@ def prendre_en_charge(request, sinistre_id):
     return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
 
 
-# Permet à l'assuré de voir les informations ou détails d'un sinistre
+# Permet à l'agent de voir les informations ou détails d'un sinistre
 @login_required
 def detail_sinistre_agent(request, sinistre_id):
     agent = getattr(request.user, 'agent', None)
@@ -779,6 +779,27 @@ def tous_sinistres_agent(request):
     }
 
     return render(request, 'tous_sinistres_agent.html', context)
+
+
+# Permet à l'agent de modifier le numéro du sinistre
+@login_required
+def modifier_numero_sinistre(request, sinistre_id):
+    sinistre = get_object_or_404(Sinistre, pk=sinistre_id)
+    
+    if request.method == 'POST':    
+        form = ModifierNumeroSinistreForm(request.POST, instance=sinistre)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Le numéro sinsitre a été bien modifié.")
+            return redirect('detail_sinistre_agent', pk=sinistre.pk)
+    else:
+        form = ModifierNumeroSinistreForm(instance=sinistre)
+        
+    context={
+        'form': form,
+        'sinistre': sinistre,
+    }
+    return render(request, 'modifier_numero_sinistre.html', context)
 
 
 # Permet à l'agent de modifier son mot de passe

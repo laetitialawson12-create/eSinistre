@@ -136,6 +136,18 @@ class SinistreForm(forms.ModelForm):
         self.fields['vehicule'].empty_label = "Sélectionnez votre véhicule"
 
 
+class ModifierNumeroSinistreForm(forms.ModelForm):
+    class Meta:
+        model = Sinistre
+        fields=['numero_sinistre']
+        widgets = {
+            'numero_sinistre': forms.TextInput({'class': 'form-control', 'placeholder': 'Ex: SIN-2026-001'})
+        }
+        label = {
+            'numero_sinistre': 'Nouveau numéro de sinistre',
+        }
+        
+        
 class ModifierProfilForm(forms.Form):
     email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
     telephone = forms.CharField(label='Téléphone', max_length=20, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))        
