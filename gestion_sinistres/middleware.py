@@ -7,7 +7,7 @@ from django.utils import timezone
 
 class InactiviteMiddleware:
     # Définition de la durée maximale d'inactivité autorisée
-    DELAI_INACTIVITE = timedelta(minutes=5)
+    DELAI_INACTIVITE = timedelta(minutes=30)
 
     def __init__(self, get_response):
         self.get_response = get_response

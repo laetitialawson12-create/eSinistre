@@ -84,7 +84,7 @@
         </div>
 
         <!-- Bloc Synthèse Financière (Prix retenu, Total payé, Reste à payer) -->
-        {% if sinistre.prix_retenu %}
+        {% if sinistre.prix_retenu is not None %}
             <div class="alert alert-light border py-2 mb-3">
                 <div class="d-flex gap-4 flex-wrap">
                     <div><strong>Prix retenu :</strong> <span class="badge bg-success">{{ sinistre.prix_retenu }} FCFA</span></div>

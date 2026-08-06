@@ -149,7 +149,7 @@ class Sinistre(models.Model):
         # Calcule le montant restant à verser par rapport au prix retenu
         if self.prix_retenu is None:
             return 0
-        return self.prix_retenu - self.montant_deja_paye
+        return self.prix_retenu - self.total_paye
 
     def clean(self):
         super().clean()

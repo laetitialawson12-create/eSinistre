@@ -227,7 +227,6 @@ def detail_sinistre(request, sinistre_id):
         messages.success(request, "Message envoyé avec succès.")
         return redirect('detail_sinistre', sinistre_id=sinistre.id)
 
-   
     historique_brut = list(
         sinistre.historique.exclude(commentaires__icontains="Prix").order_by('date_changement')
     )
@@ -236,7 +235,10 @@ def detail_sinistre(request, sinistre_id):
     for h in historique_brut:
         if 'indemnisation' in h.commentaires.lower():
             if sinistre.indemnisation_validee:
-                h.commentaires = "Idenmination saisie et validé par le chef de département."
+                if sinistre.prix_retenu == 0:
+                    h.commentaires = "Votre sinistre a été jugé non indemnisable par le département sinistres."
+                else:
+                    h.commentaires = "Indemnisation saisie et validée par le chef de département."
                 historique_filetre.append(h)
         else:
             historique_filetre.append(h)
@@ -653,10 +655,17 @@ def saisir_prix_retenu(request, sinistre_id):
             sinistre.save()
 
             if prix_existant is None:
-                commentaire = f"Prix retenu à la saisie : {nouveau_prix} FCFA."
+                if Decimal(nouveau_prix) == 0:
+                    commentaire = "Prix retenu saisi à 0 FCFA - sinistre jugé non indemnisable."
+                else:
+                    commentaire = f"Prix retenu à la saisie : {nouveau_prix} FCFA."
             else:
-                commentaire = f"Prix modifié : {nouveau_prix} FCFA (ancien prix : {prix_existant} FCFA)."
-
+                if Decimal(nouveau_prix) == 0:
+                    commentaire = f"Prix modifié : sinistre jugé non indemnisable (ancien prix : {prix_existant} FCFA)."
+                else:
+                    commentaire = f"Prix modifié : {nouveau_prix} FCFA (ancien prix : {prix_existant} FCFA)."
+                    
+                
             HistoriqueSinistre.objects.create(
                 sinistre=sinistre,
                 statut=sinistre.statut,
@@ -1008,10 +1017,15 @@ def valider_indemnisation(request, sinistre_id):
 
     sinistre.indemnisation_validee = True
     sinistre.save()
+    if sinistre.prix_retenu == 0:
+        commentaire = "Sinistre non indemnisable (prix retenu fixé à 0 FCFA), validé par le chef de département."
+    else:
+        commentaire = f"Indemnisation de {sinistre.prix_retenu} FCFA validée par le chef de département."
+        
     HistoriqueSinistre.objects.create(
         sinistre=sinistre,
-        statut='EN_COURS',
-        commentaires=f"Indemnisation de {sinistre.prix_retenu} FCFA validée par le Chef de département.",
+        statut="EN_COURS",
+        commentaires=commentaire,
         auteur=request.user,
     )
     messages.success(request, "Indemnisation validée. Le dossier peut maintenant être clôturé ou classé sans suite.")
