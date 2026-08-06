@@ -791,7 +791,7 @@ def modifier_numero_sinistre(request, sinistre_id):
         if form.is_valid():
             form.save()
             messages.success(request, "Le numéro sinsitre a été bien modifié.")
-            return redirect('detail_sinistre_agent', pk=sinistre.pk)
+            return redirect('detail_sinistre_agent', sinistre_id=sinistre.pk)
     else:
         form = ModifierNumeroSinistreForm(instance=sinistre)
         
@@ -867,7 +867,7 @@ def accueil_chef(request):
     if not chef:
         return redirect('accueil_assure')
 
-    sinistres = Sinistre.objects.filter(assure__assure__agence=chef.agence)
+    sinistres = Sinistre.objects.all()
     context = {
         'chef': chef,
         'a_valider': sinistres.filter(statut='ATTENTE_VALIDATION').count(),
@@ -890,7 +890,6 @@ def dossiers_a_valider(request):
         return redirect('accueil_assure')
     sinistres = Sinistre.objects.filter(
         statut='ATTENTE_VALIDATION',
-        assure__assure__agence=chef.agence,    
     ).order_by('date_declaration')
     return render(request, 'dossiers_a_valider.html', {'chef': chef, 'sinistres': sinistres})
 
@@ -903,7 +902,6 @@ def dossiers_a_corriger_chef(request):
         return redirect('accueil_assure')
     sinistres_a_corriger = Sinistre.objects.filter(
         statut="A_CORRIGER",
-        assure__assure__agence=chef.agence,
     ).order_by('date_declaration')
 
     context = {

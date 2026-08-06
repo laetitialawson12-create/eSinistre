@@ -163,17 +163,24 @@ class Sinistre(models.Model):
         # Génération automatique du numéro de sinistre à la création
         if not self.numero_sinistre:
             annee = timezone.now().strftime('%Y')
-            count = Sinistre.objects.filter(
-                numero_sinistre__startswith=f"{annee}{self.numero_point_vente}"
-            ).count() + 1
-            ordre = str(count).zfill(6)
-            self.numero_sinistre = f"{annee}{self.numero_point_vente}{self.nature}{ordre}"
-
-        # Exécute la méthode clean() pour forcer la validation avant sauvegarde
-        self.full_clean()
-
-        super().save(*args, **kwargs)
+            prefix = f"{annee}{self.numero_point_vente}"
+            numeros_existants = Sinistre.objects.filter(
+                numero_sinistre__startswith=prefix
+            ).values_list('numero_sinistre', flat=True)
+            
+            max_ordre = 0
+            for numero in numeros_existants:
+                suffixe = numero[-6]
+                if suffixe.isdigit():
+                    max_ordre = max(max_ordre, int(suffixe))
+                    
+            ordre = str(max_ordre + 1).zfill(6)
+            self.numero_sinistre = f"{prefix}{self.nature}{ordre}"
     
+        self.full_clean()
+        super().save(*args, **kwargs)
+        
+        
     def __str__(self):
         return f"Sinistre {self.numero_sinistre} - {self.nature}"
     

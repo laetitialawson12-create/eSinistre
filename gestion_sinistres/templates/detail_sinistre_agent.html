@@ -11,9 +11,11 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+    {% if sinistre.statut == 'SOUMIS' %}
     <a href="{% url 'modifier_numero_sinistre' sinistre.pk %}" class="btn" style="background: var(--fidelia-blue); color: white;">
         <i class="bi bi-pencil-square"></i> Modifier le numéro
     </a>
+    {% endif %}
 </div>
 
 <!-- Affichage des messages de notification / erreurs de validation -->
