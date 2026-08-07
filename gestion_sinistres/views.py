@@ -153,45 +153,50 @@ def accueil_assure(request):
 # Déclarer un sinistre ou poursuivre sa déclaration
 @login_required
 def declarer_sinistre(request):
+    # Si on arrive via une nouvelle demande (ex: lien avec ?new=1), on nettoie la session 
+    # pour s'assurer qu'on crée un nouveau sinistre et qu'on ne modifie pas le précédent.
+    if request.GET.get('new') == '1':
+        request.session.pop('temp_sinistre_id', None)
+
     sinistre_id = request.session.get('temp_sinistre_id')
     sinistre_instance = None
     if sinistre_id:
         sinistre_instance = Sinistre.objects.filter(id=sinistre_id, assure=request.user).first()
-
+        
     est_nouvelle_declaration = sinistre_instance is None
-
+    
     if request.method == 'POST':
         form = SinistreForm(request.POST, request.FILES, user=request.user, instance=sinistre_instance)
-
+        
         if form.is_valid():
-            sinistre = form.save(commit=False)
-            sinistre.assure = request.user
-            sinistre.statut = 'SOUMIS'
-
-            # Attributions automatiques de la quittance
-            date_evenement = sinistre.date_survenance
-            vehicule = sinistre.vehicule
-            contrat = getattr(vehicule, 'contrat', None)
-
-            if contrat and date_evenement:
-                quittances_valides = Quittance.objects.filter(
-                    contrat=contrat,
-                    date_debut__lte=date_evenement,
-                    date_fin__gte=date_evenement
-                )
-                sinistre.quittance = quittances_valides.first() if quittances_valides.count() == 1 else None
-            else:
-                sinistre.quittance = None
-
             try:
+                sinistre = form.save(commit=False)
+                sinistre.assure = request.user
+                sinistre.statut = 'SOUMIS'
+                
+                # Attributions automatiques de la quittance
+                date_evenement = sinistre.date_survenance
+                vehicule = sinistre.vehicule
+                contrat = getattr(vehicule, 'contrat', None)
+                
+                if contrat and date_evenement:
+                    quittances_valides = Quittance.objects.filter(
+                        contrat=contrat,
+                        date_debut__lte=date_evenement,
+                        date_fin__gte=date_evenement
+                    )
+                    sinistre.quittance = quittances_valides.first() if quittances_valides.count() == 1 else None
+                else:
+                    sinistre.quittance = None
+                    
+                # Sauvegarde (déclenche la méthode save() et clean() du modèle avec génération auto du numéro)
                 sinistre.save()
-
+                
                 fichiers = request.FILES.getlist('fichiers_justificatifs')
                 for f in fichiers:
-                    PieceJointe.objects.create(sinistre=sinistre, fichier=f)
-
-                # Historique : uniquement à la toute première déclaration,
-                # pas lors des modifications avant confirmation finale
+                    PieceJustificative.objects.create(sinistre=sinistre, fichier=f)
+                    
+                # Historique : uniquement à la toute première déclaration
                 if est_nouvelle_declaration:
                     HistoriqueSinistre.objects.create(
                         sinistre=sinistre,
@@ -199,17 +204,27 @@ def declarer_sinistre(request):
                         commentaires="Déclaration initiale du sinistre par l'assuré.",
                         auteur=request.user,
                     )
-
+                    
                 request.session['temp_sinistre_id'] = sinistre.id
                 return redirect('confirmer_sinistre')
-
+                
             except ValidationError as e:
-                form.add_error(None, e)
+                # Capture les erreurs levées par model.clean() ou save() et les renvoie au formulaire
+                if hasattr(e, 'error_dict'):
+                    for field, error_list in e.error_dict.items():
+                        if field in form.fields:
+                            for err in error_list:
+                                form.add_error(field, err)
+                        else:
+                            for err in error_list:
+                                form.add_error(None, err)
+                else:
+                    form.add_error(None, e)
         else:
             messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
     else:
         form = SinistreForm(user=request.user, instance=sinistre_instance)
-
+        
     return render(request, 'declaration.html', {'form': form, 'title': 'Déclarer un sinistre'})
 
 

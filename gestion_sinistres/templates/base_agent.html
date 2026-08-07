@@ -57,7 +57,7 @@
                 <h5 class="mb-0"> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
             </div>
             <div class="d-flex align-items-center">
-                <span class="text-muted me-3">Agence : {{ request.user.agent.agence }}</span>
+                <span class="text-muted me-3">Agent</span>
                 <a href="{% url 'profil_agent' %}" class="user-badge">{{ request.user.first_name|first|default:"A" }}{{ request.user.last_name|first|default:"G" }}</a>
             </div>
         </div>

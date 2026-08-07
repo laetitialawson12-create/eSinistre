@@ -83,9 +83,12 @@
                 <button class="sidebar-toggle me-3" id="sidebarToggle"><i class="bi bi-list"></i></button>
                 <h5 class="mb-0"> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
             </div>
-            <a href="{% url 'profil_chef' %}" class="user-badge text-decoration-none">
-                {{ request.user.first_name|first|default:"C" }}{{ request.user.last_name|first|default:"D" }}
-            </a>
+            <div class="d-flex align-items-center">
+                <span class="text-muted me-3">Chef</span>
+                 <a href="{% url 'profil_chef' %}" class="user-badge text-decoration-none">
+                    {{ request.user.first_name|first|default:"C" }}{{ request.user.last_name|first|default:"D" }}
+                </a>
+            </div>
         </div>
 
         <!-- Zone de Notifications et Contenu de la Page -->

@@ -160,30 +160,33 @@ class Sinistre(models.Model):
             })
 
     def save(self, *args, **kwargs):
-        # Génération automatique du numéro de sinistre à la création
-        if not self.numero_sinistre:
+        if not self.pk:  # Uniquement à la création d'un nouveau sinistre
             annee = timezone.now().strftime('%Y')
             prefix = f"{annee}{self.numero_point_vente}"
-            numeros_existants = Sinistre.objects.filter(
-                numero_sinistre__startswith=prefix
-            ).values_list('numero_sinistre', flat=True)
             
-            max_ordre = 0
-            for numero in numeros_existants:
-                suffixe = numero[-6]
-                if suffixe.isdigit():
-                    max_ordre = max(max_ordre, int(suffixe))
-                    
-            ordre = str(max_ordre + 1).zfill(6)
-            self.numero_sinistre = f"{prefix}{self.nature}{ordre}"
-    
+            # Recherche du dernier numéro généré pour ce préfixe et cette nature
+            base_pattern = f"{prefix}{self.nature}"
+            dernier_sinistre = Sinistre.objects.filter(
+                numero_sinistre__startswith=base_pattern
+            ).order_by('numero_sinistre').last()
+            
+            if dernier_sinistre:
+                # Extrait les 6 derniers chiffres du numéro existant et les incrémente
+                try:
+                    dernier_ordre = int(dernier_sinistre.numero_sinistre[-6:])
+                    ordre = str(dernier_ordre + 1).zfill(6)
+                except ValueError:
+                    ordre = "000001"
+            else:
+                ordre = "000001"
+                
+            self.numero_sinistre = f"{base_pattern}{ordre}"
+            
         self.full_clean()
         super().save(*args, **kwargs)
         
-        
     def __str__(self):
         return f"Sinistre {self.numero_sinistre} - {self.nature}"
-    
 
 # Statut possible d'un chèque
 class Paiement(models.Model):
