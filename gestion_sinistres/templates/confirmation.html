@@ -35,13 +35,11 @@
             <p><strong>Conducteur : </strong> {{ sinistre.nom_conducteur }}</p>
         </div>
 
-        {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
         <div class="mb-3">
             <h6 class="text-uppercase text-secondary small">Victimes</h6>
             <p><strong>Nombre de blessés : </strong> {{ sinistre.nombre_blesses }}</p>
             <p><strong>Nombre de morts : </strong> {{ sinistre.nombre_morts }}</p>
         </div>
-        {% endif %}
 
         {% if sinistre.autre_vehicule_implique %}
         <div class="mb-3">

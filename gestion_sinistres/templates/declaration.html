@@ -39,11 +39,11 @@
 
             <div class="row mb-3">
                 <div class="col-md-4">{{ form.date_survenance.label_tag }} {{ form.date_survenance }}</div>
-                <div class="col-md-4">{{ form.heure_approximative.label_tag }} {{form.heure_approximative }}</div>
-                <div class="col-md-4">{{form.nature.label_tag }} {{ form.nature }}</div>
+                <div class="col-md-4">{{ form.heure_approximative.label_tag }} {{ form.heure_approximative }}</div>
+                <div class="col-md-4">{{ form.contact_declarant.label_tag }} {{ form.contact_declarant }}</div>
             </div>
 
-            <div class="row mb-3" id="victimes-container" style="display: none;">
+            <div class="row mb-3">
                 <div class="col-md-6">{{ form.nombre_blesses.label_tag }} {{ form.nombre_blesses }}</div>
                 <div class="col-md-6">{{ form.nombre_morts.label_tag }} {{ form.nombre_morts }}</div>
             </div>
@@ -58,6 +58,11 @@
             <div class="mb-3">
                 <label class="form-label">Circonstances</label>
                 {{ form.circonstances }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Dommages</label>
+                {{ form.dommage }}
             </div>
 
             <div class="mb-3 form-check">
@@ -138,16 +143,6 @@
             if (autreVehiculeCheckBox) {
                 toggleVehiculeAdverse();
                 autreVehiculeCheckBox.addEventListener('change', toggleVehiculeAdverse);
-            }
-
-            const natureField = document.querySelector('select[name="nature"]');
-            const victimesContainer = document.getElementById('victimes-container');
-            function toggleVictimes() {
-                victimesContainer.style.display = ['C', 'X'].includes(natureField.value) ? 'flex' : 'none';
-            }
-            if (natureField) {
-                toggleVictimes();
-                natureField.addEventListener('change', toggleVictimes);
             }
         });
     </script>

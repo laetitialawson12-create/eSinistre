@@ -9,7 +9,11 @@
     <i class="bi bi-arrow-left"></i> Retour
 </a>
     <!-- Titre principal -->
-    <h3 class="mb-4">📋 Suivi du sinistre : {{ sinistre.numero_sinistre }}</h3>
+    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' %}
+        <h3 class="mb-4">📋 Suivi du sinistre : {{ sinistre.numero_sinistre }}</h3>
+    {% else %}
+        <h3 class="mb-4">📋 Suivi du sinistre : - </h3>
+    {% endif %}
 
     <!-- Cartes d'information en haut -->
     <div class="row mb-4">

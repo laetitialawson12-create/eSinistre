@@ -53,7 +53,11 @@
             <tbody>
                 {% for sinistre in derniers %}
                 <tr>
-                    <td class="ps-4"><strong>{{ sinistre.numero_sinistre }}</strong></td>
+                    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' %}
+                        <td class="ps-4"><strong>{{ sinistre.numero_sinistre }}</strong></td>
+                    {% else %}
+                        <td class="ps-4"><center><strong>-</strong></center></td>
+                    {% endif %}
                     <td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
                     <td>{{ sinistre.get_nature_display }}</td>
                     <td>

@@ -337,8 +337,7 @@ def finaliser_envoi(request):
             else:
                 messages.info(
                     request,
-                    f"Votre sinistre N° {sinistre.numero_sinistre} a été enregistré. "
-                    "Une vérification de la quittance par un agent est requise."
+                    f"Votre sinistre a été enregistré avec succès. "
                 )
         return redirect('accueil_assure')
     return redirect('confirmer_sinistre')

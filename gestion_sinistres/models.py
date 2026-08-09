@@ -90,7 +90,8 @@ class Sinistre(models.Model):
 
     nom_conducteur = models.CharField(max_length=100) 
     immatriculation = models.CharField(max_length=50, blank=True, null=True, verbose_name="Immatriculation")
-
+    contact_declarant = models.CharField(max_length=16, blank=True, null=True, verbose_name="Contact du déclarant")
+    
     # Identifiants
     numero_sinistre = models.CharField(max_length=20, unique=True)
     statut = models.CharField(max_length=30, choices=STATUS_CHOICES, default='SOUMIS')
@@ -110,6 +111,7 @@ class Sinistre(models.Model):
     date_declaration = models.DateTimeField(auto_now_add=True)
     heure_approximative = models.TimeField()
     circonstances = models.TextField()
+    dommage = models.TextField()
     vehicule = models.ForeignKey(Vehicule, on_delete=models.CASCADE)
 
     # Localisation
@@ -139,6 +141,12 @@ class Sinistre(models.Model):
     nombre_blesses = models.PositiveSmallIntegerField(default=0)
     nombre_morts = models.PositiveSmallIntegerField(default=0)
 
+    # Détails sinistres gérés par le rédacteur sinistre
+    taux_responsabilite = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    niveau_responsabilite = models.TextField()
+    pv_verifie = models.BooleanField(default=False)
+    
+    
     @property
     def total_paye(self):
         # Calcule la somme totale des paiements/chèques émis pour ce sinistre
