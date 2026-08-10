@@ -154,16 +154,19 @@ def clean(self):
     return cleaned_data
 
 
-class ModifierNumeroSinistreForm(forms.ModelForm):
+class AjouterNumeroSinistreForm(forms.ModelForm):
     class Meta:
         model = Sinistre
         fields=['numero_sinistre']
         widgets = {
-            'numero_sinistre': forms.TextInput({'class': 'form-control', 'placeholder': 'Ex: SIN-2026-001'})
+            'numero_sinistre': forms.TextInput({'class': 'form-control', 'placeholder': 'Ex: SIN-2026-001', 'required': 'required'})
         }
         label = {
             'numero_sinistre': 'Nouveau numéro de sinistre',
         }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['numero_sinistre'].required = True
         
         
 class ModifierProfilForm(forms.Form):

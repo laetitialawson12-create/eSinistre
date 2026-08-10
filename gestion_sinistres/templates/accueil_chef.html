@@ -63,7 +63,7 @@
     <div class="card-header bg-white fw-bold">📥 Derniers Sinistres </div>
     <div class="card-body p-0">
         <table class="table mb-0">
-            <thead><tr><th>N° Sinistre</th><th>Date</th><th>Assuré</th><th>Nature</th><th></th></tr></thead>
+            <thead><tr><th>N° Sinistre</th><th>Date</th><th>Assuré</th><th>Nature</th><th>Statut</th><th>Actions</th><th></th></tr></thead>
             <tbody>
                 {% for s in derniers_sinistres %}
                 <tr>
@@ -71,6 +71,7 @@
                     <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
                     <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                     <td>{{ s.get_nature_display }}</td>
+                    <td><span class="badge bg-primary">{{ s.get_statut_display }}</span></td>
                     <td><a href="{% url 'detail_sinistre_chef' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
                 </tr>
                 {% empty %}

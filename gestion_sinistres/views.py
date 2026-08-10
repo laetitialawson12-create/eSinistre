@@ -23,7 +23,7 @@ from .forms import (
     ChefCreationForm, ModifierAgentAdminForm, ModifierChefAdminForm,
     ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
     RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm,
-    ModifierProfilAdminForm, StylePasswordChangeForm, ModifierNumeroSinistreForm,
+    ModifierProfilAdminForm, StylePasswordChangeForm, AjouterNumeroSinistreForm,
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
@@ -32,6 +32,18 @@ from .models import (
 )
 
 
+def get_profil_operateur(user):
+    """Renvoie le profil (Agent ou ChefDepartement) de l'utilisateur connecté,
+    peu importe son rôle réel. Un chef peut ainsi agir sur tout ce qu'un
+    agent peut faire, en plus de ses propres actions de validation."""
+    
+    return getattr(user, 'agent', None) or getattr(user, 'chef', None)
+
+
+def get_url_detail_dossier(user):
+    """Renvoie le nom de l'URL de détail du dossier adaptée au rôle
+    de l'utilisateur connecté (agent ou chef)."""
+    return 'detail_sinistre_chef' if hasattr(user, 'chef') else 'detail_sinistre_agent'
 #-------------------------------------------------------------------
 #                   AUTHENTIFICATION & REDIRECTION
 #-------------------------------------------------------------------
@@ -435,16 +447,6 @@ def accueil_agent(request):
     return render(request, 'accueil_agent.html', context)
 
 
-# Tableau de bord alternatif affichant les sinistres en cours
-"""@login_required
-def tableau_bord_agent(request):
-    agent = getattr(request.user, 'agent', None)
-    if not agent:
-        return redirect('accueil_assure')
-    sinistres_a_traiter = Sinistre.objects.filter(statut='EN_COURS', assure__assure__agence=agent.agence)
-    return render(request, 'accueil_agent.html', {'sinistres': sinistres_a_traiter})"""
-
-
 # Tableau de bord alternatif affichant les sinistres à instruire
 @login_required
 def dossiers_a_valider_agent(request):
@@ -462,7 +464,7 @@ def dossiers_a_valider_agent(request):
 # Permet à un agent de s'assigner la prise en charge d'un dossier soumis.
 @login_required
 def prendre_en_charge(request, sinistre_id):
-    agent = getattr(request.user, 'agent', None)
+    agent = get_profil_operateur(request.user)
     if not agent:
         return redirect('accueil_assure')
 
@@ -479,7 +481,7 @@ def prendre_en_charge(request, sinistre_id):
         )
         messages.success(request, f"Dossier {sinistre.numero_sinistre} pris en charge.")
 
-    return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+    return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
 
 # Permet à l'agent de voir les informations ou détails d'un sinistre
@@ -557,8 +559,13 @@ def detail_sinistre_agent(request, sinistre_id):
 def marquer_conforme(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
 
+    if not sinistre.numero_sinistre:
+        messages.error(request, "Le numéro de sinistre doit être ajouté avant de marquer le dossier comme conforme.")
+        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre_id)
+    
+    
     if request.method != 'POST':
-        return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+        return redirect(get_url_detail_dossier(request.user),  sinistre_id=sinistre_id)
 
     nature = request.POST.get('nature')
     pv_verifie = request.POST.get('pv_verifie') == 'on'
@@ -566,10 +573,10 @@ def marquer_conforme(request, sinistre_id):
 
     if not nature:
         messages.error(request, "Veuillez renseigner la nature du sinistre.")
-        return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+        return redirect(get_url_detail_dossier(request.user),  sinistre_id=sinistre_id)
     if not pv_verifie:
         messages.error(request, "Le PV doit être vérifié avant l'envoi au Chef.")
-        return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+        return redirect(get_url_detail_dossier(request.user),  sinistre_id=sinistre_id)
 
     sinistre.nature = nature
     sinistre.pv_verifie = pv_verifie
@@ -578,7 +585,7 @@ def marquer_conforme(request, sinistre_id):
             sinistre.taux_responsabilite = Decimal(taux_responsabilite)
         except InvalidOperation:
             messages.error(request, "Taux de responsabilité invalide.")
-            return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+            return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre_id)
 
     if sinistre.statut == 'A_CORRIGER':
         sinistre.statut = 'ATTENTE_VALIDATION'
@@ -598,13 +605,13 @@ def marquer_conforme(request, sinistre_id):
         )
 
     messages.success(request, f"Dossier {sinistre.numero_sinistre} transmis au Chef.")
-    return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+    return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre_id)
 
 
 # Permet à l'agent de demander des pièces ou informations manquantes ou complémentaires
 @login_required
 def demander_complements(request, sinistre_id):
-    agent = getattr(request.user, 'agent', None)
+    agent = get_profil_operateur(request.user)
     if not agent:
         return redirect('accueil_assure')
 
@@ -624,7 +631,7 @@ def demander_complements(request, sinistre_id):
                 auteur=request.user,
             )
             messages.success(request, f"Demande de compléments envoyée pour le dossier {sinistre.numero_sinistre}.")
-            return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+            return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
     else:
         form = DemanderComplementsForm()
 
@@ -634,7 +641,7 @@ def demander_complements(request, sinistre_id):
 # Permet à l'agent de saisir le prix retenu par le département indemnisation après que le dossier soit passé à en cours
 @login_required
 def saisir_prix_retenu(request, sinistre_id):
-    agent = getattr(request.user, 'agent', None)
+    agent = get_profil_operateur(request.user)
     if not agent:
         return redirect('accueil_assure')
 
@@ -649,12 +656,12 @@ def saisir_prix_retenu(request, sinistre_id):
             request,
             "Le prix retenu ne peut être saisi qu'après validation du dossier par le Chef de département."
         )
-        return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
     # Vérification si le prix peut être modifié (par exemple, si non validé par le chef)
     if getattr(sinistre, 'indemnisation_validee', False):
         messages.error(request, "Le prix retenu a été validé par le Chef. Il ne peut plus être modifié.")
-        return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
     if request.method == 'POST':
         nouveau_prix = request.POST.get('prix_retenu')
@@ -683,13 +690,13 @@ def saisir_prix_retenu(request, sinistre_id):
                 auteur=request.user,
             )
             messages.success(request, "Le prix retenu a été enrégistré avec succès.")
-        return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre_id)
 
     
 # Permet à l'agent d'enregistrer les détails du paiement pour un sinistre clôturé
 @login_required
 def saisir_indemnisation(request, sinistre_id):
-    agent = getattr(request.user, 'agent', None)
+    agent = get_profil_operateur(request.user)
     if not agent:
         return redirect('accueil_assure')
 
@@ -712,7 +719,7 @@ def saisir_indemnisation(request, sinistre_id):
                 auteur=request.user,
             )
             messages.success(request, "Informations d'indemnisation enregistrées.")
-            return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+            return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
     else:
         form = IndemnisationForm()
 
@@ -739,7 +746,6 @@ def dossiers_clotures(request):
         return redirect('accueil_assure')
     sinistres = Sinistre.objects.filter(
         statut__in=['CLOTURE', 'SANS_SUITE'],
-        assure__assure__agence=agent.agence,
     ).order_by('-date_declaration')
     return render(request, 'dossiers_clotures.html', {'agent': agent, 'sinistres': sinistres})
 
@@ -752,7 +758,6 @@ def dossiers_a_corriger_agent(request):
         return redirect('accueil_assure')
     sinistres_a_corriger = Sinistre.objects.filter(
         statut="A_CORRIGER",
-        assure__assure__agence=agent.agence,    
     ).order_by('date_declaration')
 
     context = {
@@ -770,7 +775,6 @@ def tous_sinistres_agent(request):
         return redirect('accueil_assure')
 
     sinistres = Sinistre.objects.select_related('assure', 'vehicule', 'region').filter(
-        assure__assure__agence=agent.agence
     ).order_by('-date_declaration')
 
     statut = request.GET.get('statut', '')
@@ -799,25 +803,27 @@ def tous_sinistres_agent(request):
     return render(request, 'tous_sinistres_agent.html', context)
 
 
-# Permet à l'agent de modifier le numéro du sinistre
+# Permet à l'agent d'ajouter le numéro du sinistre
 @login_required
-def modifier_numero_sinistre(request, sinistre_id):
+def ajouter_numero_sinistre(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, pk=sinistre_id)
     
     if request.method == 'POST':    
-        form = ModifierNumeroSinistreForm(request.POST, instance=sinistre)
+        form = AjouterNumeroSinistreForm(request.POST, instance=sinistre)
         if form.is_valid():
             form.save()
             messages.success(request, "Le numéro sinsitre a été bien modifié.")
-            return redirect('detail_sinistre_agent', sinistre_id=sinistre.pk)
+            return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.pk)
     else:
-        form = ModifierNumeroSinistreForm(instance=sinistre)
+        form = AjouterNumeroSinistreForm(instance=sinistre)
         
     context={
         'form': form,
         'sinistre': sinistre,
+        'base_layout': 'base_chef.html' if hasattr(request.user, 'chef') else 'base_agent.html',
+        'url_detail_dossier': get_url_detail_dossier(request.user),
     }
-    return render(request, 'modifier_numero_sinistre.html', context)
+    return render(request, 'ajouter_numero_sinistre.html', context)
 
 
 # Permet à l'agent de modifier son mot de passe
