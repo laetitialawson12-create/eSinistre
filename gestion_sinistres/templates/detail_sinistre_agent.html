@@ -34,6 +34,7 @@
     <div class="card-body">
         <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
         <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
+        <p><strong>Contact :</strong> {{ sinistre.contact_declarant }} </p>
         <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
         <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
         <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}
@@ -44,9 +45,9 @@
         </p>
         <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
 
-        {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
         <p><strong>Victimes :</strong> {{ sinistre.nombre_blesses }} blessé(s), {{ sinistre.nombre_morts }} mort(s)</p>
-        {% endif %}
+
+        <p><strong>Taux de responsabilité : </strong>{{ sinistre.taux_responsabilite }} %</p>
 
         {% if sinistre.autre_vehicule_implique %}
         <p><strong>Véhicule adverse :</strong> 
@@ -57,31 +58,25 @@
         {% endif %}
 
         <p><strong>Statut :</strong> <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span></p>
+
         <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+
+        <p><strong>Dommages :</strong> {{ sinistre.dommage }}</p>
 
         <!-- Bloc Quittance -->
         <div class="alert alert-info py-2 mb-3">
-            <strong>Quittance :</strong> 
-            {% if sinistre.quittance %}
-                <span class="fw-bold">{{ sinistre.quittance.numero_quittance }}</span> 
-                ({{ sinistre.quittance.date_debut|date:"d/m/Y" }} - {{ sinistre.quittance.date_fin|date:"d/m/Y" }}) 
-                — <span class="badge bg-secondary">Prime : {{ sinistre.quittance.prime }} FCFA</span>
-            {% else %}
-                <span class="text-danger fw-bold">Aucune quittance liée automatiquement.</span>
-                <form method="POST" action="{% url 'lier_quittance_agent' sinistre.id %}" class="d-inline-flex align-items-center gap-2 mt-2 flex-wrap">
-                    {% csrf_token %}
-                    <select name="quittance_id" class="form-select form-select-sm" style="width: auto;" required>
-                        <option value="">-- Choisir une quittance --</option>
-                        {% for q in quittances_disponibles %}
-                            <option value="{{ q.id }}">
-                                {{ q.numero_quittance }} ({{ q.date_debut|date:"d/m/Y" }} - {{ q.date_fin|date:"d/m/Y" }}) — Prime : {{ q.prime }} FCFA
-                            </option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">Lier la quittance</button>
-                </form>
-            {% endif %}
+            <strong>Quittance{{ sinistre.quittances.count|pluralize }} :</strong>
+                <ul class="mb-0 mt-1">
+                    {% for q in sinistre.quittances.all %}
+                        <li>
+                        <span class="fw-bold">{{ q.numero_quittance }}</span>
+                        ({{ q.date_debut|date:"d/m/Y" }} - {{ q.date_fin|date:"d/m/Y" }})
+                        — <span class="badge bg-secondary">Prime : {{ q.prime }} FCFA</span>
+                        </li>
+                    {% endfor %}
+                </ul>
         </div>
+
 
         <!-- Bloc Synthèse Financière (Prix retenu, Total payé, Reste à payer) -->
         {% if sinistre.prix_retenu is not None %}
@@ -128,17 +123,43 @@
         
         <!-- Actions sur le dossier (Validation ou demande de compléments) -->
         {% if sinistre.statut == 'SOUMIS' or sinistre.statut == 'A_CORRIGER' and not sinistre.attestation_generee %}
-            <div class="d-flex gap-2 mt-3">
-                <form method="post" action="{% url 'marquer_conforme' sinistre.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success btn-sm">
-                        <i class="bi bi-check2-circle me-1"></i> Dossier conforme — envoyer au Chef
-                    </button>
-                </form>
-                <a href="{% url 'demander_complements' sinistre.id %}" class="btn btn-warning btn-sm">
-                    <i class="bi bi-exclamation-circle me-1"></i> Demander des compléments
-                </a>
+            <div class="d-flex gap-2 mt-3 align-items-start flex-wrap">
+                <form method="post" action="{% url 'marquer_conforme' sinistre.id %}" class="mt-2">
+    {% csrf_token %}
+    <div class="mt-3">
+    <form method="post" action="{% url 'marquer_conforme' sinistre.id %}" class="mt-2">
+        {% csrf_token %}
+        <div class="row g-4 row-cols-2 row-cols-md-3 align-items-end mb-3">
+            <div class="col-md-4">
+                <label class="form-label small mb-1">Nature du sinistre</label>
+                <select name="nature" class="form-select form-select-sm" required>
+                    <option value="" selected disabled>Choisir...</option>
+                    {% for value, label in sinistre.NATURE_CHOICES %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
+            <div class="col-md-4">
+                <label class="form-label small mb-1">Taux de responsabilité (%)</label>
+                <input type="number" name="taux_responsabilite" class="form-control form-control-sm"
+                       step="0.01" min="0" max="100" placeholder="Ex: 100.00" required>
+            </div>
+            <div class="col form-check ps-4 pb-1">
+                <input type="checkbox" name="pv_verifie" class="form-check-input" id="id_pv_verifie" required>
+                <label class="form-check-label small" for="id_pv_verifie">PV vérifié</label>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3">
+            <button type="submit" class="btn btn-success btn-sm">
+                <i class="bi bi-check2-circle me-1"></i> Dossier conforme — envoyer au Chef
+            </button>
+            <a href="{% url 'demander_complements' sinistre.id %}" class="btn btn-warning btn-sm">
+                <i class="bi bi-exclamation-circle me-1"></i> Demander des compléments
+            </a>
+        </div>
+    </form>
+</div>
         {% elif sinistre.statut == 'A_CORRIGER' and sinistre.attestation_generee %}
             <div class="d-flex gap-2 mt-3">
                 <form method="post" action="{% url 'marquer_conforme' sinistre.id %}">
@@ -159,7 +180,7 @@
             </div>
         {% endif %}
 
-        {% if sinistre.statut == 'EN_COURS' and sinistre.reste_a_payer > 0 %}
+        {% if sinistre.statut == 'EN_COURS' and sinistre.indemnisation_validee and sinistre.reste_a_payer > 0 %}
             <div class="mt-3">
                 <a href="{% url 'emettre_cheque' sinistre.id %}" class="btn btn-success btn-sm">
                     <i class="bi bi-cash-stack me-1"></i> Émettre un nouveau chèque (Reste : {{ sinistre.reste_a_payer }} FCFA)
@@ -167,7 +188,7 @@
             </div>
         {% endif %}
 
-        {% if sinistre.statut == 'CLOTURE' and sinistre.reste_a_payer > 0 %}
+        {% if sinistre.statut == 'CLOTURE' and sinistre.indemnisation_validee and sinistre.reste_a_payer > 0 %}
             <a href="{% url 'emettre_cheque' sinistre.id %}" class="btn btn-success btn-sm mt-3">
                 <i class="bi bi-cash-stack me-1"></i> Émettre un nouveau chèque
             </a>
@@ -222,7 +243,11 @@
                                 <form method="POST" action="{% url 'modifier_statut_cheque' paiement.id %}" class="d-inline">
                                     {% csrf_token %}
                                     <select name="statut" class="form-select form-select-sm d-inline-block w-auto"
-                                        onchange="if (this.value === 'RETIRE') { window.location.href = '{% url 'marquer_cheque_retire' paiement.id %}'; } else { this.form.submit(); }">
+                                        onchange="if (this.value === 'RETIRE') { 
+                                            window.location.href = '{% url "marquer_cheque_retire" paiement.id %}';
+                                        } else { 
+                                            this.form.submit(); 
+                                        }">
                                         <option value="" selected disabled>Changer...</option>
                                         <option value="EMIS">Émis</option>
                                         <option value="DISPONIBLE">Prêt pour retrait</option>

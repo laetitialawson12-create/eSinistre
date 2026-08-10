@@ -112,19 +112,23 @@
                         <td class="fw-bold">Assuré :</td>
                         <td>{{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</td>
                         <td class="fw-bold">Effet : </td>
-                        <td>{{ sinistre.quittance.date_debut|date:"d/m/Y"|default:"-" }}</td>
+                        <td>{{ date_effet|date:"d/m/Y"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Contact :</td>
+                        <td>{{ sinistre.contact_declarant }}</td>
+                        <td class="fw-bold">Echéance : </td>
+                        <td>{{ date_echeance|date:"d/m/Y"|default:"-" }}</td>
                     </tr>
                     <tr>
                         <td class="fw-bold">Conducteur :</td>
                         <td>{{ sinistre.nom_conducteur }}</td>
-                        <td class="fw-bold">Echéance : </td>
-                        <td>{{ sinistre.quittance.date_fin|date:"d/m/Y"|default:"-" }}</td>
+                        <td class="fw-bold">Date de Déclaration :</td>
+                        <td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
                     </tr>
                     <tr>
                         <td class="fw-bold">Date de Survenance :</td>
                         <td>{{ sinistre.date_survenance|date:"d/m/Y" }} à {{ sinistre.heure_approximative|time:"H:i" }}</td>
-                        <td class="fw-bold">Date de Déclaration :</td>
-                        <td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
                     </tr>
                 </table>
             </div>
@@ -149,7 +153,6 @@
             </div>
 
             <!-- Victimes si Corporel -->
-            {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
             <div class="section-box">
                 <div class="section-header">Bilan Corporel (Victimes)</div>
                 <table class="table table-borderless table-custom mb-0">
@@ -161,7 +164,6 @@
                     </tr>
                 </table>
             </div>
-            {% endif %}
 
             <!-- Véhicule Tiers / Adverse -->
             {% if sinistre.autre_vehicule_implique %}
@@ -188,6 +190,12 @@
             <div class="section-box p-2">
                 <div class="fw-bold mb-1">Circonstances déclarées :</div>
                 <p class="mb-0 text-secondary" style="font-size: 11.5px;">{{ sinistre.circonstances }}</p>
+            </div>
+
+
+            <div class="section-box p-2">
+                <div class="fw-bold mb-1">Dommages causés :</div>
+                <p class="mb-0 text-secondary" style="font-size: 11.5px;">{{ sinistre.dommage }}</p>
             </div>
         </div>
 

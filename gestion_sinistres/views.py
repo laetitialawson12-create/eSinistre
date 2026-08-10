@@ -144,7 +144,9 @@ def accueil_assure(request):
     all_sinistres = Sinistre.objects.filter(assure=request.user)
     context = {
         'total': all_sinistres.count(),
+        'soumis': all_sinistres.filter(statut='SOUMIS').count(),
         'en_cours': all_sinistres.filter(statut='EN_COURS').count(),
+        'clotures': all_sinistres.filter(statut__in = ['CLOTURE', 'SANS_SUITE']).count(),
         'derniers': all_sinistres.order_by('-date_declaration')[:5],
     }
     return render(request, 'accueil_assure.html', context)
@@ -174,27 +176,33 @@ def declarer_sinistre(request):
                 sinistre.assure = request.user
                 sinistre.statut = 'SOUMIS'
                 
-                # Attributions automatiques de la quittance
-                date_evenement = sinistre.date_survenance
-                vehicule = sinistre.vehicule
-                contrat = getattr(vehicule, 'contrat', None)
-                
-                if contrat and date_evenement:
-                    quittances_valides = Quittance.objects.filter(
-                        contrat=contrat,
-                        date_debut__lte=date_evenement,
-                        date_fin__gte=date_evenement
-                    )
-                    sinistre.quittance = quittances_valides.first() if quittances_valides.count() == 1 else None
-                else:
-                    sinistre.quittance = None
-                    
-                # Sauvegarde (déclenche la méthode save() et clean() du modèle avec génération auto du numéro)
+                # Sauvegarde (déclenche full_clean() ; numero_sinistre reste vide pour l'instant)
                 sinistre.save()
+                
+                # Attribution automatique de toutes les quittances valides (relation M2M, donc après le save())
+                assure_profile = getattr(sinistre.assure, 'assure', None)
+                if assure_profile and sinistre.date_survenance:
+                    quittances_valides = Quittance.objects.filter(
+                        contrat=assure_profile,
+                        date_debut__lte=sinistre.date_survenance,
+                        date_fin__gte=sinistre.date_survenance,
+                    )
+                    sinistre.quittances.set(quittances_valides)
+
+                if not quittances_valides.exists():
+                    sinistre.delete()
+                    request.session.pop('temp_sinistre_id', None)
+                    messages.error(
+                        request,
+                        "Aucune quittance valide ne couvre la date de survenance déclarée. "
+                        "Votre déclaration ne peut pas être enregistrée. Vérifiez la date renseignée "
+                        "ou contactez votre agence si vous pensez qu'il s'agit d'une erreur."
+                    )
+                    return render(request, 'declaration.html', {'form': form, 'title': 'Déclarer un sinistre'})
                 
                 fichiers = request.FILES.getlist('fichiers_justificatifs')
                 for f in fichiers:
-                    PieceJustificative.objects.create(sinistre=sinistre, fichier=f)
+                    PieceJointe.objects.create(sinistre=sinistre, fichier=f)
                     
                 # Historique : uniquement à la toute première déclaration
                 if est_nouvelle_declaration:
@@ -255,6 +263,9 @@ def detail_sinistre(request, sinistre_id):
                 else:
                     h.commentaires = "Indemnisation saisie et validée par le chef de département."
                 historique_filetre.append(h)
+        elif 'verifié par l\'agent' in h.commentaires.lower():
+            h.commentaires = "Votre dossier a été vérifié et transmis au Chef de département pour validation."
+            historique_filetre.append(h)
         else:
             historique_filetre.append(h)
 
@@ -332,7 +343,7 @@ def finaliser_envoi(request):
             del request.session['temp_sinistre_id']
 
         if sinistre:
-            if sinistre.quittance:
+            if sinistre.quittances.exists():
                 messages.success(request, f"Votre sinistre N° {sinistre.numero_sinistre} a été enregistré avec succès.")
             else:
                 messages.info(
@@ -410,13 +421,15 @@ def accueil_agent(request):
 
     context = {
         'agent': agent,
+        'soumis': sinistres.count(),
         'a_instruire': sinistres.filter(statut='SOUMIS').count(),
         'attente_complements': sinistres.filter(statut='ATTENTE_COMPLEMENTS').count(),
-        'valides_ce_mois': sinistres.filter(
-            statut='CLOTURE',
-            date_cloture__month=timezone.now().month,
-            date_cloture__year=timezone.now().year,
-        ).count(),
+        'en_cours': sinistres.filter(statut="EN_COURS").count(),
+        # 'valides_ce_mois': sinistres.filter(
+        #     statut='CLOTURE',
+        #     date_cloture__month=timezone.now().month,
+        #     date_cloture__year=timezone.now().year,
+        # ).count(),
         'derniers_sinistres': sinistres.order_by('-date_declaration')[:5],
     }
     return render(request, 'accueil_agent.html', context)
@@ -434,17 +447,16 @@ def tableau_bord_agent(request):
 
 # Tableau de bord alternatif affichant les sinistres à instruire
 @login_required
-def dossiers_a_instruire(request):
+def dossiers_a_valider_agent(request):
     agent = getattr(request.user, 'agent', None)
     if not agent:
         return redirect('accueil_assure')
 
     sinistres = Sinistre.objects.filter(
         statut__in=['SOUMIS', 'ATTENTE_COMPLEMENTS', 'A_CORRIGER'],
-        assure__assure__agence=agent.agence,
     ).order_by('date_declaration')
 
-    return render(request, 'agent_a_instruire.html', {'agent': agent, 'sinistres': sinistres})
+    return render(request, 'agent_a_valider.html', {'agent': agent, 'sinistres': sinistres})
 
 
 # Permet à un agent de s'assigner la prise en charge d'un dossier soumis.
@@ -539,70 +551,54 @@ def detail_sinistre_agent(request, sinistre_id):
     return render(request, 'detail_sinistre_agent.html', context)
 
 
-# Permet à l'agent d'associer manuellement une quittance à une déclaration si un numéro de police est lié à pluisieurs quittances
-@login_required
-def lier_quittance_agent(request, sinistre_id):
-    agent = getattr(request.user, 'agent', None)
-    if not agent:
-        return redirect('accueil_assure')
-
-    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
-
-    if request.method == 'POST':
-        quittance_id = request.POST.get('quittance_id')
-        if quittance_id:
-            assure_profile = getattr(sinistre.assure, 'assure', None)
-            quittance = get_object_or_404(Quittance, id=quittance_id, contrat=assure_profile)
-            sinistre.quittance = quittance
-            try:
-                sinistre.save()
-                messages.success(request, f"La quittance N° {quittance.numero_quittance} a été liée au sinistre.")
-            except ValidationError as e:
-                messages.error(request, f"Impossible de lier cette quittance : {e}")
-        else:
-            messages.warning(request, "Veuillez sélectionner une quittance valide.")
-
-    return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
-
 
 # Permet à l'agent de marquer un dossier comme conforme et l'envoyer au chef
 @login_required
 def marquer_conforme(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
 
-    if not sinistre.quittance:
-        messages.error(
-            request,
-            "Impossible d'envoyer le dossier au Chef: aucune quittance n'est liée à ce sinistre."
-            "Veuillez d'abord lier une quittance."
-        )
+    if request.method != 'POST':
         return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
-    
-    # On vérifie si le dossier revient d'une correction de prix
+
+    nature = request.POST.get('nature')
+    pv_verifie = request.POST.get('pv_verifie') == 'on'
+    taux_responsabilite = request.POST.get('taux_responsabilite')
+
+    if not nature:
+        messages.error(request, "Veuillez renseigner la nature du sinistre.")
+        return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+    if not pv_verifie:
+        messages.error(request, "Le PV doit être vérifié avant l'envoi au Chef.")
+        return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+
+    sinistre.nature = nature
+    sinistre.pv_verifie = pv_verifie
+    if taux_responsabilite:
+        try:
+            sinistre.taux_responsabilite = Decimal(taux_responsabilite)
+        except InvalidOperation:
+            messages.error(request, "Taux de responsabilité invalide.")
+            return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
+
     if sinistre.statut == 'A_CORRIGER':
         sinistre.statut = 'ATTENTE_VALIDATION'
         sinistre.save()
-        
-        # Enregistrement d'un historique propre et explicite
         HistoriqueSinistre.objects.create(
-            sinistre=sinistre,
-            statut=sinistre.statut,
-            commentaires=f"Prix révisé à {sinistre.prix_retenu} FCFA — Dossier transmis au Chef pour validation de l'indemnisation.",
+            sinistre=sinistre, statut=sinistre.statut,
+            commentaires=f"Prix révisé à {sinistre.prix_retenu} FCFA - Dossier transmis au chef pour validation de l'indemnisation.",
             auteur=request.user
         )
     else:
-        # Comportement initial (première soumission)
         sinistre.statut = 'ATTENTE_VALIDATION'
         sinistre.save()
-        
         HistoriqueSinistre.objects.create(
-            sinistre=sinistre,
-            statut=sinistre.statut,
-            commentaires="Dossier jugé conforme (première validation), transmis au Chef de département.",
+            sinistre=sinistre, statut=sinistre.statut,
+            commentaires=f"Dossier jugé conforme, numéro officiel {sinistre.numero_sinistre} attribué, transmis au Chef de département",
             auteur=request.user
         )
-        
-    return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+
+    messages.success(request, f"Dossier {sinistre.numero_sinistre} transmis au Chef.")
+    return redirect('detail_sinistre_agent', sinistre_id=sinistre_id)
 
 
 # Permet à l'agent de demander des pièces ou informations manquantes ou complémentaires
@@ -731,7 +727,6 @@ def dossiers_en_cours(request):
         return redirect('accueil_assure')
     sinistres = Sinistre.objects.filter(
         statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'REOUVERT'],
-        assure__assure__agence=agent.agence,
     ).order_by('-date_declaration')
     return render(request, 'dossiers_en_cours.html', {'agent': agent, 'sinistres': sinistres})
 
@@ -893,8 +888,12 @@ def accueil_chef(request):
     sinistres = Sinistre.objects.all()
     context = {
         'chef': chef,
+        'declarer': sinistres.count(),
+        'soumis': sinistres.filter(statut='SOUMIS').count(),
         'a_valider': sinistres.filter(statut='ATTENTE_VALIDATION').count(),
         'en_cours': sinistres.filter(statut='EN_COURS').count(),
+        'a_corriger': sinistres.filter(statut='A_CORRIGER').count(),
+        'en_attente_de_complements': sinistres.filter(statut='EN_ATTENTE_DE_COMPLEMENTS').count(),
         'clotures_ce_mois': sinistres.filter(
             statut='CLOTURE',
             date_declaration__month=timezone.now().month,
@@ -1242,7 +1241,14 @@ def voir_attestation(request, sinistre_id):
     is_owner = (getattr(sinistre, 'assure', None) == request.user or getattr(sinistre, 'assure_id', None) == request.user.id)
     
     if is_owner or hasattr(request.user, 'agent') or hasattr(request.user, 'chef'):
-        return render(request, 'attestation.html', {'sinistre': sinistre})
+        quittances = sinistre.quittances.all().order_by('date_debut')
+        date_effet = quittances.first().date_debut if quittances.exists() else None
+        date_echeance = quittances.first().date_fin if quittances.exists() else None
+        return render(request, 'attestation.html', {
+            'sinistre': sinistre,
+            'date_effet': date_effet,
+            'date_echeance': date_echeance,
+        })
         
     return redirect('accueil_assure')
 
@@ -1256,7 +1262,15 @@ def telecharger_attestation(request, sinistre_id):
     if not (is_owner or hasattr(request.user, 'agent') or hasattr(request.user, 'chef')):
         return redirect('accueil_assure')
 
-    return render(request, 'attestation.html', {'sinistre': sinistre, 'download_pdf': True})
+    quittances = sinistre.quittances.all().order_by('date_debut')
+    date_effet = quittances.first().date_debut if quittances.exists() else None
+    date_echeance = quittances.first().date_fin if quittances.exists() else None
+    return render(request, 'attestation.html', {
+        'sinistre': sinistre,
+        'download_pdf': True,
+        'date_effet': date_effet,
+        'date_echeance': date_echeance,
+        })
 
 
 #-------------------------------------------------------------------

@@ -1,7 +1,7 @@
 {% extends "base_agent.html" %}
-{% block title %}À instruire{% endblock %}
+{% block title %}À valider{% endblock %}
 {% block content %}
-<h4 class="mb-4">📥 Dossiers à instruire</h4>
+<h4 class="mb-4">📥 Dossiers à valider</h4>
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <table class="table mb-0">
@@ -16,7 +16,7 @@
                     <td><span class="badge bg-primary">{{ s.get_statut_display }}</span></td>
                         <td>
                             {% if s.statut == 'SOUMIS' %}
-                            <a href="{% url 'prendre_en_charge' s.id %}" class="btn btn-sm btn-primary">Instruire</a>
+                            <a href="{% url 'prendre_en_charge' s.id %}" class="btn btn-sm btn-primary">A valider</a>
                             {% else %}
                             <a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
                             {% endif %}
@@ -24,7 +24,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier à instruire pour le moment.</td></tr>
+                <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier à valider pour le moment.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

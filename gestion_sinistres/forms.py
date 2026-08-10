@@ -78,8 +78,6 @@ class SinistreForm(forms.ModelForm):
             'quartier', 
             'circonstances',
             'dommage',
-            'prix_retenu',
-            'agent_traitant',
             'autre_vehicule_implique',
             'vehicule_adverse_immatriculation',
             'vehicule_adverse_marque',
@@ -103,9 +101,6 @@ class SinistreForm(forms.ModelForm):
             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
             'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'dommage' : forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'prix_retenu': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Prix retenu en FCFA'}),
-            'statut': forms.Select(attrs={'class': 'form-control'}),
-            'agent_traitant': forms.TextInput(attrs={'class': 'form-control'}),
             'autre_vehicule_implique':forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_autre_vehicule'}),
             'vehicule_adverse_immatriculation': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Immatriculation du véhicule adverse'}),
             'vehicule_adverse_marque': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Marque'}),
@@ -129,6 +124,7 @@ class SinistreForm(forms.ModelForm):
         # Récupération de l'utilisateur passé depuis la vue
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        self.user = user 
         
         # Si un utilisateur assuré est présent, filtrer ses véhicules
         if user is not None and hasattr(user, 'vehicules'):
@@ -136,6 +132,26 @@ class SinistreForm(forms.ModelForm):
         
         # Texte par défaut dans le menu déroulant des véhicules
         self.fields['vehicule'].empty_label = "Sélectionnez votre véhicule"
+
+def clean(self):
+    cleaned_data = super().clean()
+    date_survenance = cleaned_data.get('date_survenance')
+    assure_profile = getattr(self.user, 'assure', None) if self.user else None
+    
+    if date_survenance and assure_profile:
+        quittance_valide_existe = Quittance.objects.filter(
+            contrat=assure_profile,
+            date_debut__lte=date_survenance,
+            date_fin__lte=date_survenance,
+        ).exists()
+        
+        if not quittance_valide_existe:
+            raise forms.ValidationError(
+                "Aucun contrat actif n'a été trouvé pour cette date de survenance. "
+                "Veuillez vérifier la date, ou contacter votre point mde vente si vous pensez qu'il s'agit d'une erreur."
+            )
+            
+    return cleaned_data
 
 
 class ModifierNumeroSinistreForm(forms.ModelForm):

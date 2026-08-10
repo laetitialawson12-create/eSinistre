@@ -36,7 +36,7 @@
         </div>
         <div class="py-3">
             <a href="{% url 'accueil_agent' %}" class="{% if request.resolver_match.url_name == 'accueil_agent' %}active{% endif %}"><i class="bi bi-house-door me-2"></i> Accueil</a>
-            <a href="{% url 'dossiers_a_instruire' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_instruire' or request.resolver_match.url_name == 'detail_sinistre_agent' %}active{% endif %}"><i class="bi bi-inbox me-2"></i> À instruire</a>
+            <a href="{% url 'dossiers_a_valider_agent' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_valider_agent' or request.resolver_match.url_name == 'detail_sinistre_agent' %}active{% endif %}"><i class="bi bi-inbox me-2"></i> À valider</a>
             <a href="{% url 'dossiers_en_cours' %}" class="{% if request.resolver_match.url_name == 'dossiers_en_cours' %}active{% endif %}"><i class="bi bi-arrow-repeat me-2"></i> En cours</a>
             <a href="{% url 'dossiers_a_corriger_agent' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_corriger_agent' %}active{% endif %}"><i class="bi bi-exclamation-triangle-fill"></i>  À corriger</a>
             <a href="{% url 'dossiers_clotures' %}" class="{% if request.resolver_match.url_name == 'dossiers_clotures' %}active{% endif %}"><i class="bi bi-folder2 me-2"></i> Clôturés</a>

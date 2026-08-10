@@ -15,6 +15,7 @@
     <div class="card-body">
         <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
         <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
+        <p><strong>Contact :</strong> {{ sinistre.contact_declarant }} </p>
         <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
         <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
         <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}
@@ -25,9 +26,9 @@
         </p>
         <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
 
-        {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
         <p><strong>Victimes :</strong> {{ sinistre.nombre_blesses }} blessé(s), {{ sinistre.nombre_morts }} mort(s)</p>
-        {% endif %}
+
+        <p><strong>Taux de responsabilité : </strong>{{ sinistre.taux_responsabilite }} %</p>
 
         {% if sinistre.autre_vehicule_implique %}
         <p><strong>Véhicule adverse :</strong> 
@@ -39,7 +40,21 @@
 
         <p><strong>Statut :</strong> <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span></p>
         <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+        <p><strong>Dommages :</strong> {{ sinistre.dommage }}</p>
 
+
+        <div class="alert alert-info py-2 mb-3">
+            <strong>Quittance{{ sinistre.quittances.count|pluralize }} :</strong>
+                <ul class="mb-0 mt-1">
+                    {% for q in sinistre.quittances.all %}
+                        <li>
+                        <span class="fw-bold">{{ q.numero_quittance }}</span>
+                        ({{ q.date_debut|date:"d/m/Y" }} - {{ q.date_fin|date:"d/m/Y" }})
+                        — <span class="badge bg-secondary">Prime : {{ q.prime }} FCFA</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+        </div>
         <!-- BLOC PRIX RETENU / SYNTHÈSE FINANCIÈRE -->
         {% if sinistre.prix_retenu is not None %}
             <div class="alert alert-light border py-2 mb-3">

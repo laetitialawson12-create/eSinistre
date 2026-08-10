@@ -85,6 +85,7 @@
                 <div class="card-header bg-white fw-bold">📝 Détails de la déclaration</div>
                 <div class="card-body">
                     <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
+                    <p><strong>Contact :</strong> {{ sinistre.contact_declarant }}</p>
                     <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
                     <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
                     <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}
@@ -95,7 +96,7 @@
                     </p>
                     <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
 
-                    {% if sinistre.nature == 'C' or sinistre.nature == 'X' %}
+                    {% if sinistre.nombre_blesses or sinistre.nombre_morts %}
                     <p><strong>Victimes :</strong> {{ sinistre.nombre_blesses }} blessé(s), {{ sinistre.nombre_morts }} mort(s)</p>
                     {% endif %}
 
@@ -107,7 +108,9 @@
                     </p>
                     {% endif %}
 
-                    <p class="mb-0"><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+                    <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+
+                    <p><strong>Dommages :</strong> {{ sinistre.dommage }} </p>
                 </div>
             </div>
         </div>

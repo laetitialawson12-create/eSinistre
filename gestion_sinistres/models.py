@@ -93,7 +93,7 @@ class Sinistre(models.Model):
     contact_declarant = models.CharField(max_length=16, blank=True, null=True, verbose_name="Contact du déclarant")
     
     # Identifiants
-    numero_sinistre = models.CharField(max_length=20, unique=True)
+    numero_sinistre = models.CharField(max_length=20, unique=True, blank=True, null=True)
     statut = models.CharField(max_length=30, choices=STATUS_CHOICES, default='SOUMIS')
     agent_traitant = models.CharField(max_length=100, blank=True, null=True)
     
@@ -121,13 +121,13 @@ class Sinistre(models.Model):
     quartier = models.CharField(max_length=150)
 
     # Détails du sinistre
-    nature = models.CharField(max_length=1, choices=NATURE_CHOICES)
+    nature = models.CharField(max_length=1, choices=NATURE_CHOICES, blank=True, null=True)
 
     # Informations pour la génération du numéro
     numero_point_vente = models.CharField(max_length=10, default="001")
     assure = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sinistres')
 
-    quittance = models.ForeignKey(Quittance, on_delete=models.SET_NULL, null=True, blank=True)
+    quittances = models.ManyToManyField(Quittance, blank=True, related_name='sinistres')
     
     # Pièces jointes
     lettre_derogation = models.FileField(upload_to='sinistres/derogations/', blank=True, null=True)
@@ -143,7 +143,7 @@ class Sinistre(models.Model):
 
     # Détails sinistres gérés par le rédacteur sinistre
     taux_responsabilite = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    niveau_responsabilite = models.TextField()
+    niveau_responsabilite = models.TextField(blank=True, null=True)
     pv_verifie = models.BooleanField(default=False)
     
     
@@ -167,29 +167,10 @@ class Sinistre(models.Model):
                 'prix_retenu': f"Le prix retenu ({self.prix_retenu} FCFA) ne peut pas être négatif."
             })
 
+    
     def save(self, *args, **kwargs):
-        if not self.pk:  # Uniquement à la création d'un nouveau sinistre
-            annee = timezone.now().strftime('%Y')
-            prefix = f"{annee}{self.numero_point_vente}"
-            
-            # Recherche du dernier numéro généré pour ce préfixe et cette nature
-            base_pattern = f"{prefix}{self.nature}"
-            dernier_sinistre = Sinistre.objects.filter(
-                numero_sinistre__startswith=base_pattern
-            ).order_by('numero_sinistre').last()
-            
-            if dernier_sinistre:
-                # Extrait les 6 derniers chiffres du numéro existant et les incrémente
-                try:
-                    dernier_ordre = int(dernier_sinistre.numero_sinistre[-6:])
-                    ordre = str(dernier_ordre + 1).zfill(6)
-                except ValueError:
-                    ordre = "000001"
-            else:
-                ordre = "000001"
-                
-            self.numero_sinistre = f"{base_pattern}{ordre}"
-            
+        if not self.numero_sinistre:
+            self.numero_sinistre = None  # normalise "" en NULL pour ne pas violer unique=True
         self.full_clean()
         super().save(*args, **kwargs)
         
