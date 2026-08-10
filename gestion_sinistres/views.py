@@ -159,7 +159,7 @@ def accueil_assure(request):
         'soumis': all_sinistres.filter(statut='SOUMIS').count(),
         'en_cours': all_sinistres.filter(statut='EN_COURS').count(),
         'clotures': all_sinistres.filter(statut__in = ['CLOTURE', 'SANS_SUITE']).count(),
-        'derniers': all_sinistres.order_by('-date_declaration')[:5],
+        'derniers': all_sinistres.order_by('-date_declaration'),
     }
     return render(request, 'accueil_assure.html', context)
 
@@ -442,7 +442,7 @@ def accueil_agent(request):
         #     date_cloture__month=timezone.now().month,
         #     date_cloture__year=timezone.now().year,
         # ).count(),
-        'derniers_sinistres': sinistres.order_by('-date_declaration')[:5],
+        'derniers_sinistres': sinistres.order_by('-date_declaration'),
     }
     return render(request, 'accueil_agent.html', context)
 
@@ -905,7 +905,7 @@ def accueil_chef(request):
             date_declaration__month=timezone.now().month,
             date_declaration__year=timezone.now().year,
         ).count(),
-        'derniers_sinistres': sinistres.order_by('-date_declaration')[:5],
+        'derniers_sinistres': sinistres.order_by('-date_declaration'),
     }
     return render(request, 'accueil_chef.html', context)
 
@@ -937,6 +937,23 @@ def dossiers_a_corriger_chef(request):
     }
 
     return render(request, 'dossiers_a_corriger_chef.html', context)
+
+
+# Fonction affichant les dossiers au statut soumis au chef
+@login_required
+def dossiers_soumis_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+    sinistres_soumis = Sinistre.objects.filter(
+        statut="SOUMIS",
+    ).order_by('date_declaration')
+
+    context = {
+        'sinistres_soumis' : sinistres_soumis,
+    }
+
+    return render(request, 'dossiers_soumis_chef.html', context)
 
 
 # Fonction affichant les détails ou informations des sinistres au chef
@@ -1046,7 +1063,7 @@ def valider_indemnisation(request, sinistre_id):
     if not chef:
         return redirect('accueil_assure')
 
-    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['EN_COURS','ATTENTE_VALIDATION'])
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['EN_COURS','ATTENTE_VALIDATION','A_CORRIGER'])
 
     if sinistre.prix_retenu is None:
         messages.error(request, "L'agent doit d'abord saisir le prix retenu.")
@@ -1318,7 +1335,7 @@ def accueil_admin(request):
         'nb_agents': Agent.objects.count(),
         'nb_chefs': ChefDepartement.objects.count(),
         'nb_assures': Assure.objects.count(),
-        'derniers_sinistres': sinistres.order_by('-date_declaration')[:8],
+        'derniers_sinistres': sinistres.order_by('-date_declaration'),
     }
     return render(request, 'accueil_admin.html', context)
 

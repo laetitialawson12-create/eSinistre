@@ -48,6 +48,9 @@
             <a href="{% url 'accueil_chef' %}" class="{% if request.resolver_match.url_name == 'accueil_chef' %}active{% endif %}">
                 <i class="bi bi-house-door me-2"></i> Accueil
             </a>
+            <a href="{% url 'dossiers_soumis_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_soumis' or request.resolver_match.url_name == 'detail_sinistre_chef' %}active{% endif %}">
+                <i class="bi bi-inbox me-2"></i> Soumis
+            </a>
             <a href="{% url 'dossiers_a_valider' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_valider' or request.resolver_match.url_name == 'detail_sinistre_chef' %}active{% endif %}">
                 <i class="bi bi-check2-square me-2"></i> À valider
             </a>

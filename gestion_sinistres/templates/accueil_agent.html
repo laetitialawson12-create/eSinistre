@@ -52,11 +52,7 @@
                     <td>{{ s.get_nature_display }}</td>
                     <td><span class="badge bg-primary">{{ s.get_statut_display }}</span></td>
                     <td>
-                        {% if s.statut == 'SOUMIS' %}
-                            <a href="{% url 'prendre_en_charge' s.id %}" class="btn btn-sm btn-primary">Instruire</a>
-                        {% else %}
-                            <a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
-                        {% endif %}
+                        <a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
                     </td>
                 </tr>
                 {% empty %}
