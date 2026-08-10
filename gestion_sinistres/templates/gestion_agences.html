@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container-fluid px-4 py-4">
-    <h2 class="mb-4">Gestion des agences</h2>
+    <h2 class="mb-4">Gestion des points de vente</h2>
 
     <!-- Messages de notification -->
     {% if messages %}
@@ -18,12 +18,12 @@
         <!-- Formulaire d'ajout -->
         <div class="col-md-4">
             <div class="card shadow-sm mb-3">
-                <div class="card-header text-white" style="background-color: #0b2545;">Ajouter une agence</div>
+                <div class="card-header text-white" style="background-color: #0b2545;">Ajouter un point de vente</div>
                 <div class="card-body">
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-2">
-                            <label class="form-label small text-muted">Nom de l'agence</label>
+                            <label class="form-label small text-muted">Nom du point de vente</label>
                             {{ form.nom }}
                         </div>
                         <div class="mb-2">
@@ -39,12 +39,12 @@
         <!-- Tableau de la liste des agences -->
         <div class="col-md-8">
             <div class="card shadow-sm">
-                <div class="card-header text-white" style="background-color: #0b2545;">Liste des agences</div>
+                <div class="card-header text-white" style="background-color: #0b2545;">Liste des points de vente</div>
                 <div class="card-body p-0">
                     <table class="table table-striped mb-0">
                         <thead>
                             <tr>
-                                <th>Nom de l'agence</th>
+                                <th>Nom du point de vente</th>
                                 <th>Ville</th>
                                 <th class="text-end">Actions</th>
                             </tr>
@@ -62,7 +62,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                               <td colspan="3" class="text-muted text-center py-3">Aucune agence enregistrée</td>
+                               <td colspan="3" class="text-muted text-center py-3">Aucun point de vente enregistrée</td>
                             </tr>
                             {% endfor %}
                         </tbody>

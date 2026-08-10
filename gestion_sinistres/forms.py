@@ -197,7 +197,7 @@ class AgentCreationForm(forms.Form):
     prenom = forms.CharField(max_length=100, label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
     email = forms.EmailField(required=False, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
     telephone = forms.CharField(max_length=20, required=False, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Agence", widget=forms.Select(attrs={'class': 'form-select'}))
+    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Point de vente", widget=forms.Select(attrs={'class': 'form-select'}))
 
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
@@ -214,7 +214,7 @@ class ChefCreationForm(forms.Form):
     prenom = forms.CharField(max_length=100, label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
     email = forms.EmailField(required=False, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
     telephone = forms.CharField(max_length=20, required=False, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Agence", widget=forms.Select(attrs={'class': 'form-select'}))
+    agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Point de vente", widget=forms.Select(attrs={'class': 'form-select'}))
 
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
@@ -492,5 +492,5 @@ class AgenceForm(forms.ModelForm):
         model = Agence
         fields = ['nom', 'ville']
         widgets = {
-            'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Nom de l'agence"}),
+            'nom': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Nom du point de vente"}),
         }

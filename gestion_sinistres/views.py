@@ -1494,7 +1494,7 @@ def liste_chefs(request):
 def modifier_chef_admin(request, chef_id):
     chef = get_object_or_404(ChefDepartement, id=chef_id)
     if request.method == 'POST':
-        user_form = ModifierProfilForm(request.POST, instance=chef.user)
+        user_form = ModifierProfilAdminForm(request.POST, instance=chef.user)
         chef_form = ModifierChefAdminForm(request.POST, instance=chef)
         if user_form.is_valid() and chef_form.is_valid():
             user_form.save()
@@ -1502,7 +1502,7 @@ def modifier_chef_admin(request, chef_id):
             messages.success(request, "Chef mis à jour.")
             return redirect('liste_chefs')
     else:
-        user_form = ModifierProfilForm(instance=chef.user)
+        user_form = ModifierProfilAdminForm(instance=chef.user)
         chef_form = ModifierChefAdminForm(instance=chef)
     return render(request, 'modifier_chef_admin.html', {
         'user_form': user_form, 'chef_form': chef_form, 'chef': chef,

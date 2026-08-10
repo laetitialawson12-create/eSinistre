@@ -1,12 +1,12 @@
 {% extends 'base_admin.html' %}
 
-{% block title %}Gestion des agents{% endblock %}
+{% block title %}Gestion des rédacteurs{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Gestion des agents</h3>
+    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Gestion des rédacteurs</h3>
     <a href="{% url 'creer_agent' %}" class="btn btn-primary" style="background: var(--fidelia-blue); border: none;">
-        <i class="bi bi-person-plus me-1"></i> Nouvel agent
+        <i class="bi bi-person-plus me-1"></i> Nouvel rédacteur
     </a>
 </div>
 
@@ -71,7 +71,7 @@
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" class="text-muted fst-italic">Aucun agent enregistré pour le moment.</td></tr>
+            <tr><td colspan="7" class="text-muted fst-italic">Aucun rédacteur enregistré pour le moment.</td></tr>
             {% endfor %}
         </tbody>
     </table>
