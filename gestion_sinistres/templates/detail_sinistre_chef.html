@@ -173,7 +173,7 @@
         {# --- CAS 1 : En attente de validation (initiale ou après révision du prix par l'agent) --- #}
         {% if sinistre.statut == 'ATTENTE_VALIDATION' %}
         <div class="d-flex gap-2 mt-3">
-            {% if sinistre.prix_retenu and not None and not sinistre.indemnisation_validee %}
+            {% if sinistre.prix_retenu and not sinistre.indemnisation_validee %}
                 <form method="post" action="{% url 'valider_indemnisation' sinistre.id %}">
                     {% csrf_token %}
                     {% if sinistre.prix_retenu == 0 %}
@@ -205,7 +205,7 @@
         {# --- CAS 2 : Dossier en cours (Saisie/Validation de l'indemnisation) --- #}
         {% if sinistre.statut == 'EN_COURS' %}
             {% if not sinistre.prix_retenu is not None %}
-            <div class="alert alert-info mt-3">En attente de la saisie du prix retenu par l'agent.</div>
+                <div class="alert alert-info mt-3">Aucun prix retenu n'a été saisi.</div>
             {% elif not sinistre.indemnisation_validee %}
             <div class="mt-3">
                 <div class="d-flex gap-2">
