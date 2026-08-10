@@ -171,9 +171,9 @@
         {% endif %}
 
         {# --- CAS 1 : En attente de validation (initiale ou après révision du prix par l'agent) --- #}
-        {% if sinistre.statut == 'ATTENTE_VALIDATION' %}
+        {% if sinistre.statut == 'ATTENTE_VALIDATION' or sinistre.statut == 'A_CORRIGER' %}
         <div class="d-flex gap-2 mt-3">
-            {% if sinistre.prix_retenu and not sinistre.indemnisation_validee %}
+            {% if sinistre.prix_retenu is not None and not sinistre.indemnisation_validee %}
                 <form method="post" action="{% url 'valider_indemnisation' sinistre.id %}">
                     {% csrf_token %}
                     {% if sinistre.prix_retenu == 0 %}
@@ -197,7 +197,7 @@
             {% endif %}
 
             <button type="button" class="btn btn-warning btn-sm text-white" data-bs-toggle="modal" data-bs-target="#modalRevision">
-                <i class="bi bi-arrow-return-left me-1"></i> Renvoyer à l'agent
+                <i class="bi bi-arrow-return-left me-1"></i> {% if chef_est_traitant %} Repasser en correction {% else %} Renvoyer à l'agent {% endif %}
             </button>
         </div>
         {% endif %}
@@ -222,7 +222,7 @@
                         {% endif %}
                     </form>
                     <button type="button" class="btn btn-warning btn-sm text-white" data-bs-toggle="modal" data-bs-target="#modalRevision">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i> Demander une révision du prix
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> {% if chef_est_tratant %} Repasser en correction {% else %} Demander une révision du prix {% endif %}
                     </button>
                 </div>
             </div>
@@ -260,7 +260,13 @@
             <form method="post" action="{% url 'renvoyer_a_agent' sinistre.id %}">
                 {% csrf_token %}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalRevisionLabel">Demander une révision à l'agent</h5>
+                    <h5 class="modal-title" id="modalRevisionLabel">
+                        {% if chef_est_traitant %} 
+                            Repasser le dossier en correction
+                        {% else %}
+                            Demander une révision à l'agent
+                        {% endif %}
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                 </div>
                 <div class="modal-body">

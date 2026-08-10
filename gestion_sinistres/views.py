@@ -952,9 +952,13 @@ def detail_sinistre_chef(request, sinistre_id):
         Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
         return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
 
+    nom_chef = request.user.get_full_name() or request.user.username
+    chef_est_traitant = sinistre.agent_traitant == nom_chef
+    
     context = {
         'chef': chef,
         'sinistre': sinistre,
+        'chef_est_traitant': chef_est_traitant,
         'historique': sinistre.historique.all().order_by('date_changement'),
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
@@ -1015,7 +1019,21 @@ def renvoyer_a_agent(request, sinistre_id):
             auteur=request.user,
         )
 
-        messages.warning(request, f"Le dossier {sinistre.numero_sinistre} a été renvoyé à l'agent pour révision.")
+        nom_chef = request.user.get_full_name() or request.user.username
+        chef_est_traitant = sinistre.agent_traitant == nom_chef
+        
+        if chef_est_traitant:
+            messages.warning(
+                request, 
+                f"Le dossier {sinistre.numero_sinistre} a été repassé en correction."
+                f"Comme vous êtes vous-même en charge de ce dossier, vous pouvez modifier le prix retenu directement ci-dessous."
+                )
+        else:
+            messages.warning(
+                request,
+                f"Le dossier {sinistre.numero_sinistre} a été renvoyé à l'agent ({sinistre.agent_traitant}) pour révision."
+            )
+            
         return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
 
     return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
