@@ -1,7 +1,7 @@
 {% extends "base_agent.html" %}
-{% block title %}Dossiers à corriger{% endblock %}
+{% block title %}À valider{% endblock %}
 {% block content %}
-<h4 class="mb-4">⚠️ Dossiers à corriger</h4>
+<h4 class="mb-4">📥 Dossiers à valider</h4>
 
 <div class="card border-0 shadow-sm p-3 mb-4">
     <form method="get" class="row g-2 align-items-end">
@@ -39,7 +39,7 @@
         <div class="col-md-4 d-flex gap-2">
             <button type="submit" class="btn flex-fill" style="background: #003366; color: white; white-space: nowrap;">Filtrer</button>
             {% if nature_selectionnee or recherche or date_debut or date_fin %}
-            <a href="{% url 'dossiers_a_corriger_agent' %}" class="btn flex-fill d-flex align-items-center justify-content-center gap-1" style="background: #003366; color: white; white-space: nowrap;">
+            <a href="{% url 'dossiers_a_valider_agent' %}" class="btn flex-fill d-flex align-items-center justify-content-center gap-1" style="background: #003366; color: white; white-space: nowrap;">
                 <i class="bi bi-x-circle"></i> Réinitialiser
             </a>
             {% endif %}
@@ -50,34 +50,25 @@
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <table class="table mb-0">
-            <thead>
-                <tr>
-                    <th>N° Sinistre</th>
-                    <th>Date</th>
-                    <th>Assuré</th>
-                    <th>Nature</th>
-                    <th>Statut</th>
-                    <th></th>
-                </tr>
-            </thead>
+            <thead><tr><th>N° Sinistre</th><th>Date</th><th>Assuré</th><th>Nature</th><th>Statut</th><th></th></tr></thead>
             <tbody>
-                {% for s in sinistres_a_corriger %}
+                {% for s in sinistres %}
                 <tr>
                     <td><strong>{{ s.numero_sinistre }}</strong></td>
                     <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
                     <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                     <td>{{ s.get_nature_display }}</td>
+                    <td><span class="badge bg-primary">{{ s.get_statut_display }}</span></td>
                     <td>
-                        <span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
-                    </td>
-                    <td>
+                        {% if s.statut == 'SOUMIS' %}
+                        <a href="{% url 'prendre_en_charge' s.id %}" class="btn btn-sm btn-primary">A valider</a>
+                        {% else %}
                         <a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center text-muted py-3">Aucun dossier à corriger pour le moment.</td>
-                </tr>
+                <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier à valider pour le moment.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

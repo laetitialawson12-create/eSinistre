@@ -75,7 +75,7 @@
                     <td><a href="{% url 'detail_sinistre_chef' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="5" class="text-center text-muted py-3">Aucun dossier à valider.</td></tr>
+                <tr><td colspan="5" class="text-center text-muted py-3">Aucun dossier aujourd'hui.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

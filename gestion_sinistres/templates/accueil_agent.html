@@ -39,7 +39,7 @@
 </div>
 
 <div class="card shadow-sm border-0">
-    <div class="card-header bg-white fw-bold">📥 Derniers Sinistres</div>
+    <div class="card-header bg-white fw-bold">📥 Sinistres du jour </div>
     <div class="card-body p-0">
         <table class="table mb-0">
             <thead><tr><th>N° Sinistre</th><th>Date</th><th>Assuré</th><th>Nature</th><th>Statut</th><th>Actions</th><th></th></tr></thead>
@@ -56,7 +56,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier à instruire pour le moment.</td></tr>
+                <tr><td colspan="6" class="text-center text-muted py-3">Aucun sinistre aujourd'hui.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
