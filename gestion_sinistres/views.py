@@ -2543,11 +2543,50 @@ def liste_contrats_admin(request):
     })
     
   
+# Fonction permettant à l'administrateur de consulter le détail d'un dossier sinistre
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def detail_sinistre_admin(request, sinistre_id):
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    context = {
+        'sinistre': sinistre,
+        'historique': sinistre.historique.all().order_by('date_changement'),
+        'discussion': sinistre.messages.all().order_by('date_envoi'),
+        'documents': sinistre.pieces.all(),
+    }
+    return render(request, 'detail_sinistre_admin.html', context)
+
+
 # Fonction permettant à l'administrateur de superviser les contrats par lot
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def action_lot_contrats(request):
-    
+    if request.method == 'POST':
+        ids = request.POST.getlist('selection')
+        action = request.POST.get('action')
+
+        if not ids:
+            messages.warning(request, "Aucun contrat sélectionné.")
+            return redirect('liste_contrats')
+        
+        if action == 'exporter':
+            return exporter_contrats_admin(request)
+        
+        elif action == 'supprimer':
+            for assure_id in ids:
+                supprimer_contrat_admin(request, assure_id)
+            messages.success(request, f"{len(ids)} contrat(s) supprimé(s) avec succès.")
+            
+        elif action == 'modifier':
+            for assure_id in ids:
+                modifier_contrat_admin(request, assure_id)
+            messages.success(request, f"{len(ids)} contrat(s) modifié(s) avec succès.")
+            
+        else:
+            messages.error(request, "Action inconnue.")
+
+    return redirect('liste_contrats')
     
     
 # Fonction permettant à l'administrateur d'exporter des contrats avec des filtres

@@ -88,80 +88,118 @@
         </div>
         
         <div class="card-body">
-            <!-- Ajout du scroll vertical (max-height) et horizontal si nécessaire -->
-            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                <table class="table table-bordered table-striped align-middle" style="font-size: 0.9rem;">
-                    <thead class="table-dark text-center align-middle sticky-top" style="background-color: #0b2545; color: white; z-index: 1;">
-                        <tr>
-                            <th>N° Police</th>
-                            <th>NOM</th>
-                            <th>Prénom(s)</th>
-                            <th>Email</th>
-                            <th>Téléphone</th>
-                            <th>Véhicule</th>
-                            <th>Immatriculation</th>
-                            <th>N° Quittance</th>
-                            <th>Date effet</th>
-                            <th>Date échéance</th>
-                            <th>Prime Nette</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for quittance in quittances %}
-                            <tr>
-                                <td><strong>{{ quittance.contrat.numero_police }}</strong></td>
-                                <td>{{ quittance.contrat.user.last_name }}</td>
-                                <td>{{ quittance.contrat.user.first_name }}</td>
-                                <td><small>{{ quittance.contrat.user.email }}</small></td>
-                                <td>{{ quittance.contrat.telephone|default:"N/A" }}</td>
-                                
-                                <!-- Colonne Véhicule (Corrigée) -->
-                                <td>
-                                    {% for v in quittance.vehicules.all %}
-                                        <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">
-                                            {{ v.marque }} {{ v.modele }}
-                                        </span>
-                                    {% empty %}
-                                        <span class="text-muted">N/A</span>
-                                    {% endfor %}
-                                </td>
-                                
-                                <!-- Colonne Immatriculation (Corrigée) -->
-                                <td>
-                                    {% for v in quittance.vehicules.all %}
-                                        <span class="badge bg-light text-dark border d-block mb-1 text-start py-1">
-                                            <code class="text-dark fw-bold">{{ v.immatriculation }}</code>
-                                        </span>
-                                    {% empty %}
-                                        <span class="text-danger">N/A</span>
-                                    {% endfor %}
-                                </td>
+            <form method="post" action="{% url 'action_lot_contrats' %}" id="form-lot-contrats">
+                {% csrf_token %}
+                {% if quittances %}
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="small text-secondary"><span id="count-selection-contrats">0</span> sélectionné(s)</span>
+                    <select name="action" class="form-select form-select-sm w-auto">
+                        <option value="exporter">Exporter</option>
+                        <option value="supprimer">Supprimer</option>
+                        <option value="modifier">Modifier</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-outline-primary" onclick="return confirm('Appliquer cette action aux contrats sélectionnés ?');">
+                        Appliquer à la sélection
+                    </button>
+                </div>
+                {% endif %}
 
-                                <td><strong>{{ quittance.numero_quittance|default:"N/A" }}</strong></td>
-                                <td class="text-center">{{ quittance.date_debut|date:"d/m/Y" }}</td>
-                                <td class="text-center">{{ quittance.date_fin|date:"d/m/Y" }}</td>
-                                <td class="text-end"><strong>{{ quittance.prime|floatformat:0 }} FCFA</strong></td>
-                                <td class="text-center">
-                                    <div class="d-flex justify-content-center gap-2">
-                                        <a href="{% url 'modifier_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-warning text-warning" title="Modifier">
-                                            <i class="bi bi-pencil-square"></i>
-                                        </a>
-                                        <a href="{% url 'supprimer_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-danger text-danger" title="Supprimer">
-                                            <i class="bi bi-trash"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        {% empty %}
+                <!-- Ajout du scroll vertical (max-height) et horizontal si nécessaire -->
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-bordered table-striped align-middle" style="font-size: 0.9rem;">
+                        <thead class="table-dark text-center align-middle sticky-top" style="background-color: #0b2545; color: white; z-index: 1;">
                             <tr>
-                                <td colspan="12" class="text-center py-4 text-muted">Aucun contrat automobile trouvé.</td>
+                                <th style="width:30px;"><input type="checkbox" id="select-all-contrats"></th>
+                                <th>N° Police</th>
+                                <th>NOM</th>
+                                <th>Prénom(s)</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Véhicule</th>
+                                <th>Immatriculation</th>
+                                <th>N° Quittance</th>
+                                <th>Date effet</th>
+                                <th>Date échéance</th>
+                                <th>Prime Nette</th>
+                                <th>Actions</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {% for quittance in quittances %}
+                                <tr>
+                                    <td><input type="checkbox" name="selection" value="{{ quittance.contrat.id }}" class="check-contrat"></td>
+                                    <td><strong>{{ quittance.contrat.numero_police }}</strong></td>
+                                    <td>{{ quittance.contrat.user.last_name }}</td>
+                                    <td>{{ quittance.contrat.user.first_name }}</td>
+                                    <td><small>{{ quittance.contrat.user.email }}</small></td>
+                                    <td>{{ quittance.contrat.telephone|default:"N/A" }}</td>
+                                    
+                                    <!-- Colonne Véhicule (Corrigée) -->
+                                    <td>
+                                        {% for v in quittance.vehicules.all %}
+                                            <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">
+                                                {{ v.marque }} {{ v.modele }}
+                                            </span>
+                                        {% empty %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endfor %}
+                                    </td>
+                                    
+                                    <!-- Colonne Immatriculation (Corrigée) -->
+                                    <td>
+                                        {% for v in quittance.vehicules.all %}
+                                            <span class="badge bg-light text-dark border d-block mb-1 text-start py-1">
+                                                <code class="text-dark fw-bold">{{ v.immatriculation }}</code>
+                                            </span>
+                                        {% empty %}
+                                            <span class="text-danger">N/A</span>
+                                        {% endfor %}
+                                    </td>
+
+                                    <td><strong>{{ quittance.numero_quittance|default:"N/A" }}</strong></td>
+                                    <td class="text-center">{{ quittance.date_debut|date:"d/m/Y" }}</td>
+                                    <td class="text-center">{{ quittance.date_fin|date:"d/m/Y" }}</td>
+                                    <td class="text-end"><strong>{{ quittance.prime|floatformat:0 }} FCFA</strong></td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <a href="{% url 'modifier_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-warning text-warning" title="Modifier">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </a>
+                                            <a href="{% url 'supprimer_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-danger text-danger" title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="13" class="text-center py-4 text-muted">Aucun contrat automobile trouvé.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('select-all-contrats');
+    const checks = document.querySelectorAll('.check-contrat');
+    const counter = document.getElementById('count-selection-contrats');
+
+    function updateCounter() {
+        if (counter) counter.textContent = document.querySelectorAll('.check-contrat:checked').length;
+    }
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            checks.forEach(c => c.checked = selectAll.checked);
+            updateCounter();
+        });
+    }
+    checks.forEach(c => c.addEventListener('change', updateCounter));
+});
+</script>
 {% endblock %}

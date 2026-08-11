@@ -1,0 +1,103 @@
+{% extends "base_admin.html" %}
+{% block title %}Dossier {{ sinistre.numero_sinistre }}{% endblock %}
+
+{% block content %}
+<a href="{% url 'supervision_sinistres' %}" class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
+   style="border: 1px solid #003366; color: #003366; font-weight: 500; border-radius: 6px; padding: 6px 14px; transition: all 0.15s;"
+   onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
+   onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
+    <i class="bi bi-arrow-left"></i> Retour
+</a>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
+    <span class="badge bg-primary fs-6">{{ sinistre.get_statut_display }}</span>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
+        <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
+        <p><strong>Contact :</strong> {{ sinistre.contact_declarant }}</p>
+        <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
+        <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
+        <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}
+            {% if sinistre.heure_approximative %} à {{ sinistre.heure_approximative|time:"H:i" }}{% endif %}
+        </p>
+        <p><strong>Lieu :</strong>
+            {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} ({{ sinistre.region }})
+        </p>
+        <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
+        <p><strong>Victimes :</strong> {{ sinistre.nombre_blesses }} blessé(s), {{ sinistre.nombre_morts }} mort(s)</p>
+        <p><strong>Taux de responsabilité :</strong> {{ sinistre.taux_responsabilite }} %</p>
+
+        {% if sinistre.autre_vehicule_implique %}
+        <p><strong>Véhicule adverse :</strong>
+            {{ sinistre.vehicule_adverse_immatriculation|default:"—" }} —
+            {{ sinistre.vehicule_adverse_marque|default:"—" }} {{ sinistre.vehicule_adverse_modele|default:"—" }}
+            ({{ sinistre.vehicule_adverse_compagnie|default:"—" }})
+        </p>
+        {% endif %}
+
+        <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+        <p><strong>Dommages :</strong> {{ sinistre.dommage }}</p>
+
+        <div class="alert alert-info py-2 mb-3">
+            <strong>Quittance{{ sinistre.quittances.count|pluralize }} :</strong>
+            <ul class="mb-0 mt-1">
+                {% for q in sinistre.quittances.all %}
+                    <li>
+                        <span class="fw-bold">{{ q.numero_quittance }}</span>
+                        ({{ q.date_debut|date:"d/m/Y" }} - {{ q.date_fin|date:"d/m/Y" }})
+                    </li>
+                {% empty %}
+                    <li class="text-muted">Aucune quittance associée.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h6 class="text-uppercase text-secondary small mb-3">Historique du dossier</h6>
+        <ul class="list-group list-group-flush">
+            {% for h in historique %}
+                <li class="list-group-item px-0">
+                    <span class="text-muted small">{{ h.date_changement|date:"d/m/Y H:i" }}</span> —
+                    {{ h.ancien_statut|default:"—" }} → {{ h.nouveau_statut }}
+                </li>
+            {% empty %}
+                <li class="list-group-item px-0 text-muted fst-italic">Aucun historique.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h6 class="text-uppercase text-secondary small mb-3">Documents</h6>
+        <ul class="list-group list-group-flush">
+            {% for d in documents %}
+                <li class="list-group-item px-0">
+                    <a href="{{ d.fichier.url }}" target="_blank">{{ d.fichier.name }}</a>
+                </li>
+            {% empty %}
+                <li class="list-group-item px-0 text-muted fst-italic">Aucun document.</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h6 class="text-uppercase text-secondary small mb-3">Discussion</h6>
+        {% for m in discussion %}
+            <p><strong>{{ m.auteur.get_full_name|default:m.auteur.username }}</strong>
+                <span class="text-muted small">({{ m.date_envoi|date:"d/m/Y H:i" }})</span> : {{ m.contenu }}</p>
+        {% empty %}
+            <p class="text-muted fst-italic">Aucun message.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

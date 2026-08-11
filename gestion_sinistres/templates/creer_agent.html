@@ -20,8 +20,14 @@
         </div>
         {% endfor %}
     </div>
+    <div>
     <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">
         Créer rédacteur
     </button>
+    
+    <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">
+        <a href="{% url 'liste_agents' %}"><i class="bi bi-arrow-left"></i> Retour</a>
+    </button>
+    </div>
 </form>
 {% endblock %}
