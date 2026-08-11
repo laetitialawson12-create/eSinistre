@@ -1,4 +1,4 @@
-{% extends "base_agent.html" %}
+{% extends "base_chef.html" %}
 
 {% block title %}Tous les sinistres{% endblock %}
 
@@ -51,13 +51,12 @@
         <div class="col-md-4 d-flex gap-2">
             <button type="submit" class="btn flex-fill" style="background: #003366; color: white; white-space: nowrap;">Filtrer</button>
             {% if statut_selectionne or nature_selectionnee or recherche or date_debut or date_fin %}
-            <a href="{% url 'tous_sinistres_agent' %}" class="btn flex-fill d-flex align-items-center justify-content-center gap-1" style="background: #003366; color: white; white-space: nowrap;">
+            <a href="{% url 'tous_sinistres_chef' %}" class="btn flex-fill d-flex align-items-center justify-content-center gap-1" style="background: #003366; color: white; white-space: nowrap;">
                 <i class="bi bi-x-circle"></i> Réinitialiser
             </a>
             {% endif %}
         </div>
     </form>
-    
 </div>
 
 <div class="card border-0 shadow-sm p-3">
@@ -77,10 +76,10 @@
         <tbody>
             {% for s in sinistres %}
             <tr>
-                <td>{{ s.numero_sinistre }}</td>
+                <td>{{ s.numero_sinistre|default:"—" }}</td>
                 <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                 <td>{{ s.n_police }}</td>
-                <td>{{ s.get_nature_display }}</td>
+                <td>{{ s.get_nature_display|default:"—" }}</td>
                 <td>
                     {% if s.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
                     {% elif s.statut == 'ATTENTE_COMPLEMENTS' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
@@ -94,7 +93,7 @@
                     {% endif %}
                 </td>
                 <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
-                <td class="text-end"><a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
+                <td class="text-end"><a href="{% url 'detail_sinistre_chef' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
             </tr>
             {% empty %}
             <tr><td colspan="7" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>

@@ -68,6 +68,7 @@ urlpatterns = [
     path('chef/en-cours/', views.dossiers_en_cours_chef, name='dossiers_en_cours_chef'),
     path('chef/a-corriger/', views.dossiers_a_corriger_chef, name='dossiers_a_corriger_chef'),
     path('chef/soumis/', views.dossiers_soumis_chef, name='dossiers_soumis_chef'),
+    path('chef/sinistres/', views.tous_sinistres_chef, name='tous_sinistres_chef'),
     path('chef/clotures/', views.dossiers_clotures_chef, name='dossiers_clotures_chef'),
     path('chef/dossier/<int:sinistre_id>/', views.detail_sinistre_chef, name='detail_sinistre_chef'),
     path('chef/dossier/<int:sinistre_id>/valider/', views.valider_declaration, name='valider_declaration'),

@@ -1147,44 +1147,14 @@ def dossiers_a_valider(request):
         return redirect('accueil_assure')
     sinistres = Sinistre.objects.filter(
         statut='ATTENTE_VALIDATION',
-    ).order_by('date_declaration')
-    return render(request, 'dossiers_a_valider.html', {'chef': chef, 'sinistres': sinistres})
-
-
-# Fonction affichant les dossiers au statut à corriger au chef
-@login_required
-def dossiers_a_corriger_chef(request):
-    chef = getattr(request.user, 'chef', None)
-    if not chef:
-        return redirect('accueil_assure')
-    sinistres_a_corriger = Sinistre.objects.filter(
-        statut="A_CORRIGER",
-    ).order_by('date_declaration')
-
-    context = {
-        'sinistres_a_corriger' : sinistres_a_corriger,
-    }
-
-    return render(request, 'dossiers_a_corriger_chef.html', context)
-
-
-# Fonction affichant les dossiers au statut soumis au chef
-@login_required
-def dossiers_soumis_chef(request):
-    chef = getattr(request.user, 'chef', None)
-    if not chef:
-        return redirect('accueil_assure')
-    sinistres_soumis = Sinistre.objects.filter(
-        statut="SOUMIS",
     ).order_by('-date_declaration')
-
-
+    
     nature = request.GET.get('nature', '')
     recherche = request.GET.get('q', '').strip()
     periode_option = request.GET.get('periode_option', '')
     date_debut = request.GET.get('date_debut', '')
     date_fin = request.GET.get('date_fin', '')
-    
+
     today = timezone.localdate()
     if periode_option == 'auj':
         date_debut = date_fin = today.isoformat()
@@ -1205,7 +1175,7 @@ def dossiers_soumis_chef(request):
         sinistres = sinistres.filter(nature=nature)
     if recherche:
         sinistres = sinistres.filter(
-            Q(numero_sinistre_icontains=recherche) | Q(assureassurenumero_police_icontains=recherche)
+            Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
         )
     if date_debut:
         debut_dt = datetime.combine(date.fromisoformat(date_debut), time.min)
@@ -1213,9 +1183,9 @@ def dossiers_soumis_chef(request):
     if date_fin:
         fin_dt = datetime.combine(date.fromisoformat(date_fin), time.max)
         sinistres = sinistres.filter(date_survenance__lte=timezone.make_aware(fin_dt))
-        
+
     context = {
-        'chef' : chef,
+        'chef': chef,
         'sinistres': sinistres,
         'nature_choices': Sinistre.NATURE_CHOICES,
         'nature_selectionnee': nature,
@@ -1224,7 +1194,180 @@ def dossiers_soumis_chef(request):
         'date_debut': date_debut,
         'date_fin': date_fin,
     }
+    return render(request, 'dossiers_a_valider.html', context)
 
+
+# Fonction affichant au chef tous les dossiers de sinistres, tous statuts confondus
+@login_required
+def tous_sinistres_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistres = Sinistre.objects.all().order_by('-date_declaration')
+
+    statut = request.GET.get('statut', '')
+    nature = request.GET.get('nature', '')
+    recherche = request.GET.get('q', '').strip()
+    periode_option = request.GET.get('periode_option', '')
+    date_debut = request.GET.get('date_debut', '')
+    date_fin = request.GET.get('date_fin', '')
+
+    today = timezone.localdate()
+    if periode_option == 'auj':
+        date_debut = date_fin = today.isoformat()
+    elif periode_option == '7j':
+        date_debut = (today - timedelta(days=6)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'mois':
+        date_debut = today.replace(day=1).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'trimestre':
+        date_debut = (today - timedelta(days=89)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'annee':
+        date_debut = today.replace(month=1, day=1).isoformat()
+        date_fin = today.isoformat()
+
+    if statut:
+        sinistres = sinistres.filter(statut=statut)
+    if nature:
+        sinistres = sinistres.filter(nature=nature)
+    if recherche:
+        sinistres = sinistres.filter(
+            Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
+        )
+    if date_debut:
+        debut_dt = datetime.combine(date.fromisoformat(date_debut), time.min)
+        sinistres = sinistres.filter(date_survenance__gte=timezone.make_aware(debut_dt))
+    if date_fin:
+        fin_dt = datetime.combine(date.fromisoformat(date_fin), time.max)
+        sinistres = sinistres.filter(date_survenance__lte=timezone.make_aware(fin_dt))
+
+    context = {
+        'chef': chef,
+        'sinistres': sinistres,
+        'statut_choices': Sinistre.STATUS_CHOICES,
+        'nature_choices': Sinistre.NATURE_CHOICES,
+        'statut_selectionne': statut,
+        'nature_selectionnee': nature,
+        'recherche': recherche,
+        'periode_option': periode_option,
+        'date_debut': date_debut,
+        'date_fin': date_fin,
+    }
+    return render(request, 'tous_sinistres_chef.html', context)
+
+   
+# Fonction affichant les dossiers au statut à corriger au chef
+@login_required
+def dossiers_a_corriger_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+    sinistres_a_corriger = Sinistre.objects.filter(
+        statut="A_CORRIGER",
+    ).order_by('date_declaration')
+
+    nature = request.GET.get('nature', '')
+    recherche = request.GET.get('q', '').strip()
+    periode_option = request.GET.get('periode_option', '')
+    date_debut = request.GET.get('date_debut', '')
+    date_fin = request.GET.get('date_fin', '')
+
+    today = timezone.localdate()
+    if periode_option == 'auj':
+        date_debut = date_fin = today.isoformat()
+    elif periode_option == '7j':
+        date_debut = (today - timedelta(days=6)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'mois':
+        date_debut = today.replace(day=1).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'trimestre':
+        date_debut = (today - timedelta(days=89)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'annee':
+        date_debut = today.replace(month=1, day=1).isoformat()
+        date_fin = today.isoformat()
+
+    if nature:
+        sinistres_a_corriger = sinistres_a_corriger.filter(nature=nature)
+    if recherche:
+        sinistres_a_corriger = sinistres_a_corriger.filter(
+            Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
+        )
+    if date_debut:
+        debut_dt = datetime.combine(date.fromisoformat(date_debut), time.min)
+        sinistres_a_corriger = sinistres_a_corriger.filter(date_survenance__gte=timezone.make_aware(debut_dt))
+    if date_fin:
+        fin_dt = datetime.combine(date.fromisoformat(date_fin), time.max)
+        sinistres_a_corriger = sinistres_a_corriger.filter(date_survenance__lte=timezone.make_aware(fin_dt))
+
+    context = {
+        'chef': chef,
+        'sinistres_a_corriger': sinistres_a_corriger,
+        'nature_choices': Sinistre.NATURE_CHOICES,
+        'nature_selectionnee': nature,
+        'recherche': recherche,
+        'periode_option': periode_option,
+        'date_debut': date_debut,
+        'date_fin': date_fin,
+    }
+    return render(request, 'dossiers_a_corriger_chef.html', context)
+
+
+# Fonction affichant les dossiers au statut soumis au chef
+@login_required
+def dossiers_soumis_chef(request):
+    chef = getattr(request.user, 'chef', None)
+    if not chef:
+        return redirect('accueil_assure')
+
+    sinistres = Sinistre.objects.filter(
+        statut="SOUMIS",
+    ).order_by('-date_declaration')
+
+    recherche = request.GET.get('q', '').strip()
+    periode_option = request.GET.get('periode_option', '')
+    date_debut = request.GET.get('date_debut', '')
+    date_fin = request.GET.get('date_fin', '')
+
+    today = timezone.localdate()
+    if periode_option == 'auj':
+        date_debut = date_fin = today.isoformat()
+    elif periode_option == '7j':
+        date_debut = (today - timedelta(days=6)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'mois':
+        date_debut = today.replace(day=1).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'trimestre':
+        date_debut = (today - timedelta(days=89)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'annee':
+        date_debut = today.replace(month=1, day=1).isoformat()
+        date_fin = today.isoformat()
+
+    if recherche:
+        sinistres = sinistres.filter(
+            Q(assure__assure__numero_police__icontains=recherche)
+        )
+    if date_debut:
+        debut_dt = datetime.combine(date.fromisoformat(date_debut), time.min)
+        sinistres = sinistres.filter(date_survenance__gte=timezone.make_aware(debut_dt))
+    if date_fin:
+        fin_dt = datetime.combine(date.fromisoformat(date_fin), time.max)
+        sinistres = sinistres.filter(date_survenance__lte=timezone.make_aware(fin_dt))
+
+    context = {
+        'chef': chef,
+        'sinistres': sinistres,
+        'recherche': recherche,
+        'periode_option': periode_option,
+        'date_debut': date_debut,
+        'date_fin': date_fin,
+    }
     return render(request, 'dossiers_soumis_chef.html', context)
 
 
@@ -1472,9 +1615,58 @@ def dossiers_en_cours_chef(request):
     chef = getattr(request.user, 'chef', None)
     if not chef:
         return redirect('accueil_assure')
-    sinistres = Sinistre.objects.filter(statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'REOUVERT']).order_by('-date_declaration')
-    return render(request, 'dossiers_en_cours_chef.html', {'chef': chef, 'sinistres': sinistres})
 
+    sinistres = Sinistre.objects.filter(
+        statut__in=['ATTENTE_VALIDATION', 'EN_COURS', 'A_CORRIGER', 'REOUVERT'],
+    ).order_by('-date_declaration')
+
+    nature = request.GET.get('nature', '')
+    recherche = request.GET.get('q', '').strip()
+    periode_option = request.GET.get('periode_option', '')
+    date_debut = request.GET.get('date_debut', '')
+    date_fin = request.GET.get('date_fin', '')
+
+    today = timezone.localdate()
+    if periode_option == 'auj':
+        date_debut = date_fin = today.isoformat()
+    elif periode_option == '7j':
+        date_debut = (today - timedelta(days=6)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'mois':
+        date_debut = today.replace(day=1).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'trimestre':
+        date_debut = (today - timedelta(days=89)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'annee':
+        date_debut = today.replace(month=1, day=1).isoformat()
+        date_fin = today.isoformat()
+
+    if nature:
+        sinistres = sinistres.filter(nature=nature)
+    if recherche:
+        sinistres = sinistres.filter(
+            Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
+        )
+    if date_debut:
+        debut_dt = datetime.combine(date.fromisoformat(date_debut), time.min)
+        sinistres = sinistres.filter(date_survenance__gte=timezone.make_aware(debut_dt))
+    if date_fin:
+        fin_dt = datetime.combine(date.fromisoformat(date_fin), time.max)
+        sinistres = sinistres.filter(date_survenance__lte=timezone.make_aware(fin_dt))
+
+    context = {
+        'chef': chef,
+        'sinistres': sinistres,
+        'nature_choices': Sinistre.NATURE_CHOICES,
+        'nature_selectionnee': nature,
+        'recherche': recherche,
+        'periode_option': periode_option,
+        'date_debut': date_debut,
+        'date_fin': date_fin,
+    }
+    return render(request, 'dossiers_en_cours_chef.html', context)
+ 
 
 # Fonction affichant au chef les sinistres clôturés
 @login_required
@@ -1482,8 +1674,57 @@ def dossiers_clotures_chef(request):
     chef = getattr(request.user, 'chef', None)
     if not chef:
         return redirect('accueil_assure')
-    sinistres = Sinistre.objects.filter(statut__in=['CLOTURE', 'SANS_SUITE']).order_by('-date_declaration')
-    return render(request, 'dossiers_clotures_chef.html', {'chef': chef, 'sinistres': sinistres})
+
+    sinistres = Sinistre.objects.filter(
+        statut__in=['CLOTURE', 'SANS_SUITE'],
+    ).order_by('-date_declaration')
+
+    nature = request.GET.get('nature', '')
+    recherche = request.GET.get('q', '').strip()
+    periode_option = request.GET.get('periode_option', '')
+    date_debut = request.GET.get('date_debut', '')
+    date_fin = request.GET.get('date_fin', '')
+
+    today = timezone.localdate()
+    if periode_option == 'auj':
+        date_debut = date_fin = today.isoformat()
+    elif periode_option == '7j':
+        date_debut = (today - timedelta(days=6)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'mois':
+        date_debut = today.replace(day=1).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'trimestre':
+        date_debut = (today - timedelta(days=89)).isoformat()
+        date_fin = today.isoformat()
+    elif periode_option == 'annee':
+        date_debut = today.replace(month=1, day=1).isoformat()
+        date_fin = today.isoformat()
+
+    if nature:
+        sinistres = sinistres.filter(nature=nature)
+    if recherche:
+        sinistres = sinistres.filter(
+            Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
+        )
+    if date_debut:
+        debut_dt = datetime.combine(date.fromisoformat(date_debut), time.min)
+        sinistres = sinistres.filter(date_survenance__gte=timezone.make_aware(debut_dt))
+    if date_fin:
+        fin_dt = datetime.combine(date.fromisoformat(date_fin), time.max)
+        sinistres = sinistres.filter(date_survenance__lte=timezone.make_aware(fin_dt))
+
+    context = {
+        'chef': chef,
+        'sinistres': sinistres,
+        'nature_choices': Sinistre.NATURE_CHOICES,
+        'nature_selectionnee': nature,
+        'recherche': recherche,
+        'periode_option': periode_option,
+        'date_debut': date_debut,
+        'date_fin': date_fin,
+    }
+    return render(request, 'dossiers_clotures_chef.html', context)
 
 
 # Fonction permettant de modifier son mot de passe

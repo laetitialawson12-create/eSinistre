@@ -48,7 +48,7 @@
             <a href="{% url 'accueil_chef' %}" class="{% if request.resolver_match.url_name == 'accueil_chef' %}active{% endif %}">
                 <i class="bi bi-house-door me-2"></i> Accueil
             </a>
-            <a href="{% url 'dossiers_soumis_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_soumis' or request.resolver_match.url_name == 'detail_sinistre_chef' %}active{% endif %}">
+            <a href="{% url 'dossiers_soumis_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_soumis_chef' or request.resolver_match.url_name == 'detail_sinistre_chef' %}active{% endif %}">
                 <i class="bi bi-inbox me-2"></i> Soumis
             </a>
             <a href="{% url 'dossiers_a_valider' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_valider' or request.resolver_match.url_name == 'detail_sinistre_chef' %}active{% endif %}">
@@ -62,6 +62,9 @@
             </a>
             <a href="{% url 'dossiers_clotures_chef' %}" class="{% if request.resolver_match.url_name == 'dossiers_clotures_chef' %}active{% endif %}">
                 <i class="bi bi-folder2 me-2"></i> Clôturés
+            </a>
+            <a href="{% url 'tous_sinistres_chef' %}" class="{% if request.resolver_match.url_name == 'tous_sinistres_chef' %}active{% endif %}">
+                <i class="bi bi-collection me-2"></i> Tous les sinistres
             </a>
             <a href="{% url 'profil_chef' %}" class="{% if request.resolver_match.url_name == 'profil_chef' or request.resolver_match.url_name == 'modifier_profil_chef' %}active{% endif %}">
                 <i class="bi bi-person-circle me-2"></i> Profil
