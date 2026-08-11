@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.urls import reverse
 from decimal import Decimal, InvalidOperation
 from .forms import (
@@ -2562,29 +2562,42 @@ def detail_sinistre_admin(request, sinistre_id):
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def action_lot_contrats(request):
-    if request.method == 'POST':
-        ids = request.POST.getlist('selection')
-        action = request.POST.get('action')
+    if request.method != 'POST':
+        return redirect('liste_contrats')
 
-        if not ids:
-            messages.warning(request, "Aucun contrat sélectionné.")
-            return redirect('liste_contrats')
-        
-        if action == 'exporter':
-            return exporter_contrats_admin(request)
-        
-        elif action == 'supprimer':
+    ids = request.POST.getlist('selection')
+    action = request.POST.get('action')
+
+    if not ids:
+        messages.warning(request, "Aucun contrat sélectionné.")
+        return redirect('liste_contrats')
+
+    if action == 'exporter':
+        return exporter_contrats_admin(request)
+
+    elif action == 'supprimer':
+        supprimes = 0
+        echecs = []
+
+        with transaction.atomic():
             for assure_id in ids:
-                supprimer_contrat_admin(request, assure_id)
-            messages.success(request, f"{len(ids)} contrat(s) supprimé(s) avec succès.")
-            
-        elif action == 'modifier':
-            for assure_id in ids:
-                modifier_contrat_admin(request, assure_id)
-            messages.success(request, f"{len(ids)} contrat(s) modifié(s) avec succès.")
-            
-        else:
-            messages.error(request, "Action inconnue.")
+                try:
+                    assure = Assure.objects.select_related('user').get(id=assure_id)
+                    assure.user.delete()
+                    supprimes += 1
+                except Assure.DoesNotExist:
+                    echecs.append(assure_id)
+
+        if supprimes:
+            messages.success(request, f"{supprimes} contrat(s) supprimé(s) avec succès.")
+        if echecs:
+            messages.error(
+                request,
+                f"{len(echecs)} contrat(s) introuvable(s) et n'ont pas pu être supprimés."
+            )
+
+    else:
+        messages.error(request, "Action inconnue.")
 
     return redirect('liste_contrats')
     
@@ -2594,17 +2607,23 @@ def action_lot_contrats(request):
 @user_passes_test(lambda u: u.is_staff)
 def exporter_contrats_admin(request):
     quittances = Quittance.objects.select_related('contrat', 'contrat__user').order_by('contrat__user__last_name')
-    query_police = request.GET.get('police', '').strip()
-    query_nom = request.GET.get('nom', '').strip()
 
-    if query_police:
-        quittances = quittances.filter(contrat__numero_police__icontains=query_police)
-    if query_nom:
-        quittances = quittances.filter(
-            Q(contrat__user__last_name__icontains=query_nom) |
-            Q(contrat__user__last_name__icontains=query_nom)
-        )
+    ids_selection = request.POST.getlist('selection')
 
+    if ids_selection:
+        quittances = quittances.filter(contrat__id__in=ids_selection)
+    else:
+        query_police = request.GET.get('police', '').strip()
+        query_nom = request.GET.get('nom', '').strip()
+
+        if query_police:
+            quittances = quittances.filter(contrat__numero_police__icontains=query_police)
+        if query_nom:
+            quittances = quittances.filter(
+                Q(contrat__user__last_name__icontains=query_nom) |
+                Q(contrat__user__first_name__icontains=query_nom)
+            )
+            
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Contrats"
