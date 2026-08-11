@@ -1,4 +1,5 @@
 import os
+import unicodedata
 import pandas as pd
 import openpyxl
 from openpyxl.styles import Font
@@ -1837,9 +1838,19 @@ def telecharger_attestation(request, sinistre_id):
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def accueil_admin(request):
-    sinistres = Sinistre.objects.all()
+    sinistres = Sinistre.objects.all().order_by('-date_survenance')
     debut_mois = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
+    today = timezone.localdate()
+    debut_jour = timezone.make_aware(datetime.combine(today, time.min))
+    fin_jour = timezone.make_aware(datetime.combine(today, time.max))
+    
+    sinistres_du_jour = sinistres.filter(
+        date_survenance__gte=debut_jour,
+        date_survenance__lte=fin_jour,
+    ).order_by('-date_declaration')
+    
+    
     context = {
         'nb_sinistres_total': sinistres.count(),
         'nb_sinistres_en_cours': sinistres.exclude(statut__in=['CLOTURE', 'SANS_SUITE']).count(),
@@ -1849,7 +1860,7 @@ def accueil_admin(request):
         'nb_agents': Agent.objects.count(),
         'nb_chefs': ChefDepartement.objects.count(),
         'nb_assures': Assure.objects.count(),
-        'derniers_sinistres': sinistres.order_by('-date_declaration'),
+        'derniers_sinistres': sinistres_du_jour,
     }
     return render(request, 'accueil_admin.html', context)
 
@@ -2753,7 +2764,7 @@ def exporter_sinistres_admin(request):
                "Immatriculation", "Nature", "Statut", "Agent traitant",
                "Montant estimé (FCFA)", "Prix retenu (FCFA)",
                "Date survenance", "Date déclaration",
-               "Région", "Commune", "Ville", "Quartier"]
+               "Région", "Commune", "Ville", "Quartier", "Circonstances", "Dommages"]
     ws.append(entetes)
     for cell in ws[1]:
         cell.font = Font(bold=True)
@@ -2777,6 +2788,8 @@ def exporter_sinistres_admin(request):
             s.commune.nom if s.commune else '',
             s.ville.nom if s.ville else '',
             s.quartier or '',
+            s.dommage,
+            s.circonstances,
         ])
 
     for col_cells in ws.columns:
@@ -2840,20 +2853,52 @@ def importer_sinistres_admin(request):
                 df = pd.read_excel(fichier)
                 df.columns = [str(c).strip() for c in df.columns]
 
+                def _normalise_cle(valeur):
+                    valeur = str(valeur).strip().lower()
+                    valeur = unicodedata.normalize('NFKD', valeur)
+                    valeur = ''.join(c for c in valeur if not unicodedata.combining(c))
+                    valeur = valeur.replace('°', '').replace('n°', 'numero')
+                    for caractere in ('_', '-', "'"):
+                        valeur = valeur.replace(caractere, ' ')
+                    return ' '.join(valeur.split())
+
                 def get_val(row, possible_keys):
                     for k in possible_keys:
                         for col in row.index:
-                            if str(col).strip().lower().replace(' ', '_') == str(k).strip().lower().replace(' ', '_'):
+                            if _normalise_cle(col) == _normalise_cle(k):
                                 val = row[col]
                                 if pd.notna(val):
                                     return val
                     return None
 
+                # Table de correspondance libellé -> code pour le statut (ex: "Soumis" -> "SOUMIS")
+                statut_par_libelle = {
+                    _normalise_cle(libelle): code for code, libelle in Sinistre.STATUS_CHOICES
+                }
+                statut_par_libelle.update({
+                    _normalise_cle(code): code for code, _ in Sinistre.STATUS_CHOICES
+                })
+
+                def parser_statut(valeur):
+                    if not valeur:
+                        return 'SOUMIS'
+                    return statut_par_libelle.get(_normalise_cle(valeur), 'SOUMIS')
+
+                def parser_date(valeur):
+                    if not valeur:
+                        return None
+                    if isinstance(valeur, datetime):
+                        return valeur
+                    horodatage = pd.to_datetime(str(valeur), dayfirst=True, errors='coerce')
+                    if pd.isna(horodatage):
+                        return None
+                    return horodatage.to_pydatetime()
+
                 crees, echecs = 0, []
 
                 for index, row in df.iterrows():
                     try:
-                        numero_police = get_val(row, ['NUMERO_POLICE', 'NUMERO POLICE'])
+                        numero_police = get_val(row, ['NUMERO_POLICE', 'NUMERO POLICE', 'N° POLICE', 'N°POLICE', 'POLICE'])
                         if not numero_police:
                             echecs.append(f"Ligne {index + 2} : numéro de police manquant")
                             continue
@@ -2892,23 +2937,36 @@ def importer_sinistres_admin(request):
                         if nature_val not in ('C', 'M', 'X'):
                             nature_val = None
 
+                        date_survenance = parser_date(get_val(row, ['DATE_SURVENANCE', 'DATE SURVENANCE']))
+                        if not date_survenance:
+                            echecs.append(f"Ligne {index + 2} : date de survenance manquante ou invalide")
+                            continue
+
+                        heure_val = get_val(row, ['HEURE_APPROXIMATIVE', 'HEURE'])
+                        heure_approximative = parser_date(heure_val).time() if heure_val else date_survenance.time()
+
+                        nom_conducteur = get_val(row, ['NOM_CONDUCTEUR', 'NOM CONDUCTEUR']) or (
+                            f"{assure.user.first_name} {assure.user.last_name}".strip()
+                        ) or assure.user.username
+
                         Sinistre.objects.create(
                             assure=assure.user,
                             vehicule=vehicule,
-                            nom_conducteur=get_val(row, ['NOM_CONDUCTEUR', 'NOM CONDUCTEUR']) or '',
+                            nom_conducteur=nom_conducteur,
                             contact_declarant=get_val(row, ['CONTACT_DECLARANT', 'CONTACT']),
                             immatriculation=immatriculation,
-                            date_survenance=get_val(row, ['DATE_SURVENANCE', 'DATE SURVENANCE']),
-                            heure_approximative=get_val(row, ['HEURE_APPROXIMATIVE', 'HEURE']) or datetime.now().time(),
-                            circonstances=get_val(row, ['CIRCONSTANCES']) or '',
-                            dommage=get_val(row, ['DOMMAGE']) or '',
+                            date_survenance=date_survenance,
+                            heure_approximative=heure_approximative,
+                            circonstances=get_val(row, ['CIRCONSTANCES']) or 'Non renseigné (import en masse).',
+                            dommage=get_val(row, ['DOMMAGE']) or 'Non renseigné (import en masse).',
                             region=region,
                             commune=commune,
                             ville=ville,
                             quartier=get_val(row, ['QUARTIER']) or '',
                             nature=nature_val,
                             montant_estime=get_val(row, ['MONTANT_ESTIME', 'MONTANT']) or 0,
-                            statut=get_val(row, ['STATUT']) or 'SOUMIS',
+                            statut=parser_statut(get_val(row, ['STATUT'])),
+                            agent_traitant=get_val(row, ['AGENT_TRAITANT', 'AGENT TRAITANT']) or '',
                         )
                         crees += 1
 

@@ -47,6 +47,7 @@
     <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
+                <th style="width:30px;"><input type="checkbox" id="select-all-sinistres"></th>
                 <th>Nom</th>
                 <th>N° Police</th>
                 <th>Email</th>
@@ -59,6 +60,7 @@
         <tbody>
             {% for assure in assures %}
             <tr>
+                <td><input type="checkbox" name="selection" value="{{ s.id }}" class="check-sinistre"></td>
                 <td>{{ assure.user.get_full_name|default:assure.user.username }}</td>
                 <td>{{ assure.numero_police }}</td>
                 <td>{{ assure.user.email|default:"—" }}</td>
@@ -89,6 +91,15 @@
                                 <i class="bi bi-check-circle"></i>
                             </button>
                         {% endif %}
+                        <!--<a href="{% url 'modifier_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <a href="{% url 'exporter_sinistres' %}?id={{ s.id }}" class="btn btn-sm btn-outline-success" title="Exporter">
+                            <i class="bi bi-file-earmark-excel"></i>
+                        </a>
+                        <a href="{% url 'supprimer_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                            <i class="bi bi-trash"></i>
+                        </a>-->
                     </form>
                 </td>
             </tr>
