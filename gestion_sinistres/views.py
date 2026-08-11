@@ -2542,6 +2542,13 @@ def liste_contrats_admin(request):
         'date_effet_fin': date_effet_fin,
     })
     
+  
+# Fonction permettant à l'administrateur de superviser les contrats par lot
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def action_lot_contrats(request):
+    
+    
     
 # Fonction permettant à l'administrateur d'exporter des contrats avec des filtres
 @login_required
