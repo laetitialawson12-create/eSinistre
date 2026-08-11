@@ -3,7 +3,26 @@
 {% block title %}Supervision des sinistres{% endblock %}
 
 {% block content %}
-<h3 class="fw-bold mb-4" style="color: var(--fidelia-blue);">Supervision des sinistres</h3>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Supervision des sinistres</h3>
+    <div class="d-flex gap-2">
+        <a href="{% url 'importer_sinistres' %}" class="btn btn-outline-primary">
+            <i class="bi bi-file-earmark-arrow-up"></i> Importer des sinistres
+        </a>
+        <a href="{% url 'exporter_sinistres' %}?statut={{ statut_selectionne }}&nature={{ nature_selectionnee }}&q={{ recherche }}" class="btn btn-outline-success">
+            <i class="bi bi-file-earmark-excel"></i> Exporter la liste filtrée
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
 
 <div class="card border-0 shadow-sm p-3 mb-4">
     <form method="get" class="row g-2 align-items-end">
@@ -43,61 +62,131 @@
 </div>
 
 <div class="card border-0 shadow-sm p-3">
-    <div class="mb-2 text-secondary small">{{ sinistres|length }} résultat{{ sinistres|length|pluralize }}</div>
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr>
-                <th style="width:30px;"><input type="checkbox" id="select-all-contrats"></th>
-                <th>N° Sinistre</th>
-                <th>Assuré</th>
-                <th>N° Police</th>
-                <th>Nature</th>
-                <th>Statut</th>
-                <th>Agent traitant</th>
-                <th>Date</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for s in sinistres %}
-            <tr>
-                <td><input type="checkbox" name="selection" value="{{ quittance.contrat.id }}" class="check-contrat"></td>
-                <td>{{ s.numero_sinistre }}</td>
-                <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
-                <td>{{ s.n_police }}</td>
-                <td>{{ s.get_nature_display }}</td>
-                <td>
-                    {% if s.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'ATTENTE_COMPLEMENTS' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'ATTENTE_VALIDATION' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'A_CORRIGER' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'EN_COURS' %}<span class="badge bg-info text-dark">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'CLOTURE' %}<span class="badge bg-success">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'SANS_SUITE' %}<span class="badge bg-dark">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'REOUVERT' %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
-                    {% else %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
-                    {% endif %}
-                </td>
-                <td>{{ s.agent_traitant|default:"—" }}</td>
-                <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
-                <td>
-                    <div class="d-flex gap-1">
-                        <a href="{% url 'detail_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-secondary" title="Voir">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                        <a href="{% url 'modifier_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
-                            <i class="bi bi-pencil-square"></i>
-                        </a>
-                        <a href="{% url 'supprimer_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
-                            <i class="bi bi-trash"></i>
-                        </a>
-                    </div>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="8" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <form method="post" action="{% url 'action_lot_sinistres' %}" id="form-lot-sinistres">
+        {% csrf_token %}
+
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div class="text-secondary small">{{ sinistres|length }} résultat{{ sinistres|length|pluralize }}</div>
+            {% if sinistres %}
+            <div class="d-flex align-items-center gap-2">
+                <span class="small text-secondary"><span id="count-selection-sinistres">0</span> sélectionné(s)</span>
+                <select name="action" class="form-select form-select-sm w-auto">
+                    <option value="exporter">Exporter</option>
+                    <option value="supprimer">Supprimer</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary" id="btn-appliquer-lot-sinistres">
+                    Appliquer à la sélection
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:30px;"><input type="checkbox" id="select-all-sinistres"></th>
+                        <th>N° Sinistre</th>
+                        <th>Assuré</th>
+                        <th>N° Police</th>
+                        <th>Nature</th>
+                        <th>Statut</th>
+                        <th>Agent traitant</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sinistres %}
+                    <tr>
+                        <td><input type="checkbox" name="selection" value="{{ s.id }}" class="check-sinistre"></td>
+                        <td>{{ s.numero_sinistre|default:"—" }}</td>
+                        <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
+                        <td>{{ s.assure.assure.numero_police|default:"—" }}</td>
+                        <td>{{ s.get_nature_display|default:"—" }}</td>
+                        <td>
+                            {% if s.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
+                            {% elif s.statut == 'ATTENTE_COMPLEMENTS' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                            {% elif s.statut == 'ATTENTE_VALIDATION' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
+                            {% elif s.statut == 'A_CORRIGER' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                            {% elif s.statut == 'EN_COURS' %}<span class="badge bg-info text-dark">{{ s.get_statut_display }}</span>
+                            {% elif s.statut == 'CLOTURE' %}<span class="badge bg-success">{{ s.get_statut_display }}</span>
+                            {% elif s.statut == 'SANS_SUITE' %}<span class="badge bg-dark">{{ s.get_statut_display }}</span>
+                            {% elif s.statut == 'REOUVERT' %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
+                            {% else %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ s.agent_traitant|default:"—" }}</td>
+                        <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'detail_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-secondary" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'modifier_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a href="{% url 'exporter_sinistres' %}?id={{ s.id }}" class="btn btn-sm btn-outline-success" title="Exporter">
+                                    <i class="bi bi-file-earmark-excel"></i>
+                                </a>
+                                <a href="{% url 'supprimer_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('select-all-sinistres');
+    const checks = document.querySelectorAll('.check-sinistre');
+    const counter = document.getElementById('count-selection-sinistres');
+    const form = document.getElementById('form-lot-sinistres');
+
+    function updateCounter() {
+        if (counter) counter.textContent = document.querySelectorAll('.check-sinistre:checked').length;
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            checks.forEach(c => c.checked = selectAll.checked);
+            updateCounter();
+        });
+    }
+
+    checks.forEach(c => c.addEventListener('change', updateCounter));
+
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            const action = form.querySelector('select[name="action"]').value;
+            const nbSelection = document.querySelectorAll('.check-sinistre:checked').length;
+
+            if (nbSelection === 0) {
+                e.preventDefault();
+                alert("Veuillez sélectionner au moins un sinistre.");
+                return;
+            }
+
+            if (action === 'supprimer') {
+                const confirmation = confirm(
+                    `Voulez-vous vraiment supprimer définitivement ${nbSelection} sinistre(s) ? Cette action est irréversible.`
+                );
+                if (!confirmation) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+
+    updateCounter();
+});
+</script>
 {% endblock %}

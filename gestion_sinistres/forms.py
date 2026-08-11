@@ -360,6 +360,10 @@ class ImportExcelForm(forms.Form):
     fichier = forms.FileField(label="Fichier Excel des contrats (.xlsx)")
 
 
+class ImportSinistresForm(forms.Form):
+    fichier = forms.FileField(label="Fichier Excel des sinistres (.xlsx)")
+    
+    
 class AssureAdminForm(forms.ModelForm):
     # Champs supplémentaires pour manipuler directement le profil utilisateur django lié à l'assuré
     first_name = forms.CharField(label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))

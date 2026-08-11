@@ -24,7 +24,7 @@ from .forms import (
     ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
     RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm,
     ModifierProfilAdminForm, StylePasswordChangeForm, AjouterNumeroSinistreForm,
-    ModifierSinistreAdminForm,
+    ModifierSinistreAdminForm, ImportSinistresForm,
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
@@ -2714,6 +2714,220 @@ def modifier_sinistre_admin(request, sinistre_id):
         form = ModifierSinistreAdminForm(instance=sinistre)
 
     return render(request, 'modifier_sinistre_admin.html', {'form': form, 'sinistre': sinistre})
+
+
+# Fonction permettant à l'administrateur d'exporter les sinistres
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def exporter_sinistres_admin(request):
+    sinistres = Sinistre.objects.select_related('assure', 'vehicule', 'region', 'commune', 'ville').order_by('-date_declaration')
+
+    # Cas 1 : export individuel (lien "Exporter" sur une ligne du tableau)
+    id_unique = request.GET.get('id')
+    # Cas 2 : export par lot (sélection cochée envoyée en POST)
+    ids_selection = request.POST.getlist('selection')
+
+    if id_unique:
+        sinistres = sinistres.filter(id=id_unique)
+    elif ids_selection:
+        sinistres = sinistres.filter(id__in=ids_selection)
+    else:
+        # Cas 3 : export de la liste filtrée (mêmes filtres que supervision_sinistres)
+        statut = request.GET.get('statut', '')
+        nature = request.GET.get('nature', '')
+        recherche = request.GET.get('q', '').strip()
+        if statut:
+            sinistres = sinistres.filter(statut=statut)
+        if nature:
+            sinistres = sinistres.filter(nature=nature)
+        if recherche:
+            sinistres = sinistres.filter(
+                Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
+            )
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sinistres"
+
+    entetes = ["N° Sinistre", "Nom", "Prénom(s)", "Email", "N° Police",
+               "Immatriculation", "Nature", "Statut", "Agent traitant",
+               "Montant estimé (FCFA)", "Prix retenu (FCFA)",
+               "Date survenance", "Date déclaration",
+               "Région", "Commune", "Ville", "Quartier"]
+    ws.append(entetes)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    for s in sinistres:
+        ws.append([
+            s.numero_sinistre or '',
+            s.assure.last_name,
+            s.assure.first_name,
+            s.assure.email,
+            getattr(s.assure.assure, 'numero_police', '') if hasattr(s.assure, 'assure') else '',
+            s.vehicule.immatriculation if s.vehicule else '',
+            s.get_nature_display() if s.nature else '',
+            s.get_statut_display(),
+            s.agent_traitant or '',
+            float(s.montant_estime or 0),
+            float(s.prix_retenu) if s.prix_retenu is not None else '',
+            s.date_survenance.strftime('%d/%m/%Y %H:%M') if s.date_survenance else '',
+            s.date_declaration.strftime('%d/%m/%Y %H:%M') if s.date_declaration else '',
+            s.region.nom if s.region else '',
+            s.commune.nom if s.commune else '',
+            s.ville.nom if s.ville else '',
+            s.quartier or '',
+        ])
+
+    for col_cells in ws.columns:
+        longueur = max((len(str(c.value)) if c.value else 0) for c in col_cells)
+        ws.column_dimensions[col_cells[0].column_letter].width = min(longueur + 2, 40)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="sinistres_fidelia.xlsx"'
+    wb.save(response)
+    return response
+
+
+# Fonction permettant à l'administrateur de faire des actions par lot sur les sinistres
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def action_lot_sinistres(request):
+    if request.method != 'POST':
+        return redirect('supervision_sinistres')
+
+    ids = request.POST.getlist('selection')
+    action = request.POST.get('action')
+
+    if not ids:
+        messages.warning(request, "Aucun sinistre sélectionné.")
+        return redirect('supervision_sinistres')
+
+    if action == 'exporter':
+        return exporter_sinistres_admin(request)
+
+    elif action == 'supprimer':
+        supprimes = 0
+        echecs = []
+        with transaction.atomic():
+            for sinistre_id in ids:
+                try:
+                    sinistre = Sinistre.objects.get(id=sinistre_id)
+                    sinistre.delete()
+                    supprimes += 1
+                except Sinistre.DoesNotExist:
+                    echecs.append(sinistre_id)
+
+        if supprimes:
+            messages.success(request, f"{supprimes} sinistre(s) supprimé(s) avec succès.")
+        if echecs:
+            messages.error(request, f"{len(echecs)} sinistre(s) introuvable(s), non supprimés.")
+    else:
+        messages.error(request, "Action inconnue.")
+
+    return redirect('supervision_sinistres')
+
+
+# Fonction permettant à l'administrateur d'importer des sinistres
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def importer_sinistres_admin(request):
+    if request.method == 'POST':
+        form = ImportSinistresForm(request.POST, request.FILES)
+        if form.is_valid():
+            fichier = request.FILES['fichier']
+            try:
+                df = pd.read_excel(fichier)
+                df.columns = [str(c).strip() for c in df.columns]
+
+                def get_val(row, possible_keys):
+                    for k in possible_keys:
+                        for col in row.index:
+                            if str(col).strip().lower().replace(' ', '_') == str(k).strip().lower().replace(' ', '_'):
+                                val = row[col]
+                                if pd.notna(val):
+                                    return val
+                    return None
+
+                crees, echecs = 0, []
+
+                for index, row in df.iterrows():
+                    try:
+                        numero_police = get_val(row, ['NUMERO_POLICE', 'NUMERO POLICE'])
+                        if not numero_police:
+                            echecs.append(f"Ligne {index + 2} : numéro de police manquant")
+                            continue
+
+                        assure = Assure.objects.filter(numero_police=numero_police).select_related('user').first()
+                        if not assure:
+                            echecs.append(f"Ligne {index + 2} : assuré introuvable ({numero_police})")
+                            continue
+
+                        immatriculation = get_val(row, ['IMMATRICULATION', 'IMMAT'])
+                        vehicule = None
+                        if immatriculation:
+                            vehicule, _ = Vehicule.objects.get_or_create(
+                                immatriculation=immatriculation,
+                                defaults={
+                                    'marque': get_val(row, ['MARQUE']) or '',
+                                    'modele': get_val(row, ['MODELE']),
+                                    'proprietaire': assure.user,
+                                }
+                            )
+                        else:
+                            echecs.append(f"Ligne {index + 2} : immatriculation manquante")
+                            continue
+
+                        def get_or_create_localisation(model, nom, **kwargs):
+                            if not nom:
+                                return None
+                            obj, _ = model.objects.get_or_create(nom=str(nom).strip(), **kwargs)
+                            return obj
+
+                        region = get_or_create_localisation(Region, get_val(row, ['REGION']))
+                        commune = get_or_create_localisation(Commune, get_val(row, ['COMMUNE']), region=region) if region else None
+                        ville = get_or_create_localisation(Ville, get_val(row, ['VILLE']), commune=commune) if commune else None
+
+                        nature_val = str(get_val(row, ['NATURE']) or '').strip().upper()[:1]
+                        if nature_val not in ('C', 'M', 'X'):
+                            nature_val = None
+
+                        Sinistre.objects.create(
+                            assure=assure.user,
+                            vehicule=vehicule,
+                            nom_conducteur=get_val(row, ['NOM_CONDUCTEUR', 'NOM CONDUCTEUR']) or '',
+                            contact_declarant=get_val(row, ['CONTACT_DECLARANT', 'CONTACT']),
+                            immatriculation=immatriculation,
+                            date_survenance=get_val(row, ['DATE_SURVENANCE', 'DATE SURVENANCE']),
+                            heure_approximative=get_val(row, ['HEURE_APPROXIMATIVE', 'HEURE']) or datetime.now().time(),
+                            circonstances=get_val(row, ['CIRCONSTANCES']) or '',
+                            dommage=get_val(row, ['DOMMAGE']) or '',
+                            region=region,
+                            commune=commune,
+                            ville=ville,
+                            quartier=get_val(row, ['QUARTIER']) or '',
+                            nature=nature_val,
+                            montant_estime=get_val(row, ['MONTANT_ESTIME', 'MONTANT']) or 0,
+                            statut=get_val(row, ['STATUT']) or 'SOUMIS',
+                        )
+                        crees += 1
+
+                    except Exception as e:
+                        echecs.append(f"Ligne {index + 2} : {e}")
+
+                if crees:
+                    messages.success(request, f"{crees} sinistre(s) importé(s) avec succès.")
+                if echecs:
+                    messages.warning(request, f"{len(echecs)} ligne(s) ignorée(s) : " + " | ".join(echecs[:10]))
+
+                return redirect('supervision_sinistres')
+
+            except Exception as e:
+                messages.error(request, f"Erreur lors de la lecture du fichier : {e}")
+    else:
+        form = ImportSinistresForm()
+
+    return render(request, 'importer_sinistres.html', {'form': form})
 
 
 # Fonction permettant à l'administrateur de supprimer un contrat
