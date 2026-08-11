@@ -89,6 +89,8 @@ urlpatterns = [
     path('admin/importer-donnees/', views.importer_donnees_admin, name='importer_donnees'),
     path('admin/sinistres/', views.supervision_sinistres, name='supervision_sinistres'),
     path('admin/dossier/<int:sinistre_id>/', views.detail_sinistre_admin, name='detail_sinistre_admin'),
+    path('admin/dossier/<int:sinistre_id>/supprimer/', views.supprimer_sinistre_admin, name='supprimer_sinistre_admin'),
+    path('admin/dossier/<int:sinistre_id>/modifier/', views.modifier_sinistre_admin, name='modifier_sinistre_admin'),
     path('admin/profil/changer-mot-de-passe_en_cours_admin/', views.changer_mot_de_passe_en_cours_admin, name='changer_mot_de_passe_en_cours_admin'),
 
     # Gestion des Agents par Admin

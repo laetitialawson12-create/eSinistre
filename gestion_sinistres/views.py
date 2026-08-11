@@ -24,6 +24,7 @@ from .forms import (
     ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
     RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm,
     ModifierProfilAdminForm, StylePasswordChangeForm, AjouterNumeroSinistreForm,
+    ModifierSinistreAdminForm,
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
@@ -2678,6 +2679,41 @@ def modifier_contrat_admin(request, assure_id):
         form = AssureAdminForm(instance=assure)
 
     return render(request, 'modifier_contrat.html', {'form': form, 'assure': assure})
+
+
+# Fonction permettant à l'administrateur de supprimer définitivement un sinistre
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supprimer_sinistre_admin(request, sinistre_id):
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    if request.method == 'POST':
+        numero = sinistre.numero_sinistre or f"#{sinistre.id}"
+        sinistre.delete()
+        messages.success(request, f"Le sinistre {numero} a été supprimé définitivement.")
+        return redirect('supervision_sinistres')
+
+    return render(request, 'confirmer_suppression_sinistre.html', {
+        'sinistre': sinistre,
+    })
+    
+    
+# Fonction permettant à l'administrateur de modifier les informations d'un sinistre
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def modifier_sinistre_admin(request, sinistre_id):
+    sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+
+    if request.method == 'POST':
+        form = ModifierSinistreAdminForm(request.POST, instance=sinistre)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Le sinistre {sinistre.numero_sinistre or sinistre.id} a été mis à jour.")
+            return redirect('detail_sinistre_admin', sinistre_id=sinistre.id)
+    else:
+        form = ModifierSinistreAdminForm(instance=sinistre)
+
+    return render(request, 'modifier_sinistre_admin.html', {'form': form, 'sinistre': sinistre})
 
 
 # Fonction permettant à l'administrateur de supprimer un contrat

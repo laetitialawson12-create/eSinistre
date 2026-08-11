@@ -47,6 +47,7 @@
     <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>
+                <th style="width:30px;"><input type="checkbox" id="select-all-contrats"></th>
                 <th>N° Sinistre</th>
                 <th>Assuré</th>
                 <th>N° Police</th>
@@ -54,11 +55,13 @@
                 <th>Statut</th>
                 <th>Agent traitant</th>
                 <th>Date</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for s in sinistres %}
             <tr>
+                <td><input type="checkbox" name="selection" value="{{ quittance.contrat.id }}" class="check-contrat"></td>
                 <td>{{ s.numero_sinistre }}</td>
                 <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                 <td>{{ s.n_police }}</td>
@@ -78,11 +81,21 @@
                 <td>{{ s.agent_traitant|default:"—" }}</td>
                 <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
                 <td>
-                    <a href="{% url 'detail_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'detail_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-secondary" title="Voir">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'modifier_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
+                            <i class="bi bi-pencil-square"></i>
+                        </a>
+                        <a href="{% url 'supprimer_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="7" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>
+            <tr><td colspan="8" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>
             {% endfor %}
         </tbody>
     </table>

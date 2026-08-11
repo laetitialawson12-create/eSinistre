@@ -11,7 +11,15 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
-    <span class="badge bg-primary fs-6">{{ sinistre.get_statut_display }}</span>
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary fs-6">{{ sinistre.get_statut_display }}</span>
+        <a href="{% url 'modifier_sinistre_admin' sinistre.id %}" class="btn btn-sm btn-outline-warning">
+            <i class="bi bi-pencil-square"></i> Modifier
+        </a>
+        <a href="{% url 'supprimer_sinistre_admin' sinistre.id %}" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-trash"></i> Supprimer
+        </a>
+    </div>
 </div>
 
 <div class="card shadow-sm border-0 mb-4">
