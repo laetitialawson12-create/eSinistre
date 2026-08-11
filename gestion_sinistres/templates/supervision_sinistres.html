@@ -63,9 +63,23 @@
                 <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                 <td>{{ s.n_police }}</td>
                 <td>{{ s.get_nature_display }}</td>
-                <td><span class="badge bg-secondary">{{ s.get_statut_display }}</span></td>
+                <td>
+                    {% if s.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
+                    {% elif s.statut == 'ATTENTE_COMPLEMENTS' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                    {% elif s.statut == 'ATTENTE_VALIDATION' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
+                    {% elif s.statut == 'A_CORRIGER' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                    {% elif s.statut == 'EN_COURS' %}<span class="badge bg-info text-dark">{{ s.get_statut_display }}</span>
+                    {% elif s.statut == 'CLOTURE' %}<span class="badge bg-success">{{ s.get_statut_display }}</span>
+                    {% elif s.statut == 'SANS_SUITE' %}<span class="badge bg-dark">{{ s.get_statut_display }}</span>
+                    {% elif s.statut == 'REOUVERT' %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
+                    {% else %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
+                    {% endif %}
+                </td>
                 <td>{{ s.agent_traitant|default:"—" }}</td>
                 <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+                <td>
+                    <a href="{% url 'detail_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
+                </td>
             </tr>
             {% empty %}
             <tr><td colspan="7" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>

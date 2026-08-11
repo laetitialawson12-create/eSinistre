@@ -1853,6 +1853,20 @@ def accueil_admin(request):
     return render(request, 'accueil_admin.html', context)
 
 
+# Génère le prochain matricule disponible pour un préfixe donné (AG ou CH), incrément global sur 4 chiffres
+def generer_prochain_matricule(model, prefixe):
+    dernier = model.objects.filter(matricule__startswith=f"{prefixe}-").order_by('-matricule').first()
+    if dernier:
+        try:
+            dernier_numero = int(dernier.matricule.split('-')[-1])
+        except ValueError:
+            dernier_numero = 0
+    else:
+        dernier_numero = 0
+    nouveau_numero = dernier_numero + 1
+    return f"{prefixe}-{nouveau_numero:04d}"
+
+
 # Fonction permettant à l'administrateur de créer un agent
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -1872,15 +1886,17 @@ def creer_agent(request):
             user.set_password('0000')
             user.save()
 
+            matricule = generer_prochain_matricule(Agent, 'AG')
+            
             Agent.objects.create(
                 user=user,
                 agence=data['agence'],
-                matricule=data['matricule'],
+                matricule=matricule,
                 telephone=data['telephone'],
                 compte_active=False,
                 doit_changer_mot_de_passe=True,
             )
-            messages.success(request, f"Agent créé. Identifiant : {username} — Mot de passe temporaire : 0000")
+            messages.success(request, f"Rédacteur créé. Identifiant : {username} — Matricule : {matricule} - Mot de passe temporaire : 0000")
             return redirect('creer_agent')
     else:
         form = AgentCreationForm()
@@ -1893,7 +1909,97 @@ def creer_agent(request):
 @user_passes_test(lambda u: u.is_staff)
 def liste_agents(request):
     agents = Agent.objects.select_related('user', 'agence').order_by('user__last_name')
-    return render(request, 'liste_agents.html', {'agents': agents})
+
+    recherche = request.GET.get('q', '').strip()
+    statut = request.GET.get('statut', '')
+    agence_id = request.GET.get('agence', '')
+
+    if recherche:
+        agents = agents.filter(
+            Q(user__last_name__icontains=recherche) |
+            Q(user__first_name__icontains=recherche) |
+            Q(matricule__icontains=recherche) |
+            Q(user__email__icontains=recherche)
+        )
+    if statut == 'actif':
+        agents = agents.filter(user__is_active=True)
+    elif statut == 'inactif':
+        agents = agents.filter(user__is_active=False)
+    if agence_id:
+        agents = agents.filter(agence_id=agence_id)
+
+    context = {
+        'agents': agents,
+        'recherche': recherche,
+        'statut_selectionne': statut,
+        'agence_selectionnee': agence_id,
+        'agences': Agence.objects.order_by('nom'),
+    }
+    return render(request, 'liste_agents.html', context)
+
+
+# Fonction permettant à l'administrateur d'agir sur plusieurs rédacteurs sélectionnés (activer/désactiver/supprimer)
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def action_lot_agents(request):
+    if request.method == 'POST':
+        ids = request.POST.getlist('selection')
+        action = request.POST.get('action')
+        agents = Agent.objects.filter(id__in=ids)
+        nb = agents.count()
+
+        if nb == 0:
+            messages.warning(request, "Aucun rédacteur sélectionné.")
+        elif action == 'activer':
+            for agent in agents:
+                agent.user.is_active = True
+                agent.user.save()
+            messages.success(request, f"{nb} rédacteur(s) activé(s).")
+        elif action == 'desactiver':
+            for agent in agents:
+                agent.user.is_active = False
+                agent.user.save()
+            messages.success(request, f"{nb} rédacteur(s) désactivé(s).")
+        elif action == 'supprimer':
+            for agent in agents:
+                agent.user.delete()
+            messages.success(request, f"{nb} rédacteur(s) supprimé(s).")
+        else:
+            messages.error(request, "Action inconnue.")
+
+    return redirect('liste_agents')
+
+
+# Fonction permettant à l'administrateur d'agir sur plusieurs rédacteurs sélectionnés (activer/désactiver/supprimer)
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def action_lot_chefs(request):
+    if request.method == 'POST':
+        ids = request.POST.getlist('selection')
+        action = request.POST.get('action')
+        chefs = ChefDepartement.objects.filter(id__in=ids)
+        nb = chefs.count()
+
+        if nb == 0:
+            messages.warning(request, "Aucun chef sélectionné.")
+        elif action == 'activer':
+            for chef in chefs:
+                chef.user.is_active = True
+                chef.user.save()
+            messages.success(request, f"{nb} chef(s) activé(s).")
+        elif action == 'desactiver':
+            for chef in chefs:
+                chef.user.is_active = False
+                chef.user.save()
+            messages.success(request, f"{nb} chef(s) désactivé(s).")
+        elif action == 'supprimer':
+            for chef in chefs:
+                chef.user.delete()
+            messages.success(request, f"{nb} chef(s) supprimé(s).")
+        else:
+            messages.error(request, "Action inconnue.")
+
+    return redirect('liste_chefs')
 
 
 # Fonction permettant à l'administrateur de modifier les informations d'un agent
@@ -1978,14 +2084,16 @@ def creer_chef(request):
             user.set_password('0000')
             user.save()
 
+            matricule = generer_prochain_matricule(ChefDepartement, 'CH')
+            
             ChefDepartement.objects.create(
                 user=user,
                 agence=data['agence'],
-                matricule=data['matricule'],
+                matricule=matricule,
                 telephone=data['telephone'],
                 doit_changer_mot_de_passe=True,
             )
-            messages.success(request, f"Chef créé. Identifiant : {username} — Mot de passe temporaire : 0000")
+            messages.success(request, f"Chef créé. Identifiant : {username} — Matricule : {matricule} - Mot de passe temporaire : 0000")
             return redirect('creer_chef')
     else:
         form = ChefCreationForm()
@@ -1998,7 +2106,33 @@ def creer_chef(request):
 @user_passes_test(lambda u: u.is_staff)
 def liste_chefs(request):
     chefs = ChefDepartement.objects.select_related('user', 'agence').order_by('user__last_name')
-    return render(request, 'liste_chefs.html', {'chefs': chefs})
+
+    recherche = request.GET.get('q', '').strip()
+    statut = request.GET.get('statut', '')
+    agence_id = request.GET.get('agence', '')
+
+    if recherche:
+        chefs = chefs.filter(
+            Q(user__last_name__icontains=recherche) |
+            Q(user__first_name__icontains=recherche) |
+            Q(matricule__icontains=recherche) |
+            Q(user__email__icontains=recherche)
+        )
+    if statut == 'actif':
+        chefs = chefs.filter(user__is_active=True)
+    elif statut == 'inactif':
+        chefs = chefs.filter(user__is_active=False)
+    if agence_id:
+        chefs = chefs.filter(agence_id=agence_id)
+
+    context = {
+        'chefs': chefs,
+        'recherche': recherche,
+        'statut_selectionne': statut,
+        'agence_selectionnee': agence_id,
+        'agences': Agence.objects.order_by('nom'),
+    }
+    return render(request, 'liste_chefs.html', context)
 
 
 # Fonction permettant à l'administrateur de modifier les informations d'un chef
@@ -2069,7 +2203,34 @@ def supprimer_chef(request, chef_id):
 @user_passes_test(lambda u: u.is_staff)
 def liste_assures(request):
     assures = Assure.objects.select_related('user', 'agence').order_by('user__last_name')
-    return render(request, 'liste_assures.html', {'assures': assures})
+
+    recherche = request.GET.get('q', '').strip()
+    statut = request.GET.get('statut', '')
+    activation = request.GET.get('activation', '')
+
+    if recherche:
+        assures = assures.filter(
+            Q(user__last_name__icontains=recherche) |
+            Q(user__first_name__icontains=recherche) |
+            Q(numero_police__icontains=recherche) |
+            Q(user__email__icontains=recherche)
+        )
+    if statut == 'actif':
+        assures = assures.filter(user__is_active=True)
+    elif statut == 'inactif':
+        assures = assures.filter(user__is_active=False)
+    if activation == 'active':
+        assures = assures.filter(compte_active=True)
+    elif activation == 'attente':
+        assures = assures.filter(compte_active=False)
+
+    context = {
+        'assures': assures,
+        'recherche': recherche,
+        'statut_selectionne': statut,
+        'activation_selectionnee': activation,
+    }
+    return render(request, 'liste_assures.html', context)
 
 
 # Fonction permettant à l'administrateur d'activer ou de désactiver le compte d'un assuré
@@ -2333,27 +2494,55 @@ def liste_contrats_admin(request):
     query_police = request.GET.get('police', '').strip()
     query_nom = request.GET.get('nom', '').strip()
     query_type = request.GET.get('type_contrat', '').strip()
+    query_quittance = request.GET.get('quittance', '').strip()
+    periode_option = request.GET.get('periode_option', '')
+    date_effet_debut = request.GET.get('date_effet_debut', '')
+    date_effet_fin = request.GET.get('date_effet_fin', '')
+
+    today = timezone.localdate()
+    if periode_option == 'auj':
+        date_effet_debut = date_effet_fin = today.isoformat()
+    elif periode_option == '7j':
+        date_effet_debut = (today - timedelta(days=6)).isoformat()
+        date_effet_fin = today.isoformat()
+    elif periode_option == 'mois':
+        date_effet_debut = today.replace(day=1).isoformat()
+        date_effet_fin = today.isoformat()
+    elif periode_option == 'trimestre':
+        date_effet_debut = (today - timedelta(days=89)).isoformat()
+        date_effet_fin = today.isoformat()
+    elif periode_option == 'annee':
+        date_effet_debut = today.replace(month=1, day=1).isoformat()
+        date_effet_fin = today.isoformat()
 
     if query_police:
         quittances = quittances.filter(contrat__numero_police__icontains=query_police)
-    
     if query_nom:
         quittances = quittances.filter(
-            Q(contrat__user__last_name__icontains=query_nom) | 
+            Q(contrat__user__last_name__icontains=query_nom) |
             Q(contrat__user__first_name__icontains=query_nom)
         )
-        
     if query_type:
         quittances = quittances.filter(type_contrat__icontains=query_type)
+    if query_quittance:
+        quittances = quittances.filter(numero_quittance__icontains=query_quittance)
+    if date_effet_debut:
+        quittances = quittances.filter(date_debut__gte=date.fromisoformat(date_effet_debut))
+    if date_effet_fin:
+        quittances = quittances.filter(date_debut__lte=date.fromisoformat(date_effet_fin))
 
     return render(request, 'liste_contrats.html', {
         'quittances': quittances,
         'query_police': query_police,
         'query_nom': query_nom,
         'query_type': query_type,
+        'query_quittance': query_quittance,
+        'periode_option': periode_option,
+        'date_effet_debut': date_effet_debut,
+        'date_effet_fin': date_effet_fin,
     })
-
-
+    
+    
 # Fonction permettant à l'administrateur d'exporter des contrats avec des filtres
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -2454,16 +2643,25 @@ def gestion_agences(request):
         form = AgenceForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Agence ajoutée avec succès.")
+            messages.success(request, "Point de vente ajouté avec succès.")
             return redirect('gestion_agences')
     else:
         form = AgenceForm()
 
-    return render(request, 'gestion_agences.html',{
+    agences = Agence.objects.select_related('ville').order_by('nom')
+
+    recherche = request.GET.get('q', '').strip()
+    if recherche:
+        agences = agences.filter(
+            Q(nom__icontains=recherche) | Q(ville__nom__icontains=recherche)
+        )
+
+    return render(request, 'gestion_agences.html', {
         'form': form,
-        'agences': Agence.objects.select_related('ville').order_by('nom')
+        'agences': agences,
+        'recherche': recherche,
     })
-    
+        
     
 #-------------------------------------------------------------------
 #                   INDEMNISATION

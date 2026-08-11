@@ -34,13 +34,42 @@
         <div class="col-md-3">
             <input type="text" name="nom" value="{{ query_nom }}" class="form-control" placeholder="Nom / prénom">
         </div>
+        <div class="col-md-3">
+            <input type="text" name="quittance" value="{{ query_quittance }}" class="form-control" placeholder="N° de quittance">
+        </div>
         <div class="col-md-2">
             <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
             <a href="{% url 'exporter_contrats' %}?police={{ query_police }}&nom={{ query_nom }}" class="btn btn-outline-success w-100">
-                <i class="bi bi-file-earmark-excel me-1"></i> Exporter
+                <i class="bi bi-file-earmark-excel"></i>
             </a>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label small text-secondary text-uppercase mb-1">Période (date d'effet)</label>
+            <div class="d-flex flex-wrap gap-2 mb-2">
+                <button type="submit" name="periode_option" value="auj" class="btn btn-sm btn-outline-secondary {% if periode_option == 'auj' %}active{% endif %}">Aujourd'hui</button>
+                <button type="submit" name="periode_option" value="7j" class="btn btn-sm btn-outline-secondary {% if periode_option == '7j' %}active{% endif %}">7 derniers jours</button>
+                <button type="submit" name="periode_option" value="mois" class="btn btn-sm btn-outline-secondary {% if periode_option == 'mois' %}active{% endif %}">Ce mois-ci</button>
+                <button type="submit" name="periode_option" value="trimestre" class="btn btn-sm btn-outline-secondary {% if periode_option == 'trimestre' %}active{% endif %}">Ce trimestre</button>
+                <button type="submit" name="periode_option" value="annee" class="btn btn-sm btn-outline-secondary {% if periode_option == 'annee' %}active{% endif %}">Cette année</button>
+            </div>
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <input type="date" name="date_effet_debut" value="{{ date_effet_debut }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <input type="date" name="date_effet_fin" value="{{ date_effet_fin }}" class="form-control form-control-sm">
+                </div>
+                {% if query_police or query_nom or query_quittance or periode_option or date_effet_debut or date_effet_fin %}
+                <div class="col-md-2">
+                    <a href="{% url 'liste_contrats' %}" class="btn btn-sm btn-outline-secondary w-100">
+                        <i class="bi bi-x-circle"></i> Réinitialiser
+                    </a>
+                </div>
+                {% endif %}
+            </div>
         </div>
     </form>
     

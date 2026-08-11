@@ -41,6 +41,23 @@
             <div class="card shadow-sm">
                 <div class="card-header text-white" style="background-color: #0b2545;">Liste des points de vente</div>
                 <div class="card-body p-0">
+                    <form method="get" class="p-3 border-bottom">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-8">
+                                <input type="text" name="q" class="form-control form-control-sm" value="{{ recherche }}" placeholder="Nom ou ville">
+                            </div>
+                            <div class="col-4 d-flex gap-2">
+                                <button type="submit" class="btn btn-outline-primary btn-sm w-100">Filtrer</button>
+                            </div>
+                        </div>
+                        {% if recherche %}
+                        <div class="mt-2">
+                            <a href="{% url 'gestion_agences' %}" class="small text-decoration-none">
+                                <i class="bi bi-x-circle"></i> Réinitialiser
+                            </a>
+                        </div>
+                        {% endif %}
+                    </form>
                     <table class="table table-striped mb-0">
                         <thead>
                             <tr>
@@ -62,7 +79,7 @@
                             </tr>
                             {% empty %}
                             <tr>
-                               <td colspan="3" class="text-muted text-center py-3">Aucun point de vente enregistrée</td>
+                               <td colspan="3" class="text-muted text-center py-3">Aucun point de vente enregistrée en ce nom.</td>
                             </tr>
                             {% endfor %}
                         </tbody>

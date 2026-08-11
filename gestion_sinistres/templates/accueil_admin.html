@@ -77,6 +77,9 @@
                 <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                 <td><span class="badge bg-secondary">{{ s.get_statut_display }}</span></td>
                 <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+                <td>
+                    <a href="{% url 'detail_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
+                </td>
             </tr>
             {% empty %}
             <tr><td colspan="4" class="text-muted fst-italic">Aucun sinistre déclaré pour le moment.</td></tr>

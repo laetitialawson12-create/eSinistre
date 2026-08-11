@@ -7,7 +7,43 @@
     <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Gestion des assurés</h3>
 </div>
 
+<div class="card border-0 shadow-sm p-3 mb-4">
+    <form method="get" class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label small text-secondary text-uppercase">Recherche</label>
+            <input type="text" name="q" class="form-control" value="{{ recherche }}" placeholder="Nom, n° police ou email">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small text-secondary text-uppercase">Activation</label>
+            <select name="activation" class="form-select">
+                <option value="">Toutes</option>
+                <option value="active" {% if activation_selectionnee == 'active' %}selected{% endif %}>Activé par l'assuré</option>
+                <option value="attente" {% if activation_selectionnee == 'attente' %}selected{% endif %}>En attente d'activation</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label small text-secondary text-uppercase">Statut</label>
+            <select name="statut" class="form-select">
+                <option value="">Tous</option>
+                <option value="actif" {% if statut_selectionne == 'actif' %}selected{% endif %}>Actif</option>
+                <option value="inactif" {% if statut_selectionne == 'inactif' %}selected{% endif %}>Désactivé</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn w-100" style="background: var(--fidelia-blue); color: white;">Filtrer</button>
+        </div>
+    </form>
+    {% if recherche or statut_selectionne or activation_selectionnee %}
+    <div class="mt-2">
+        <a href="{% url 'liste_assures' %}" class="small text-decoration-none">
+            <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+        </a>
+    </div>
+    {% endif %}
+</div>
+
 <div class="card border-0 shadow-sm p-3">
+    <div class="mb-2 text-secondary small">{{ assures|length }} assuré{{ assures|length|pluralize }}</div>
     <table class="table table-hover align-middle mb-0">
         <thead>
             <tr>

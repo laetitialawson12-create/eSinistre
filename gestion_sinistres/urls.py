@@ -92,6 +92,7 @@ urlpatterns = [
 
     # Gestion des Agents par Admin
     path('admin/agents/', views.liste_agents, name='liste_agents'),
+    path('admin/agents/action-lot/', views.action_lot_agents, name='action_lot_agents'),
     path('admin/agents/creer/', views.creer_agent, name='creer_agent'),
     path('admin/agents/<int:agent_id>/modifier/', views.modifier_agent_admin, name='modifier_agent_admin'),
     path('admin/agents/<int:agent_id>/toggle/', views.toggle_agent_actif, name='toggle_agent_actif'),
@@ -100,6 +101,7 @@ urlpatterns = [
 
     # Gestion des Chefs par Admin
     path('admin/chefs/', views.liste_chefs, name='liste_chefs'),
+    path('admin/chefs/action-lot/', views.action_lot_chefs, name='action_lot_chefs'),
     path('admin/chefs/creer/', views.creer_chef, name='creer_chef'),
     path('admin/chefs/<int:chef_id>/modifier/', views.modifier_chef_admin, name='modifier_chef_admin'),
     path('admin/chefs/<int:chef_id>/toggle/', views.toggle_chef_actif, name='toggle_chef_actif'),
