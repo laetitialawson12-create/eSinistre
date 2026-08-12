@@ -59,7 +59,7 @@
                     <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                     <td>{{ s.get_nature_display }}</td>
                     <td><span class="badge {% if s.statut == 'CLOTURE' %}bg-success{% else %}bg-secondary{% endif %}">{{ s.get_statut_display }}</span></td>
-                    <td><a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
+                    <td><a href="{% url 'detail_sinistre_agent' s.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier clôturé.</td></tr>

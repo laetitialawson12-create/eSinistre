@@ -2,7 +2,7 @@
 {% block title %}Dossier {{ sinistre.numero_sinistre }}{% endblock %}
 
 {% block content %}
-<a href="javascript:history.back()" class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
+<a href="{{ retour_url }}" class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
    style="border: 1px solid #003366; color: #003366; font-weight: 500; border-radius: 6px; padding: 6px 14px; transition: all 0.15s;"
    onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
    onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
@@ -12,9 +12,10 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
     {% if sinistre.statut == 'SOUMIS' %}
-    <a href="{% url 'ajouter_numero_sinistre' sinistre.pk %}" class="btn" style="background: var(--fidelia-blue); color: white;">
-        <i class="bi bi-pencil-square"></i> Modifier le numéro
-    </a>
+        <a href="{% url 'ajouter_numero_sinistre' sinistre.pk %}" class="btn" style="background: var(--fidelia-blue); color: white;">
+            <i class="bi bi-pencil-square"></i>
+            {% if sinistre.numero_sinistre %}Modifier le numéro{% else %}Ajouter le numéro{% endif %}
+        </a>
     {% endif %}
 </div>
 

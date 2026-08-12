@@ -13,6 +13,12 @@
     <h4 class="mb-0">📄 Dossier {{ sinistre.numero_sinistre }}</h4>
     <div class="d-flex align-items-center gap-2">
         <span class="badge bg-primary fs-6">{{ sinistre.get_statut_display }}</span>
+        {% if sinistre.statut == 'SOUMIS' %}
+            <a href="{% url 'ajouter_numero_sinistre' sinistre.pk %}" class="btn" style="background: var(--fidelia-blue); color: white;">
+                <i class="bi bi-pencil-square"></i>
+                {% if sinistre.numero_sinistre %}Modifier le numéro{% else %}Ajouter le numéro{% endif %}
+            </a>
+        {% endif %}
         <a href="{% url 'modifier_sinistre_admin' sinistre.id %}" class="btn btn-sm btn-outline-warning">
             <i class="bi bi-pencil-square"></i> Modifier
         </a>
@@ -26,7 +32,7 @@
     <div class="card-body">
         <p><strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</p>
         <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
-        <p><strong>Contact :</strong> {{ sinistre.contact_declarant }}</p>
+        <p><strong>Contact :</strong> {{ sinistre.contact_declarant }} </p>
         <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
         <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
         <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}
@@ -36,8 +42,10 @@
             {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} ({{ sinistre.region }})
         </p>
         <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
+
         <p><strong>Victimes :</strong> {{ sinistre.nombre_blesses }} blessé(s), {{ sinistre.nombre_morts }} mort(s)</p>
-        <p><strong>Taux de responsabilité :</strong> {{ sinistre.taux_responsabilite }} %</p>
+
+        <p><strong>Taux de responsabilité : </strong>{{ sinistre.taux_responsabilite }} %</p>
 
         {% if sinistre.autre_vehicule_implique %}
         <p><strong>Véhicule adverse :</strong>
@@ -52,59 +60,253 @@
 
         <div class="alert alert-info py-2 mb-3">
             <strong>Quittance{{ sinistre.quittances.count|pluralize }} :</strong>
-            <ul class="mb-0 mt-1">
-                {% for q in sinistre.quittances.all %}
-                    <li>
+                <ul class="mb-0 mt-1">
+                    {% for q in sinistre.quittances.all %}
+                        <li>
                         <span class="fw-bold">{{ q.numero_quittance }}</span>
                         ({{ q.date_debut|date:"d/m/Y" }} - {{ q.date_fin|date:"d/m/Y" }})
-                    </li>
-                {% empty %}
-                    <li class="text-muted">Aucune quittance associée.</li>
-                {% endfor %}
-            </ul>
+                        — <span class="badge bg-secondary">Prime : {{ q.prime }} FCFA</span>
+                        </li>
+                    {% empty %}
+                        <li class="text-muted">Aucune quittance associée.</li>
+                    {% endfor %}
+                </ul>
+        </div>
+
+        <!-- Bloc Synthèse Financière (Prix retenu, Total payé, Reste à payer) -->
+        {% if sinistre.prix_retenu is not None %}
+            <div class="alert alert-light border py-2 mb-3">
+                <div class="d-flex gap-4 flex-wrap">
+                    <div><strong>Prix retenu :</strong> <span class="badge bg-success">{{ sinistre.prix_retenu }} FCFA</span></div>
+                    <div><strong>Total déjà payé :</strong> <span class="badge bg-primary">{{ sinistre.total_paye }} FCFA</span></div>
+                    <div><strong>Reste à payer :</strong> <span class="badge bg-warning text-dark">{{ sinistre.reste_a_payer }} FCFA</span></div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- FORMULAIRE DE SAISIE / REVISION DU PRIX RETENU -->
+        {% if sinistre.statut == 'EN_COURS' or sinistre.statut == 'A_CORRIGER' and sinistre.attestation_generee %}
+            {% if not sinistre.indemnisation_validee %}
+                <div class="p-3 bg-light rounded border mb-3">
+                    <form method="post" action="{% url 'saisir_prix_retenu' sinistre.id %}" class="d-flex align-items-end gap-2 flex-wrap">
+                        {% csrf_token %}
+                        <div>
+                            <label class="form-label fw-bold mb-1 small">Saisir / Réviser le prix retenu (FCFA)</label>
+                            <input type="number"
+                                   name="prix_retenu"
+                                   class="form-control form-control-sm"
+                                   step="0.01"
+                                   min="0"
+                                   {% if sinistre.quittance and sinistre.quittance.prime %}max="{{ sinistre.quittance.prime }}"{% endif %}
+                                   value="{{ sinistre.prix_retenu|default_if_none:'' }}"
+                                   style="width: 200px;"
+                                   required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            {% if sinistre.prix_retenu is not None %}<i class="bi bi-pencil-square me-1"></i> Mettre à jour le prix{% else %}<i class="bi bi-save me-1"></i> Enregistrer le prix{% endif %}
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary mt-3 py-2 mb-2">
+                    <small>Le prix retenu a été validé par le Chef. Il ne peut plus être modifié.</small>
+                </div>
+            {% endif %}
+        {% endif %}
+        {% if sinistre.attestation_generee %}
+            <a href="{% url 'voir_attestation' sinistre.id %}" target="_blank" class="btn btn-outline-primary btn-sm mt-2">
+                <i class="bi bi-file-earmark-text me-1"></i> Voir l'attestation
+            </a>
+        {% endif %}
+
+        {% if sinistre.motif_sans_suite %}
+            <div class="alert alert-secondary mt-3">
+                <strong>Motif sans suite :</strong> {{ sinistre.motif_sans_suite }}
+            </div>
+        {% endif %}
+
+        {# --- CAS 0 : Dossier soumis, pas encore pris en charge / vérifié --- #}
+        {% if sinistre.statut == 'SOUMIS' %}
+            {% if not sinistre.agent_traitant %}
+                <a href="{% url 'prendre_en_charge' sinistre.id %}" class="btn btn-primary btn-sm mt-3">
+                    <i class="bi bi-hand-index-thumb me-1"></i> Prendre en charge
+                </a>
+            {% else %}
+                <div class="mt-3 p-3 bg-light rounded border">
+                    <form method="post" action="{% url 'marquer_conforme' sinistre.id %}">
+                        {% csrf_token %}
+                        <div class="row g-3 row-cols-2 row-cols-md-3 align-items-end mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1">Nature du sinistre</label>
+                                <select name="nature" class="form-select form-select-sm" required>
+                                    <option value="" selected disabled>Choisir...</option>
+                                    {% for value, label in sinistre.NATURE_CHOICES %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small mb-1">Taux de responsabilité (%)</label>
+                                <input type="number" name="taux_responsabilite" class="form-control form-control-sm"
+                                       step="0.01" min="0" max="100" placeholder="Ex: 100.00" required>
+                            </div>
+                            <div class="col form-check ps-4 pb-1">
+                                <input type="checkbox" name="pv_verifie" class="form-check-input" id="id_pv_verifie" required>
+                                <label class="form-check-label small" for="id_pv_verifie">PV vérifié</label>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-3">
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-check2-circle me-1"></i> Dossier conforme
+                            </button>
+                            <a href="{% url 'demander_complements' sinistre.id %}" class="btn btn-warning btn-sm">
+                                <i class="bi bi-exclamation-circle me-1"></i> Demander des compléments
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {# --- CAS 1 : En attente de validation (initiale ou après révision du prix par l'agent) --- #}
+        {% if sinistre.statut == 'ATTENTE_VALIDATION' or sinistre.statut == 'A_CORRIGER' %}
+        <div class="d-flex gap-2 mt-3">
+            {% if sinistre.prix_retenu is not None and not sinistre.indemnisation_validee %}
+                <form method="post" action="{% url 'valider_indemnisation' sinistre.id %}">
+                    {% csrf_token %}
+                    {% if sinistre.prix_retenu == 0 %}
+                        <button type="submit" class="btn btn-secondary btn-sm">
+                            <i class="bi bi-x-circle me-1"></i> Confirmer la non-indemnisation
+                        </button>
+                    {% else %}
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="bi bi-patch-check me-1"></i> Valider l'indemnisation (Prix révisé)
+                        </button>
+                    {% endif %}
+                </form>
+            {% else %}
+                <form method="post" action="{% url 'valider_declaration' sinistre.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Valider la déclaration
+                    </button>
+                </form>
+            {% endif %}
+
+            <button type="button" class="btn btn-warning btn-sm text-white" data-bs-toggle="modal" data-bs-target="#modalRevision">
+                <i class="bi bi-arrow-return-left me-1"></i> {% if chef_est_traitant %} Repasser en correction {% else %} Renvoyer à l'agent {% endif %}
+            </button>
+        </div>
+        {% endif %}
+
+        {# --- CAS 2 : Dossier en cours (Saisie/Validation de l'indemnisation) --- #}
+        {% if sinistre.statut == 'EN_COURS' %}
+            {% if not sinistre.prix_retenu is not None %}
+                <div class="alert alert-info mt-3">Aucun prix retenu n'a été saisi.</div>
+            {% elif not sinistre.indemnisation_validee %}
+            <div class="mt-3">
+                <div class="d-flex gap-2">
+                    <form method="post" action="{% url 'valider_indemnisation' sinistre.id %}">
+                        {% csrf_token %}
+                        {% if sinistre.prix_retenu == 0 %}
+                            <button type="submit" class="btn btn-secondary btn-sm">
+                                <i class="bi bi-x-circle me-1"></i> Confirmer la non-indemnisation
+                            </button>
+                        {% else %}
+                            <button type="submit" class="btn btn-success btn-sm">
+                                <i class="bi bi-patch-check me-1"></i> Valider l'indemnisation
+                            </button>
+                        {% endif %}
+                    </form>
+                    <button type="button" class="btn btn-warning btn-sm text-white" data-bs-toggle="modal" data-bs-target="#modalRevision">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> {% if chef_est_traitant %} Repasser en correction {% else %} Demander une révision du prix {% endif %}
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="d-flex gap-2 mt-3">
+                <form method="post" action="{% url 'clore_sinistre' sinistre.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-check2-square me-1"></i> Clôturer le sinistre
+                    </button>
+                </form>
+                <a href="{% url 'classer_sans_suite' sinistre.id %}" class="btn btn-secondary btn-sm">
+                    <i class="bi bi-x-circle me-1"></i> Classer sans suite
+                </a>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        {# --- CAS 3 : Dossier Clôturé ou Sans suite --- #}
+        {% if sinistre.statut == 'CLOTURE' or sinistre.statut == 'SANS_SUITE' %}
+        <form method="post" action="{% url 'reouvrir_dossier' sinistre.id %}" class="mt-3">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-counterclockwise me-1"></i> Réouvrir le dossier
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Bootstrap pour Demander une Révision / Renvoyer à l'agent -->
+<div class="modal fade" id="modalRevision" tabindex="-1" aria-labelledby="modalRevisionLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'renvoyer_a_agent' sinistre.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRevisionLabel">
+                        {% if chef_est_traitant %}
+                            Repasser le dossier en correction
+                        {% else %}
+                            Demander une révision à l'agent
+                        {% endif %}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="commentaires" class="form-label">Motif / Instructions pour l'agent :</label>
+                        <textarea class="form-control" id="commentaires" name="commentaires" rows="3" placeholder="Ex: Le prix retenu doit être révisé à la hausse..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning btn-sm text-white">
+                        <i class="bi bi-send me-1"></i> Renvoyer à l'agent
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
+<!-- Section Pièces jointes -->
 <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold">📎 Pièces jointes</div>
     <div class="card-body">
-        <h6 class="text-uppercase text-secondary small mb-3">Historique du dossier</h6>
-        <ul class="list-group list-group-flush">
-            {% for h in historique %}
-                <li class="list-group-item px-0">
-                    <span class="text-muted small">{{ h.date_changement|date:"d/m/Y H:i" }}</span> —
-                    {{ h.ancien_statut|default:"—" }} → {{ h.nouveau_statut }}
-                </li>
-            {% empty %}
-                <li class="list-group-item px-0 text-muted fst-italic">Aucun historique.</li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
-
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-body">
-        <h6 class="text-uppercase text-secondary small mb-3">Documents</h6>
-        <ul class="list-group list-group-flush">
-            {% for d in documents %}
-                <li class="list-group-item px-0">
-                    <a href="{{ d.fichier.url }}" target="_blank">{{ d.fichier.name }}</a>
-                </li>
-            {% empty %}
-                <li class="list-group-item px-0 text-muted fst-italic">Aucun document.</li>
-            {% endfor %}
-        </ul>
-    </div>
-</div>
-
-<div class="card shadow-sm border-0 mb-4">
-    <div class="card-body">
-        <h6 class="text-uppercase text-secondary small mb-3">Discussion</h6>
-        {% for m in discussion %}
-            <p><strong>{{ m.auteur.get_full_name|default:m.auteur.username }}</strong>
-                <span class="text-muted small">({{ m.date_envoi|date:"d/m/Y H:i" }})</span> : {{ m.contenu }}</p>
+        {% for doc in documents %}
+            <a href="{{ doc.fichier.url }}" target="_blank">{{ doc.fichier.name }}</a><br>
         {% empty %}
-            <p class="text-muted fst-italic">Aucun message.</p>
+            <span class="text-muted">Aucun document.</span>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Section Historique -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
+    <div class="card-body">
+        {% for h in historique %}
+            <p class="mb-1">
+                <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span>
+                <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }}
+                <span class="text-muted">({{ h.auteur.get_full_name|default:h.auteur.username }})</span>
+            </p>
+        {% empty %}
+            <p class="text-muted">Aucun historique pour ce dossier.</p>
         {% endfor %}
     </div>
 </div>

@@ -14,6 +14,7 @@ from django.contrib.auth.forms import SetPasswordForm, PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models import Q
 from django.db import IntegrityError, transaction
 from django.urls import reverse
@@ -49,6 +50,17 @@ def get_url_detail_dossier(user):
     if user.is_staff:
         return 'detail_sinistre_admin' 
     return 'detail_sinistre_chef' if hasattr(user, 'chef') else 'detail_sinistre_agent'
+
+
+def get_retour_url(request, url_name_defaut):
+    """Renvoie l'URL de la liste d'où l'utilisateur est arrivé (via ?next=),
+    ou une URL de secours si absente/invalide (protège contre l'open redirect)."""
+    next_url = request.GET.get('next') or request.POST.get('next')
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return next_url
+    return reverse(url_name_defaut)
+
+
 #-------------------------------------------------------------------
 #                   AUTHENTIFICATION & REDIRECTION
 #-------------------------------------------------------------------
@@ -554,6 +566,7 @@ def detail_sinistre_agent(request, sinistre_id):
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
     assure_profile = getattr(sinistre.assure, 'assure', None)
+    retour_url = get_retour_url(request, 'tous_sinistres_agent')
 
     # Récupération des quittances éligibles
     quittances_disponibles = Quittance.objects.none()
@@ -565,6 +578,8 @@ def detail_sinistre_agent(request, sinistre_id):
             date_fin__gte=date_ref,
         ).order_by('-date_debut')
 
+    detail_url = reverse('detail_sinistre_agent', args=[sinistre.id])
+
     # Traitement des soumissions POST
     if request.method == 'POST':
         # Cas 1 : Modification ou saisie du prix retenu
@@ -574,7 +589,7 @@ def detail_sinistre_agent(request, sinistre_id):
                     request,
                     "Le prix retenu ne peut être saisi qu'après validation du dossier par le Chef de département."
                 )
-                return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+                return redirect(f"{detail_url}?next={retour_url}")
 
             nouveau_prix = request.POST.get('prix_retenu')
             if nouveau_prix:
@@ -595,24 +610,24 @@ def detail_sinistre_agent(request, sinistre_id):
                     auteur=request.user,
                 )
                 messages.success(request, "Le prix retenu a été mis à jour avec succès.")
-                return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+                return redirect(f"{detail_url}?next={retour_url}")
 
         # Cas 2 : Envoi d'un message direct à l'assuré
         elif 'contenu' in request.POST:
             Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
             messages.success(request, "Message transmis.")
-            return redirect('detail_sinistre_agent', sinistre_id=sinistre.id)
+            return redirect(f"{detail_url}?next={retour_url}")
 
     context = {
         'agent': agent,
         'sinistre': sinistre,
+        'retour_url': retour_url,
         'historique': sinistre.historique.all().order_by('date_changement'),
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
         'quittances_disponibles': quittances_disponibles,
     }
     return render(request, 'detail_sinistre_agent.html', context)
-
 
 
 # Permet à l'agent de marquer un dossier comme conforme et l'envoyer au chef
@@ -1384,11 +1399,13 @@ def detail_sinistre_chef(request, sinistre_id):
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
-
+    retour_url = get_retour_url(request, 'dossiers_en_cours_chef')
+    
     if request.method == 'POST' and 'contenu' in request.POST:
         Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
-        return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
-
+        url = reverse('detail_sinistre_chef', args=[sinistre.id])
+        return redirect(f"{url}?next={retour_url}")
+    
     nom_chef = request.user.get_full_name() or request.user.username
     chef_est_traitant = sinistre.agent_traitant == nom_chef
     
@@ -1396,6 +1413,7 @@ def detail_sinistre_chef(request, sinistre_id):
         'chef': chef,
         'sinistre': sinistre,
         'chef_est_traitant': chef_est_traitant,
+        'retour_url': retour_url,
         'historique': sinistre.historique.all().order_by('date_changement'),
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
@@ -1423,7 +1441,7 @@ def valider_declaration(request, sinistre_id):
         auteur=request.user,
     )
     messages.success(request, f"Dossier {sinistre.numero_sinistre} validé, attestation générée.")
-    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+    return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
 
 # Procédure de retransmission d'un dossier sinistre à l'agent
@@ -1471,10 +1489,9 @@ def renvoyer_a_agent(request, sinistre_id):
                 f"Le dossier {sinistre.numero_sinistre} a été renvoyé à l'agent ({sinistre.agent_traitant}) pour révision."
             )
             
-        return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
-    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
-
+    return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
 # Procédure permettant au chef de  valider une indemnisation saisie par l'assuré
 @login_required
@@ -1487,7 +1504,7 @@ def valider_indemnisation(request, sinistre_id):
 
     if sinistre.prix_retenu is None:
         messages.error(request, "L'agent doit d'abord saisir le prix retenu.")
-        return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
     sinistre.indemnisation_validee = True
     sinistre.save()
@@ -1503,7 +1520,7 @@ def valider_indemnisation(request, sinistre_id):
         auteur=request.user,
     )
     messages.success(request, "Indemnisation validée. Le dossier peut maintenant être clôturé ou classé sans suite.")
-    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+    return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
 
 # Fonction permettant au chef de demander la révision du prix retenu
@@ -1562,7 +1579,7 @@ def clore_sinistre(request, sinistre_id):
         auteur=request.user,
     )
     messages.success(request, f"Dossier {sinistre.numero_sinistre} clôturé.")
-    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+    return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
 
 # Procédure permettant à l'agent de classer un sinistre sans suite
@@ -1587,7 +1604,7 @@ def classer_sans_suite(request, sinistre_id):
                 auteur=request.user,
             )
             messages.success(request, f"Dossier {sinistre.numero_sinistre} classé sans suite.")
-            return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+            return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
     else:
         form = SansSuiteForm()
 
@@ -1611,7 +1628,7 @@ def reouvrir_dossier(request, sinistre_id):
         auteur=request.user,
     )
     messages.success(request, f"Dossier {sinistre.numero_sinistre} réouvert.")
-    return redirect('detail_sinistre_chef', sinistre_id=sinistre.id)
+    return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
 
 # Fonction affichant au chef les sinistres en cours
@@ -1799,7 +1816,7 @@ def voir_attestation(request, sinistre_id):
     )
     is_owner = (getattr(sinistre, 'assure', None) == request.user or getattr(sinistre, 'assure_id', None) == request.user.id)
     
-    if is_owner or hasattr(request.user, 'agent') or hasattr(request.user, 'chef'):
+    if is_owner or hasattr(request.user, 'agent') or hasattr(request.user, 'chef') or request.user.is_staff:
         quittances = sinistre.quittances.all().order_by('date_debut')
         date_effet = quittances.first().date_debut if quittances.exists() else None
         date_echeance = quittances.first().date_fin if quittances.exists() else None
@@ -2691,8 +2708,16 @@ def liste_contrats_admin(request):
 def detail_sinistre_admin(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
 
+    if request.method == 'POST' and 'contenu' in request.POST:
+        Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
+        return redirect('detail_sinistre_admin', sinistre_id=sinistre.id)
+
+    nom_operateur = request.user.get_full_name() or request.user.username
+    chef_est_traitant = sinistre.agent_traitant == nom_operateur
+
     context = {
         'sinistre': sinistre,
+        'chef_est_traitant': chef_est_traitant,
         'historique': sinistre.historique.all().order_by('date_changement'),
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),

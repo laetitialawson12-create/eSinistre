@@ -39,7 +39,7 @@
         <div class="col-md-4 d-flex gap-2">
             <button type="submit" class="btn flex-fill" style="background: #003366; color: white; white-space: nowrap;">Filtrer</button>
             {% if nature_selectionnee or recherche or date_debut or date_fin %}
-            <a href="{% url 'dossiers_en_cours_chef' %}" class="btn flex-fill d-flex align-items-center justify-content-center gap-1" style="background: #003366; color: white; white-space: nowrap;">
+            <a href="{% url 'dossiers_en_cours_chef' %}" class="btn btn-outline-secondary flex-fill d-flex align-items-center justify-content-center gap-1" style="white-space: nowrap;">
                 <i class="bi bi-x-circle"></i> Réinitialiser
             </a>
             {% endif %}
@@ -65,7 +65,7 @@
                         {% else %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
                         {% endif %}
                     </td>
-                    <td><a href="{% url 'detail_sinistre_chef' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
+                    <td><a href="{% url 'detail_sinistre_chef' s.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="6" class="text-center text-muted py-3">Aucun dossier en cours.</td></tr>

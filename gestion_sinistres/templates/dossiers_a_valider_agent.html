@@ -39,7 +39,7 @@
         <div class="col-md-4 d-flex gap-2">
             <button type="submit" class="btn flex-fill" style="background: #003366; color: white; white-space: nowrap;">Filtrer</button>
             {% if nature_selectionnee or recherche or date_debut or date_fin %}
-            <a href="{% url 'dossiers_a_valider_agent' %}" class="btn flex-fill d-flex align-items-center justify-content-center gap-1" style="background: #003366; color: white; white-space: nowrap;">
+            <a href="{% url 'dossiers_a_valider_agent' %}" class="btn btn-outline-secondary flex-fill d-flex align-items-center justify-content-center gap-1" style="white-space: nowrap;">
                 <i class="bi bi-x-circle"></i> Réinitialiser
             </a>
             {% endif %}
@@ -63,7 +63,7 @@
                         {% if s.statut == 'SOUMIS' %}
                         <a href="{% url 'prendre_en_charge' s.id %}" class="btn btn-sm btn-primary">A valider</a>
                         {% else %}
-                        <a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
+                        <a href="{% url 'detail_sinistre_agent' s.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-outline-secondary">Voir</a>
                         {% endif %}
                     </td>
                 </tr>
