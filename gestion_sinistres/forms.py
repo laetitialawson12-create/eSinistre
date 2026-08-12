@@ -220,7 +220,7 @@ class ChefCreationForm(forms.Form):
         if ChefDepartement.objects.filter(matricule=matricule).exists():
             raise forms.ValidationError("Ce matricule existe déjà.")
         return matricule
-    
+
 
 class ModifierAgentAdminForm(forms.ModelForm):
     class Meta:

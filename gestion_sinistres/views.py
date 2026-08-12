@@ -2014,6 +2014,27 @@ def action_lot_chefs(request):
     return redirect('liste_chefs')
 
 
+# Fonction permettant à l'administrateur de modifier les informations d'un assure
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def modifier_assure_admin(request, assure_id):
+    assure = get_object_or_404(Assure, id=assure_id)
+    if request.method == 'POST':
+        user_form = AssureAdminForm(request.POST, instance=assure.user)
+        assure_form = AssureAdminForm(request.POST, instance=assure)
+        if user_form.is_valid() and assure_form.is_valid():
+            user_form.save()
+            assure_form.save()
+            messages.success(request, "Assuré mis à jour.")
+            return redirect('liste_assure')
+    else:
+        user_form = AssureAdminForm(instance=assure.user)
+        agent_form = AssureAdminForm(instance=assure)
+    return render(request, 'modifier_assure_admin.html', {
+        'user_form': user_form, 'assure_form': assure_form, 'assure': assure,
+    })
+    
+    
 # Fonction permettant à l'administrateur de modifier les informations d'un agent
 @login_required
 @user_passes_test(lambda u: u.is_staff)
