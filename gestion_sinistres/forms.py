@@ -364,6 +364,10 @@ class ImportSinistresForm(forms.Form):
     fichier = forms.FileField(label="Fichier Excel des sinistres (.xlsx)")
     
     
+class ImportLocalisationForm(forms.Form):
+    fichier = forms.FileField(label="Fichier Excel des zones (.xlsx) - colonnes REGION, COMMUNE, VILLE")
+    
+    
 class AssureAdminForm(forms.ModelForm):
     # Champs supplémentaires pour manipuler directement le profil utilisateur django lié à l'assuré
     first_name = forms.CharField(label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))

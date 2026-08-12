@@ -116,7 +116,10 @@ urlpatterns = [
 
     # Gestion des Assurés et Contrats par Admin
     path('admin/assures/', views.liste_assures, name='liste_assures'),
+    path('admin/assures/action-lot/', views.action_lot_assures, name='action_lot_assures'),
     path('admin/assures/<int:assure_id>/toggle/', views.toggle_assure_actif, name='toggle_assure_actif'),
+    path('admin/assures/<int:assure_id>/modifier/', views.modifier_assure_admin, name='modifier_assure_admin'),
+    path('admin/assures/<int:assure_id>/supprimer/', views.supprimer_assure_admin, name='supprimer_assure_admin'),
     path('admin/contrats/', views.liste_contrats_admin, name='liste_contrats'),
     path('admin/contrats/action-lot/', views.action_lot_contrats, name='action_lot_contrats'),
     path('admin/contrats/<int:assure_id>/modifier/', views.modifier_contrat_admin, name='modifier_contrat_admin'),
@@ -124,6 +127,7 @@ urlpatterns = [
 
     # Administration — localisation
     path('admin/localisation/', views.gestion_localisation, name='gestion_localisation'),
+    path('admin/localisation/importer/', views.importer_localisation_admin, name='importer_localisation'),
     path('admin/localisation/region/<int:region_id>/supprimer/', views.supprimer_region, name='supprimer_region'),
     path('admin/localisation/commune/<int:commune_id>/supprimer/', views.supprimer_Commune, name='supprimer_commune'),
     path('admin/localisation/ville/<int:ville_id>/supprimer/', views.supprimer_ville, name='supprimer_ville'),

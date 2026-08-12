@@ -1,0 +1,30 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Modifier l'assuré{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4" style="color: #0b2545;">Modifier l'assuré</h1>
+
+    <div class="card mb-4 mt-4 shadow-sm" style="max-width: 600px;">
+        <div class="card-header text-white" style="background-color: #0b2545;">
+            <i class="fas fa-user-edit me-1"></i> Formulaire de modification
+        </div>
+        <div class="card-body">
+            <form method="POST" class="mt-2">
+                {% csrf_token %}
+                {{ form.as_p }}
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'liste_assures' %}" class="btn btn-secondary w-50 me-2">
+                        <i class="fas fa-arrow-left"></i> Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary w-50 ms-2" style="background-color: #0b2545; border-color: #0b2545;">
+                        <i class="fas fa-save"></i> Enregistrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

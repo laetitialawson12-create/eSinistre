@@ -25,7 +25,7 @@ from .forms import (
     ImportExcelForm, SansSuiteForm, ChequeForm, MotDePasseOublieForm,
     RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm,
     ModifierProfilAdminForm, StylePasswordChangeForm, AjouterNumeroSinistreForm,
-    ModifierSinistreAdminForm, ImportSinistresForm,
+    ModifierSinistreAdminForm, ImportSinistresForm, ImportLocalisationForm,
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
@@ -35,16 +35,19 @@ from .models import (
 
 
 def get_profil_operateur(user):
-    """Renvoie le profil (Agent ou ChefDepartement) de l'utilisateur connecté,
+    """Renvoie le profil (Agent/ChefDepartement/Administrateur) de l'utilisateur connecté,
     peu importe son rôle réel. Un chef peut ainsi agir sur tout ce qu'un
-    agent peut faire, en plus de ses propres actions de validation."""
+    agent peut faire, en plus de ses propres actions de validation. Un administrateur
+    peut ainsi agir sur tout ce qu'un chef peut faire, en plus de ses propres actions."""
     
-    return getattr(user, 'agent', None) or getattr(user, 'chef', None)
+    return getattr(user, 'agent', None) or getattr(user, 'chef', None) or (user if user.is_staff else None)
 
 
 def get_url_detail_dossier(user):
     """Renvoie le nom de l'URL de détail du dossier adaptée au rôle
-    de l'utilisateur connecté (agent ou chef)."""
+    de l'utilisateur connecté (agent/chef/administrateur)."""
+    if user.is_staff:
+        return 'detail_sinistre_admin' 
     return 'detail_sinistre_chef' if hasattr(user, 'chef') else 'detail_sinistre_agent'
 #-------------------------------------------------------------------
 #                   AUTHENTIFICATION & REDIRECTION
@@ -1377,7 +1380,7 @@ def dossiers_soumis_chef(request):
 @login_required
 def detail_sinistre_chef(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
-    if not chef:
+    if not chef and not request.user.is_staff:
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
@@ -1404,7 +1407,7 @@ def detail_sinistre_chef(request, sinistre_id):
 @login_required
 def valider_declaration(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
-    if not chef:
+    if not chef and not request.user.is_staff:
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='ATTENTE_VALIDATION')
@@ -1427,7 +1430,7 @@ def valider_declaration(request, sinistre_id):
 @login_required
 def renvoyer_a_agent(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
-    if not chef:
+    if not chef and not request.user.is_staff:
         return redirect('accueil_assure')
 
     # Autorise le renvoi depuis les statuts 'ATTENTE_VALIDATION' et 'EN_COURS'
@@ -1477,7 +1480,7 @@ def renvoyer_a_agent(request, sinistre_id):
 @login_required
 def valider_indemnisation(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
-    if not chef:
+    if not chef and not request.user.is_staff:
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['EN_COURS','ATTENTE_VALIDATION','A_CORRIGER'])
@@ -1507,7 +1510,7 @@ def valider_indemnisation(request, sinistre_id):
 @login_required
 def demander_revision_prix(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
-    if not chef:
+    if not chef and not request.user.is_staff:
         return redirect('accueil_assure')
 
     # Récupération du sinistre en attente de validation ou en cours
@@ -1545,7 +1548,7 @@ def demander_revision_prix(request, sinistre_id):
 @login_required
 def clore_sinistre(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
-    if not chef:
+    if not chef and not request.user.is_staff:
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='EN_COURS')
@@ -1566,7 +1569,7 @@ def clore_sinistre(request, sinistre_id):
 @login_required
 def classer_sans_suite(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
-    if not chef:
+    if not chef and not request.user.is_staff:
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='EN_COURS')
@@ -1595,7 +1598,7 @@ def classer_sans_suite(request, sinistre_id):
 @login_required
 def reouvrir_dossier(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
-    if not chef:
+    if not chef and not request.user.is_staff:
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut__in=['CLOTURE', 'SANS_SUITE'])
@@ -2020,18 +2023,68 @@ def action_lot_chefs(request):
 def modifier_assure_admin(request, assure_id):
     assure = get_object_or_404(Assure, id=assure_id)
     if request.method == 'POST':
-        user_form = AssureAdminForm(request.POST, instance=assure.user)
-        assure_form = AssureAdminForm(request.POST, instance=assure)
-        if user_form.is_valid() and assure_form.is_valid():
-            user_form.save()
-            assure_form.save()
+        form = AssureAdminForm(request.POST, instance=assure)
+        if form.is_valid():
+            form.save()
             messages.success(request, "Assuré mis à jour.")
-            return redirect('liste_assure')
+            return redirect('liste_assures')
     else:
-        user_form = AssureAdminForm(instance=assure.user)
-        agent_form = AssureAdminForm(instance=assure)
+        form = AssureAdminForm(instance=assure)
+
     return render(request, 'modifier_assure_admin.html', {
-        'user_form': user_form, 'assure_form': assure_form, 'assure': assure,
+        'form': form, 'assure': assure,
+    })
+        
+    
+# Fonction permettant à l'administrateur d'agir sur plusieurs assurés sélectionnés (activer/désactiver/supprimer)
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def action_lot_assures(request):
+    if request.method == 'POST':
+        ids = request.POST.getlist('selection')
+        action = request.POST.get('action')
+        assures = Assure.objects.filter(id__in=ids)
+        nb = assures.count()
+
+        if nb == 0:
+            messages.warning(request, "Aucun assuré sélectionné.")
+        elif action == 'activer':
+            for assure in assures:
+                assure.user.is_active = True
+                assure.user.save()
+            messages.success(request, f"{nb} assuré(s) activé(s).")
+        elif action == 'desactiver':
+            for assure in assures:
+                assure.user.is_active = False
+                assure.user.save()
+            messages.success(request, f"{nb} assuré(s) désactivé(s).")
+        elif action == 'supprimer':
+            for assure in assures:
+                assure.user.delete()
+            messages.success(request, f"{nb} assuré(s) supprimé(s).")
+        else:
+            messages.error(request, "Action inconnue.")
+
+    return redirect('liste_assures')
+
+
+# Fonction permettant à l'administrateur de supprimer définitivement le compte d'un assuré
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def supprimer_assure_admin(request, assure_id):
+    assure = get_object_or_404(Assure, id=assure_id)
+    if request.method == 'POST':
+        nom_complet = assure.user.get_full_name() or assure.user.username
+        assure.user.delete()
+        messages.success(request, f"Le compte de {nom_complet} a été supprimé.")
+        return redirect('liste_assures')
+
+    return render(request, 'confirmer_supression.html', {
+        'objet_nom': assure.user.get_full_name() or assure.user.username,
+        'type_objet': 'assuré',
+        'annuler_url': 'liste_assures',
+        'confirmer_url': 'supprimer_assure_admin',
+        'objet_id': assure.id,
     })
     
     
@@ -2490,6 +2543,62 @@ def gestion_localisation(request):
         'communes': Commune.objects.select_related('region').order_by('nom'),
         'villes': Ville.objects.select_related('commune').order_by('nom'),
     })
+
+
+# Fonction permettant à l'administrateur di'mporter en masse des régions/communes/ville
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def importer_localisation_admin(request):
+    if request.method == 'POST':
+        form = ImportLocalisationForm(request.POST, request.FILES)
+        if form.is_valid():
+            fichier = request.FILES['fichier']
+            try:
+                df = pd.read_excel(fichier)
+                df.columns = [str(c).strip() for c in df.columns]
+                
+                def get_val(row, possible_keys):
+                    for k in possible_keys:
+                        for col in row.index:
+                            if str(col).strip().lower().replace(' ','_') == str(k).strip().lower().replace(' ', '_'):
+                                val = row[col]
+                                if pd.notna(val):
+                                    return str(val).strip()
+                    return None
+                nb_regions, nb_communes, nb_villes = 0, 0, 0
+                
+                for index, row in df.iterrows():
+                    nom_region = get_val(row, ['REGION'])
+                    nom_commune = get_val(row, ['COMMUNE'])
+                    nom_ville = get_val(row, ['VILLE'])
+                    
+                    if not nom_region or not nom_commune or not nom_ville:
+                        continue
+                    
+                    region, created = Region.objects.get_or_create(nom=nom_region)
+                    if created:
+                        nb_regions += 1
+                    
+                    commune, created = Commune.objects.get_or_create(nom=nom_commune, region=region)
+                    if created:
+                        nb_communes += 1
+                        
+                    ville, created = Ville.objects.get_or_create(nom=nom_ville, commune=commune)
+                    if created:
+                        nb_villes += 1
+                        
+                messages.success(
+                    request,
+                    f"Importation réussie : {nb_regions} région(s), {nb_communes} commune(s), {nb_villes} ville(s) ajoutée(s)."
+                )
+                return redirect('gestion_localisation')
+            
+            except Exception as e:
+                messages.error(request, f"Erreur lors de l'importation : {e}")
+    else:
+        form = ImportLocalisationForm()
+    
+    return render(request, 'importer_localisation.html', {'form':form})
 
 
 # Fonction permettant à l'administrateur de supprimer une région

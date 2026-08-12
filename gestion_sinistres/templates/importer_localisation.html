@@ -1,0 +1,77 @@
+{% extends 'base_admin.html' %}
+
+{% block title %}Importer des zones géographiques{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-3">
+    <!-- En-tête de la page -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1" style="color: #0b2545;">Importation des zones géographiques</h1>
+        </div>
+        <a href="{% url 'gestion_localisation' %}" class="btn" style="border: 1px solid #0b2545; color: #0b2545; background: white;">
+            <i class="bi bi-arrow-left me-1"></i> Retour
+        </a>
+    </div>
+
+    <!-- Messages de notification -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Carte principale du formulaire -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header text-white py-3 px-4" style="background-color: #0b2545;">
+                    <h5 class="mb-0 fs-6"><i class="bi bi-file-earmark-arrow-up me-2"></i> Assistant d'importation Excel</h5>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="text-center mb-4">
+                            <div class="display-5 text-primary mb-2">
+                                <i class="bi bi-file-earmark-excel text-success"></i>
+                            </div>
+                            <h5 class="fw-semibold text-dark">Sélectionnez votre fichier de zones</h5>
+                            <p class="text-muted small">Le fichier doit être au format Excel (<code>.xlsx</code>) avec les colonnes <code>REGION</code>, <code>COMMUNE</code>, <code>VILLE</code>.</p>
+                        </div>
+
+                        <!-- Zone de sélection de fichier stylisée -->
+                        <div class="mb-4 p-4 border border-2 border-dashed rounded-3 bg-light text-center position-relative">
+                            <i class="bi bi-cloud-arrow-up display-6 text-muted d-block mb-2"></i>
+                            <label for="id_fichier" class="form-label fw-bold text-dark cursor-pointer">Glissez votre fichier ici ou cliquez pour parcourir</label>
+
+                            <div class="d-flex justify-content-center mt-2">
+                                <input type="file" name="fichier" class="form-control form-control-lg w-75 shadow-sm" id="id_fichier" accept=".xlsx, .xls" required>
+                            </div>
+                        </div>
+
+                        <!-- Instructions rapides -->
+                        <div class="alert alert-light border small text-muted mb-4">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-lightbulb text-warning me-1"></i> Conseils avant d'importer :</h6>
+                            <ul class="mb-0 ps-3">
+                                <li>Une ligne = une ville. La région et la commune associées sont créées automatiquement si elles n'existent pas encore.</li>
+                                <li>Les régions et communes déjà existantes (même nom) ne sont pas dupliquées.</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg shadow-sm py-3 fw-bold text-uppercase fs-6" style="background-color: #0b2545; border-color: #0b2545;">
+                                <i class="bi bi-check2-circle me-2"></i> Lancer l'importation des zones
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
