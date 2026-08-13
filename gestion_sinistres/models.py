@@ -91,6 +91,8 @@ class Sinistre(models.Model):
     nom_conducteur = models.CharField(max_length=100) 
     immatriculation = models.CharField(max_length=50, blank=True, null=True, verbose_name="Immatriculation")
     contact_declarant = models.CharField(max_length=16, blank=True, null=True, verbose_name="Contact du déclarant")
+    est_declarant_tiers = models.BooleanField(default=False, verbose_name="Déclaration faite par un tiers")
+    nom_declarant = models.CharField(max_length=150, blank=True, null=True, verbose_name="Nom déclarant (Tiers)")
     
     # Identifiants
     numero_sinistre = models.CharField(max_length=20, unique=True, blank=True, null=True)

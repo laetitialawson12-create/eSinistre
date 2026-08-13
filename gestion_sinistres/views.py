@@ -27,6 +27,7 @@ from .forms import (
     RegionForm, VilleForm, CommuneForm, RetraitChequeForm, AgenceForm,
     ModifierProfilAdminForm, StylePasswordChangeForm, AjouterNumeroSinistreForm,
     ModifierSinistreAdminForm, ImportSinistresForm, ImportLocalisationForm,
+    DeclarationTiersForm,
 )
 from .models import (
     Sinistre, PieceJointe, Message, HistoriqueSinistre, EtapeSinistre,
@@ -264,6 +265,95 @@ def declarer_sinistre(request):
         form = SinistreForm(user=request.user, instance=sinistre_instance)
         
     return render(request, 'declaration.html', {'form': form, 'title': 'Déclarer un sinistre'})
+
+
+# Vue permettant à un tiers de faire une déclaration de sinistre
+def _resoudre_compte_et_vehicule(numero_police, immatriculation):
+    """Retourne (user_assure, vehicule) à partir d'un n° de police ou d'une immatriculation."""
+    vehicule = None
+    user_assure = None
+
+    if immatriculation:
+        vehicule = Vehicule.objects.filter(immatriculation__iexact=immatriculation).first()
+        if vehicule:
+            if vehicule.proprietaire:
+                user_assure = vehicule.proprietaire
+            elif vehicule.quittance:
+                user_assure = vehicule.quittance.contrat.user
+
+    if not user_assure and numero_police:
+        assure_profile = Assure.objects.filter(numero_police__iexact=numero_police).first()
+        if assure_profile:
+            user_assure = assure_profile.user
+            if not vehicule:
+                vehicule = Vehicule.objects.filter(proprietaire=user_assure).first()
+                if not vehicule:
+                    v = Vehicule.objects.filter(quittance__contrat=assure_profile).first()
+                    vehicule = v
+
+    return user_assure, vehicule
+
+
+def declarer_sinistre_tiers(request):
+    if request.method == 'POST':
+        form = DeclarationTiersForm(request.POST, request.FILES)
+        if form.is_valid():
+            numero_police = form.cleaned_data.get('numero_police')
+            immatriculation = form.cleaned_data.get('immatriculation_recherche')
+            user_assure, vehicule = _resoudre_compte_et_vehicule(numero_police, immatriculation)
+
+            if not user_assure or not vehicule:
+                messages.error(
+                    request,
+                    "Aucun contrat correspondant à ce n° de police ou cette immatriculation n'a été trouvé."
+                )
+                return render(request, 'declaration_tiers.html', {'form': form})
+
+            try:
+                sinistre = form.save(commit=False)
+                sinistre.assure = user_assure
+                sinistre.vehicule = vehicule
+                sinistre.statut = 'SOUMIS'
+                sinistre.est_declaration_tiers = True
+                sinistre.nom_declarant = form.cleaned_data['nom_declarant']
+                sinistre.save()
+
+                assure_profile = getattr(user_assure, 'assure', None)
+                if assure_profile and sinistre.date_survenance:
+                    quittances_valides = Quittance.objects.filter(
+                        contrat=assure_profile,
+                        date_debut__lte=sinistre.date_survenance,
+                        date_fin__gte=sinistre.date_survenance,
+                    )
+                    sinistre.quittances.set(quittances_valides)
+
+                for f in request.FILES.getlist('fichiers_justificatifs'):
+                    PieceJointe.objects.create(sinistre=sinistre, fichier=f)
+
+                HistoriqueSinistre.objects.create(
+                    sinistre=sinistre,
+                    statut='SOUMIS',
+                    commentaires=f"Déclaration initiale faite par un tiers ({sinistre.nom_declarant}).",
+                    auteur=None,
+                )
+
+                messages.success(
+                    request,
+                    "Votre déclaration a été enregistrée. L'attestation vous sera envoyée au numéro fourni."
+                )
+                return redirect('declarer_sinistre_tiers')
+
+            except ValidationError as e:
+                if hasattr(e, 'error_dict'):
+                    for field, error_list in e.error_dict.items():
+                        for err in error_list:
+                            form.add_error(field if field in form.fields else None, err)
+                else:
+                    form.add_error(None, e)
+    else:
+        form = DeclarationTiersForm()
+
+    return render(request, 'declaration_tiers.html', {'form': form})
 
 
 # Vue permettant à l'assuré de consulter son dossier.

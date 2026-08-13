@@ -1,5 +1,10 @@
 {% extends "base_assure.html" %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+{% endblock %}
+
 {% block content %}
     <div class="container mt-4">
         <h3 class="mb-4">Déclaration de sinistre</h3>
@@ -144,6 +149,18 @@
                 toggleVehiculeAdverse();
                 autreVehiculeCheckBox.addEventListener('change', toggleVehiculeAdverse);
             }
+
+            ['id_region', 'id_commune', 'id_ville'].forEach(function (id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    new Choices(el, {
+                        searchEnabled: true,
+                        itemSelectText: '',
+                        shouldSort: false,
+                        placeholder: "Vous pouvez le saisir",
+                    });
+                }
+            });
         });
     </script>
 {% endblock  %}

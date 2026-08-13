@@ -154,6 +154,60 @@ def clean(self):
     return cleaned_data
 
 
+class DeclarationTiersForm(forms.ModelForm):
+    numero_police = forms.CharField(
+        required=False, label="N° de police",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'N° de police (ou immatriculation ci-dessous)'})
+    )
+    immatriculation_recherche = forms.CharField(
+        required=False, label="Immatriculation du véhicule",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Immatriculation (ou n° police ci-dessus)'})
+    )
+    nom_declarant = forms.CharField(
+        required=True, label="Votre nom",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom complet du déclarant'})
+    )
+    fichiers_justificatifs = MultipleFileField(required=False, label="Pièces justificatives")
+
+    class Meta:
+        model = Sinistre
+        fields = [
+            'nom_conducteur', 'date_survenance', 'heure_approximative', 'contact_declarant',
+            'region', 'commune', 'ville', 'quartier', 'circonstances', 'dommage',
+            'autre_vehicule_implique', 'vehicule_adverse_immatriculation', 'vehicule_adverse_marque',
+            'vehicule_adverse_modele', 'vehicule_adverse_compagnie', 'nombre_blesses', 'nombre_morts',
+            'lettre_derogation',
+        ]
+        widgets = {
+            'nom_conducteur': forms.TextInput(attrs={'class': 'form-control'}),
+            'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'contact_declarant': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Votre numéro (pour recevoir l\'attestation)'}),
+            'region': forms.Select(attrs={'class': 'form-control'}),
+            'commune': forms.Select(attrs={'class': 'form-control'}),
+            'ville': forms.Select(attrs={'class': 'form-control'}),
+            'quartier': forms.TextInput(attrs={'class': 'form-control'}),
+            'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'dommage': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'autre_vehicule_implique': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'vehicule_adverse_immatriculation': forms.TextInput(attrs={'class': 'form-control'}),
+            'vehicule_adverse_marque': forms.TextInput(attrs={'class': 'form-control'}),
+            'vehicule_adverse_modele': forms.TextInput(attrs={'class': 'form-control'}),
+            'vehicule_adverse_compagnie': forms.TextInput(attrs={'class': 'form-control'}),
+            'nombre_blesses': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'nombre_morts': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'lettre_derogation': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get('numero_police') and not cleaned.get('immatriculation_recherche'):
+            raise forms.ValidationError("Renseignez le n° de police ou l'immatriculation du véhicule.")
+        if not cleaned.get('contact_declarant'):
+            self.add_error('contact_declarant', "Votre numéro de contact est obligatoire.")
+        return cleaned
+    
+    
 class AjouterNumeroSinistreForm(forms.ModelForm):
     class Meta:
         model = Sinistre

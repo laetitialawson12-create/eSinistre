@@ -148,4 +148,9 @@ urlpatterns = [
     path('mot-de-passe-oublie/', views.mot_de_passe_oublie_etape1, name='mot_de_passe_oublie_etape1'),
     path('mot-de-passe-oublie/nouveau/', views.mot_de_passe_oublie_etape2, name='mot_de_passe_oublie_etape2'),
 
+    
+    # ==========================================
+    # 6. ESPACE TIERS
+    # ==========================================
+    path('declaration-tiers/', views.declarer_sinistre_tiers, name='declarer_sinistre_tiers'),
 ]

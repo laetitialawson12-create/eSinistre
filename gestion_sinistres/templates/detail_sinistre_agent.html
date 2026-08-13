@@ -292,7 +292,7 @@
                 <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> 
                 <span class="badge bg-light text-dark border">{{ h.get_statut_display|default:h.statut }}</span>
                 <span class="text-dark ms-1">{{ h.commentaires }}</span> 
-                <span class="text-muted small">({{ h.auteur.get_full_name|default:h.auteur.username }})</span>
+                <span class="text-muted small">{% if h.auteur %} ({{ h.auteur.get_full_name|default:h.auteur.username }}){% endif %}</span>
             </p>
         {% empty %}
             <p class="text-muted mb-0">Aucun historique pour ce dossier.</p>

@@ -49,6 +49,48 @@
             font-size: 0.85rem;
             color: #003366;
         }
+        .action-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .action-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            border: 1px solid transparent;
+        }
+        .action-link.primary {
+            background: #eaf2f8;
+            color: var(--fidelia-blue);
+            border-color: #cfe2f3;
+        }
+        .action-link.primary:hover {
+            background: #d9e9f6;
+        }
+        .action-link.secondary {
+            color: #6c757d;
+            font-weight: 400;
+        }
+        .action-link.secondary:hover {
+            color: var(--fidelia-blue);
+        }
+        .action-link.tiers {
+            background: #fff4e5;
+            color: #b45f06;
+            border-color: #ffe0b2;
+        }
+        .action-link.tiers:hover {
+            background: #ffe9c7;
+        }
     </style>
 </head>
 
@@ -89,12 +131,17 @@
                 <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color: var(--fidelia-blue);">Se connecter</button>
             </form>
 
-            <p class="text-center mt-3 small">
-                <a href="{% url 'activation_etape1' %}">🔑 Première connexion ? Activez votre compte assuré</a>
-            </p>
-            <p class="text-center small">
-                <a href="{% url 'mot_de_passe_oublie_etape1' %}">Mot de passe oublié ?</a>
-            </p>
+            <div class="action-links">
+                <a href="{% url 'activation_etape1' %}" class="action-link primary">
+                    Première connexion ? Activez votre compte assuré
+                </a>
+                <a href="{% url 'declarer_sinistre_tiers' %}" class="action-link tiers">
+                    Vous n'avez pas de compte ? Déclarer un sinistre
+                </a>
+                <a href="{% url 'mot_de_passe_oublie_etape1' %}" class="action-link secondary">
+                    Mot de passe oublié ?
+                </a>
+            </div>
         </div>
 
         <div class="login-footer">
