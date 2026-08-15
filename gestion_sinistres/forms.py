@@ -157,11 +157,11 @@ def clean(self):
 class DeclarationTiersForm(forms.ModelForm):
     numero_police = forms.CharField(
         required=False, label="N° de police",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'N° de police (ou immatriculation ci-dessous)'})
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'N° de police'})
     )
     immatriculation_recherche = forms.CharField(
         required=False, label="Immatriculation du véhicule",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Immatriculation (ou n° police ci-dessus)'})
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Immatriculation'})
     )
     nom_declarant = forms.CharField(
         required=True, label="Votre nom",
@@ -173,16 +173,17 @@ class DeclarationTiersForm(forms.ModelForm):
         model = Sinistre
         fields = [
             'nom_conducteur', 'date_survenance', 'heure_approximative', 'contact_declarant',
-            'region', 'commune', 'ville', 'quartier', 'circonstances', 'dommage',
+            'email_declarant', 'region', 'commune', 'ville', 'quartier', 'circonstances', 'dommage',
             'autre_vehicule_implique', 'vehicule_adverse_immatriculation', 'vehicule_adverse_marque',
             'vehicule_adverse_modele', 'vehicule_adverse_compagnie', 'nombre_blesses', 'nombre_morts',
             'lettre_derogation',
         ]
         widgets = {
-            'nom_conducteur': forms.TextInput(attrs={'class': 'form-control'}),
+            'nom_conducteur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Le nom du conducteur du véhicule'}),
             'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'contact_declarant': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Votre numéro (pour recevoir l\'attestation)'}),
+            'email_declarant': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Votre adresse mail'}),
             'region': forms.Select(attrs={'class': 'form-control'}),
             'commune': forms.Select(attrs={'class': 'form-control'}),
             'ville': forms.Select(attrs={'class': 'form-control'}),

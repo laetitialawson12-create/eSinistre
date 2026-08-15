@@ -92,6 +92,7 @@
                 <div class="card-body">
                     <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
                     <p><strong>Contact :</strong> {{ sinistre.contact_declarant }}</p>
+                    {% if sinistre.est_declaration_tiers %}<p><strong>Adresse mail :</strong> {{ sinistre.email_declarant|default:"-" }}</p>{% endif %}
                     <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
                     <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
                     <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}

@@ -1,0 +1,33 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "Fidelia_eSinistre",
+            "database": "Fidelia_eSinistre",
+            "username": "root"
+        },
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "eSinistre",
+            "database": "Fidelia_eSinistre",
+            "username": "root",
+            "password": ""
+        }
+    ]
+}
