@@ -94,7 +94,7 @@ class Sinistre(models.Model):
     est_declarant_tiers = models.BooleanField(default=False, verbose_name="Déclaration faite par un tiers")
     nom_declarant = models.CharField(max_length=150, blank=True, null=True, verbose_name="Nom déclarant (Tiers)")
     email_declarant = models.EmailField(max_length=254, blank=True, null=True, verbose_name="Email du déclarant")
-    
+
     # Identifiants
     numero_sinistre = models.CharField(max_length=20, unique=True, blank=True, null=True)
     statut = models.CharField(max_length=30, choices=STATUS_CHOICES, default='SOUMIS')
@@ -108,6 +108,7 @@ class Sinistre(models.Model):
     date_attestation = models.DateTimeField(null=True, blank=True)
     date_cloture = models.DateTimeField(null=True, blank=True)
     indemnisation_validee = models.BooleanField(default=False)
+    chef_validateur = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='dossiers_valides')
 
     # Informations de base 
     date_survenance = models.DateTimeField()
@@ -297,7 +298,8 @@ class ChefDepartement(models.Model):
     doit_changer_mot_de_passe = models.BooleanField(default=True)
     tentatives_echouees = models.PositiveSmallIntegerField(default=0)
     bloque_jusqu_a = models.DateTimeField(null=True, blank=True)
-
+    signature = models.ImageField(upload_to='signatures/chefs/', blank=True, null=True, verbose_name="Signature")
+    
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username} - Chef"
 

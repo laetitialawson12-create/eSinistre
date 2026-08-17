@@ -1,4 +1,5 @@
 {% extends 'base_admin.html' %}
+{% load static %}
 
 {% block title %}Importer des zones géographiques{% endblock %}
 
@@ -42,6 +43,12 @@
                             </div>
                             <h5 class="fw-semibold text-dark">Sélectionnez votre fichier de zones</h5>
                             <p class="text-muted small">Le fichier doit être au format Excel (<code>.xlsx</code>) avec les colonnes <code>REGION</code>, <code>COMMUNE</code>, <code>VILLE</code>.</p>
+                        </div>
+
+                        <div class="text-center mb-3"> 
+                            <a href="{% static 'modeles/modele_import_localisation.xlsx' %}" class="btn btn-outline-success btn-sm" download> 
+                                <i class="bi bi-download me-1"></i> Télécharger la maquette Excel d'importation des zones géographiques
+                            </a> 
                         </div>
 
                         <!-- Zone de sélection de fichier stylisée -->

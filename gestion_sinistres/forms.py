@@ -156,12 +156,12 @@ def clean(self):
 
 class DeclarationTiersForm(forms.ModelForm):
     numero_police = forms.CharField(
-        required=False, label="N° de police",
+        required=True, label="N° de police",
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'N° de police'})
     )
     immatriculation_recherche = forms.CharField(
-        required=False, label="Immatriculation du véhicule",
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Immatriculation'})
+        required=True, label="Immatriculation du véhicule",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Respectez le format! Ex: TG-1789-AC'})
     )
     nom_declarant = forms.CharField(
         required=True, label="Votre nom",
@@ -182,7 +182,7 @@ class DeclarationTiersForm(forms.ModelForm):
             'nom_conducteur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Le nom du conducteur du véhicule'}),
             'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'contact_declarant': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Votre numéro (pour recevoir l\'attestation)'}),
+            'contact_declarant': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Votre numéro '}),
             'email_declarant': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Votre adresse mail'}),
             'region': forms.Select(attrs={'class': 'form-control'}),
             'commune': forms.Select(attrs={'class': 'form-control'}),
@@ -202,8 +202,6 @@ class DeclarationTiersForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        if not cleaned.get('numero_police') and not cleaned.get('immatriculation_recherche'):
-            raise forms.ValidationError("Renseignez le n° de police ou l'immatriculation du véhicule.")
         if not cleaned.get('contact_declarant'):
             self.add_error('contact_declarant', "Votre numéro de contact est obligatoire.")
         return cleaned
@@ -268,7 +266,8 @@ class ChefCreationForm(forms.Form):
     email = forms.EmailField(required=False, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
     telephone = forms.CharField(max_length=20, required=False, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
     agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Point de vente", widget=forms.Select(attrs={'class': 'form-select'}))
-
+    signature = forms.ImageField(required=False, label="Signature", widget=forms.ClearableFileInput(attrs={'class':'form-control'}))
+    
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
         # Vérifie si le matricule est déjà attribué à un autre chef

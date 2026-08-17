@@ -6,6 +6,10 @@
 <div class="card border-0 shadow-sm p-3 mb-4">
     <form method="get" class="row g-2 align-items-end">
         <div class="col-12">
+            <div class="col-md-5">
+            <label class="form-label small text-secondary text-uppercase">Rechercher (n° police)</label>
+            <input type="text" name="q" class="form-control" value="{{ recherche }}" placeholder="Ex: CTR-2026-603">
+        </div>
             <label class="form-label small text-secondary text-uppercase">Période (date de l'accident)</label>
             <div class="d-flex flex-wrap gap-2 mb-2">
                 <button type="submit" name="periode_option" value="auj" class="btn btn-sm btn-outline-secondary {% if periode_option == 'auj' %}active{% endif %}">Aujourd'hui</button>
@@ -39,21 +43,17 @@
         <table class="table mb-0">
             <thead>
                 <tr>
-                    <th>N° Sinistre</th>
                     <th>Date</th>
                     <th>Assuré</th>
-                    <th>Nature</th>
                     <th>Statut</th>
-                    <th></th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for s in sinistres %}
                 <tr>
-                    <td><strong><center>{{ s.numero_sinistre|default:"—" }}</center></strong></td>
                     <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
                     <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
-                    <td><strong><center></strong>{{ s.get_nature_display|default:"—" }}</center></td>
                     <td>
                         <span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
                     </td>

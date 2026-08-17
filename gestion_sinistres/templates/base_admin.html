@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +8,29 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
-        :root { --fidelia-blue: #003366; }
-        body { background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
+        :root { 
+            --fidelia-blue: #003366; 
+            --body-bg: #f4f7f9;
+            --header-bg: #ffffff;
+            --header-border: #e0e0e0;
+        }
+
+        [data-bs-theme="dark"]{
+            --fidelia-blue: #1a4d80;
+            --body-bg: #121212;
+            --header-bg: #1e1e1e;
+            --header-border: #333333;
+        }
+
+        [data-bs-theme="dark"] .text-dark{
+            color: #e9ecef !important;
+        }
+
+        [data-bs-theme="dark"] .text-muted{
+            color: #adb5bd !important;
+        }
+
+        body { background-color: var(--body-bg); font-family: 'Segoe UI', sans-serif; }
         
         .sidebar { 
             width: 250px; 
@@ -35,7 +56,8 @@
         .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.15); color: white; }
         
         .main-content { margin-left: 250px; transition: margin-left 0.3s ease; }
-        .header-user { background: white; padding: 20px 30px; border-bottom: 1px solid #e0e0e0; position: sticky; top: 0; z-index: 1020;}
+
+        .header-user { background: var(--header-bg); padding: 20px 30px; border-bottom: 1px solid var(--header-border); position: sticky; top: 0; z-index: 1020;}
         
         .user-badge { 
             width: 40px; 
@@ -79,13 +101,15 @@
             <a href="{% url 'creer_agent' %}" class="{% if request.resolver_match.url_name == 'creer_agent' %}active{% endif %}"><i class="bi bi-person-plus me-2"></i> Ajouter un rédacteur</a>
             <a href="{% url 'creer_chef' %}" class="{% if request.resolver_match.url_name == 'creer_chef' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Ajouter un chef</a>
             <a href="{% url 'supervision_sinistres' %}" class="{% if request.resolver_match.url_name == 'supervision_sinistres' %}active{% endif %}"><i class="bi bi-folder2-open me-2"></i> Sinistres</a>
+            <a href="{% url 'importer_sinistres' %}" class="{% if request.resolver_match.url_name == 'importer_sinistres' %}active{% endif %}"><i class="bi bi-file-earmark-arrow-up me-2"></i> Importer Sinistres</a>
             <a href="{% url 'liste_agents' %}" class="{% if request.resolver_match.url_name == 'liste_agents' or request.resolver_match.url_name == 'modifier_agent_admin' %}active{% endif %}"><i class="bi bi-people me-2"></i> Rédacteurs</a>
             <a href="{% url 'liste_chefs' %}" class="{% if request.resolver_match.url_name == 'liste_chefs' or request.resolver_match.url_name == 'modifier_chef_admin' %}active{% endif %}"><i class="bi bi-person-badge me-2"></i> Chefs</a>
             <a href="{% url 'liste_assures' %}" class="{% if request.resolver_match.url_name == 'liste_assures' %}active{% endif %}"><i class="bi bi-person-lines-fill me-2"></i> Assurés</a>
             <a href="{% url 'liste_contrats' %}" class="{% if request.resolver_match.url_name == 'liste_contrats' %}active{% endif %}"><i class="bi bi-file-text me-2"></i> Voir les contrats</a>
+            <a href="{% url 'importer_donnees' %}" class="{% if request.resolver_match.url_name == 'importer_donnees' %}active{% endif %}"><i class="bi bi-file-earmark-arrow-up me-2"></i> Importer contrats</a>
             <a href="{% url 'gestion_agences' %}" class="{% if request.resolver_match.url_name == 'gestion_agences' %}active{% endif %}"><i class="bi bi-building me-2"></i> Points de vente</a>
             <a href="{% url 'gestion_localisation' %}" class="{% if request.resolver_match.url_name == 'gestion_localisation' %}active{% endif %}"><i class="bi bi-geo-alt me-2"></i> Régions / Villes / Communes</a>
-            <a href="{% url 'importer_donnees' %}" class="{% if request.resolver_match.url_name == 'importer_donnees' %}active{% endif %}"><i class="bi bi-file-earmark-arrow-up me-2"></i> Importer contrats</a>
+            <a href="{% url 'importer_localisation' %}" class="{% if request.resolver_match.url_name == 'importer_localisation' %}active{% endif %}"><i class="bi bi-file-earmark-arrow-up me-2"></i> Importer les zones géographiques</a>
             <a href="{% url 'profil_admin' %}" class="{% if request.resolver_match.url_name == 'profil_admin' or request.resolver_match.url_name == 'modifier_profil_admin' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Mon profil</a>
         </div>
         <div class="py-3 mt-auto">
@@ -103,6 +127,9 @@
                 <h5 class="mb-0 text-dark"> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
             </div>
             <div class="d-flex align-items-center">
+                <button class="btn btn-sm btn-outline-secondary me-3" id="themeToggle">
+                    <i class="bi bi-moon-stars"></i>
+                </button>
                 <span class="text-muted me-3 d-none d-md-inline">Espace Administrateur</span>
                 <a href="{% url 'profil_admin' %}" class="user-badge">{{ request.user.first_name|first|default:"A" }}{{ request.user.last_name|first|default:"D" }}</a>
             </div>
@@ -126,6 +153,28 @@
         const sidebarClose = document.getElementById('sidebarClose');
         if (sidebarClose && sidebar) {
             sidebarClose.addEventListener('click', () => sidebar.classList.remove('active'));
+        }
+
+        // Changement de thème
+        const html = document.documentElement;
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle ? themeToggle.querySelector('i') : null;
+
+        function applyTheme(theme){
+            html.setAttribute('data-bs-theme', theme);
+            if (themeIcon){
+                themeIcon.className = theme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+            }
+        }
+
+        applyTheme(localStorage.getItem('theme') || 'light');
+
+        if(themeToggle){
+            themeToggle.addEventListener('click', () => {
+                const next = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('theme', next);
+                applyTheme(next);
+            });
         }
     </script>
 </body>

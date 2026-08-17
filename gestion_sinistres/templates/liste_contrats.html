@@ -110,30 +110,27 @@
                             <tr>
                                 <th style="width:30px;"><input type="checkbox" id="select-all-contrats"></th>
                                 <th>N° Police</th>
+                                <th>N° Quittance</th>
+                                <th>Date effet</th>
+                                <th>Date échéance</th>
+                                <th>Véhicule</th>
+                                <th>Immatriculation</th>
+                                <th>Prime Nette</th>
                                 <th>NOM</th>
                                 <th>Prénom(s)</th>
                                 <th>Email</th>
                                 <th>Téléphone</th>
-                                <th>Véhicule</th>
-                                <th>Immatriculation</th>
-                                <th>N° Quittance</th>
-                                <th>Date effet</th>
-                                <th>Date échéance</th>
-                                <th>Prime Nette</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for quittance in quittances %}
-                                <tr>
+                                <tr class="{% if quittance.date_fin < today %}table-danger{% endif %}">
                                     <td><input type="checkbox" name="selection" value="{{ quittance.contrat.id }}" class="check-contrat"></td>
                                     <td><strong>{{ quittance.contrat.numero_police }}</strong></td>
-                                    <td>{{ quittance.contrat.user.last_name }}</td>
-                                    <td>{{ quittance.contrat.user.first_name }}</td>
-                                    <td><small>{{ quittance.contrat.user.email }}</small></td>
-                                    <td>{{ quittance.contrat.telephone|default:"N/A" }}</td>
-                                    
-                                    <!-- Colonne Véhicule (Corrigée) -->
+                                    <td><strong>{{ quittance.numero_quittance|default:"N/A" }}</strong></td>
+                                    <td class="text-center">{{ quittance.date_debut|date:"d/m/Y" }}</td>
+                                    <td class="text-center">{{ quittance.date_fin|date:"d/m/Y" }}</td>
                                     <td>
                                         {% for v in quittance.vehicules.all %}
                                             <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">
@@ -143,8 +140,7 @@
                                             <span class="text-muted">N/A</span>
                                         {% endfor %}
                                     </td>
-                                    
-                                    <!-- Colonne Immatriculation (Corrigée) -->
+                                
                                     <td>
                                         {% for v in quittance.vehicules.all %}
                                             <span class="badge bg-light text-dark border d-block mb-1 text-start py-1">
@@ -154,11 +150,12 @@
                                             <span class="text-danger">N/A</span>
                                         {% endfor %}
                                     </td>
-
-                                    <td><strong>{{ quittance.numero_quittance|default:"N/A" }}</strong></td>
-                                    <td class="text-center">{{ quittance.date_debut|date:"d/m/Y" }}</td>
-                                    <td class="text-center">{{ quittance.date_fin|date:"d/m/Y" }}</td>
                                     <td class="text-end"><strong>{{ quittance.prime|floatformat:0 }} FCFA</strong></td>
+                                    <td>{{ quittance.contrat.user.last_name }}</td>
+                                    <td>{{ quittance.contrat.user.first_name }}</td>
+                                    <td><small>{{ quittance.contrat.user.email }}</small></td>
+                                    <td>{{ quittance.contrat.telephone|default:"N/A" }}</td>
+                                    
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
                                             <a href="{% url 'modifier_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-warning text-warning" title="Modifier">

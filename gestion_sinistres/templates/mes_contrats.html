@@ -13,28 +13,25 @@
                     <thead class="table-dark" style="background-color: #0b2545;">
                         <tr>
                             <th>N° Police</th>
-                            <th>NOM</th>
-                            <th>Prénom(s)</th>
-                            <th>Email</th>
-                            <th>Téléphone</th>
-                            <th>Véhicule</th>
-                            <th>Immatriculation</th>
                             <th>N° Quittance</th>
                             <th>Date effet</th>
                             <th>Date échéance</th>
+                            <th>Véhicule</th>
+                            <th>Immatriculation</th>
                             <th>Prime Nette</th>
+                            <th>NOM</th>
+                            <th>Prénom(s)</th>
+                            <th>Email</th>
+                            <th>Téléphone</th> 
                         </tr>
                     </thead>
                     <tbody>
                         {% for q in quittances %}
                             <tr>
                                 <td><strong>{{ q.contrat.numero_police }}</strong></td>
-                                <td>{{ q.contrat.user.last_name }}</td>
-                                <td>{{ q.contrat.user.first_name }}</td>
-                                <td><small>{{ q.contrat.user.email }}</small></td>
-                                <td>{{ q.contrat.telephone|default:"N/A" }}</td>
-
-                                <!-- Colonne Véhicule -->
+                                <td><strong>{{ q.numero_quittance|default:"N/A" }}</strong></td>
+                                <td class="text-center">{{ q.date_debut|date:"d/m/Y" }}</td>
+                                <td class="text-center">{{ q.date_fin|date:"d/m/Y" }}</td>
                                 <td>
                                     {% for v in q.vehicules.all %}
                                         <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">
@@ -45,7 +42,6 @@
                                     {% endfor %}
                                 </td>
 
-                                <!-- Colonne Immatriculation -->
                                 <td>
                                     {% for v in q.vehicules.all %}
                                         <span class="badge bg-light text-dark border d-block mb-1 text-start py-1">
@@ -55,11 +51,11 @@
                                         <span class="text-danger">N/A</span>
                                     {% endfor %}
                                 </td>
-
-                                <td><strong>{{ q.numero_quittance|default:"N/A" }}</strong></td>
-                                <td class="text-center">{{ q.date_debut|date:"d/m/Y" }}</td>
-                                <td class="text-center">{{ q.date_fin|date:"d/m/Y" }}</td>
                                 <td class="text-end text-success fw-bold">{{ q.prime|floatformat:0 }} FCFA</td>
+                                <td>{{ q.contrat.user.last_name }}</td>
+                                <td>{{ q.contrat.user.first_name }}</td>
+                                <td><small>{{ q.contrat.user.email }}</small></td>
+                                <td>{{ q.contrat.telephone|default:"N/A" }}</td>
                             </tr>
                         {% empty %}
                             <tr>

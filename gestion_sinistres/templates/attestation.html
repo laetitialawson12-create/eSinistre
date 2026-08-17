@@ -211,6 +211,9 @@
             <div class="text-end mb-2 fw-bold" style="font-size: 12px;">
                 Fait à LOME, le {{ sinistre.date_attestation|date:"d/m/Y" }}
                 <div class="mt-2 text-muted" style="font-size: 11px; text-decoration: underline;">Pour la Compagnie</div>
+                {% if sinistre.chef_validateur.chef.signature %}
+                <img src="{{ sinistre.chef_validateur.chef.signature.url }}" style="height: 50px; margin-top: 5px;" alt="Signature">
+                {% endif %}
             </div>
 
             <!-- Bouton Téléchargement PDF -->

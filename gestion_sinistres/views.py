@@ -602,7 +602,7 @@ def dossiers_a_valider_agent(request):
         sinistres = sinistres.filter(nature=nature)
     if recherche:
         sinistres = sinistres.filter(
-            Q(numero_sinistre__icontains=recherche) | Q(assure__assure__numero_police__icontains=recherche)
+            Q(assure__assure__numero_police__icontains=recherche)
         )
     if date_debut:
         debut_dt = datetime.combine(date.fromisoformat(date_debut), time.min)
@@ -1522,6 +1522,7 @@ def valider_declaration(request, sinistre_id):
     sinistre.statut = 'EN_COURS'
     sinistre.attestation_generee = True
     sinistre.date_attestation = timezone.now()
+    sinistre.chef_validateur=request.user
     sinistre.save()
 
     HistoriqueSinistre.objects.create(
@@ -2263,7 +2264,7 @@ def supprimer_agent(request, agent_id):
 @user_passes_test(lambda u: u.is_staff)
 def creer_chef(request):
     if request.method == 'POST':
-        form = ChefCreationForm(request.POST)
+        form = ChefCreationForm(request.POST, request.FILES)
         if form.is_valid():
             data = form.cleaned_data
             username = f"{data['prenom']}.{data['nom']}".lower().replace(' ', '')
@@ -2284,6 +2285,7 @@ def creer_chef(request):
                 agence=data['agence'],
                 matricule=matricule,
                 telephone=data['telephone'],
+                signature=data['signature'],
                 doit_changer_mot_de_passe=True,
             )
             messages.success(request, f"Chef créé. Identifiant : {username} — Matricule : {matricule} - Mot de passe temporaire : 0000")
@@ -2789,6 +2791,7 @@ def liste_contrats_admin(request):
         'periode_option': periode_option,
         'date_effet_debut': date_effet_debut,
         'date_effet_fin': date_effet_fin,
+        'today': today,
     })
     
   
