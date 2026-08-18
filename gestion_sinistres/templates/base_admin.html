@@ -16,7 +16,6 @@
         }
 
         [data-bs-theme="dark"]{
-            --fidelia-blue: #1a4d80;
             --body-bg: #121212;
             --header-bg: #1e1e1e;
             --header-border: #333333;
@@ -30,6 +29,23 @@
             color: #adb5bd !important;
         }
 
+        [data-bs-theme="dark"] .bg-light.text-dark,
+
+        [data-bs-theme="dark"] .gb-light .text-dark{
+            color: #212529 !important;
+        }
+
+        [data-bs-theme="dark"] .bg-light code{
+            color: #212529 !important;
+        }
+
+        [data-bs-theme="dark"] .bg-white{
+            background-color: #1e1e1e !important;
+        }
+
+        [data-bs-theme="dark"] .bg-light{
+            background-color: #1e1e1e !important;
+        }
         body { background-color: var(--body-bg); font-family: 'Segoe UI', sans-serif; }
         
         .sidebar { 
@@ -127,11 +143,16 @@
                 <h5 class="mb-0 text-dark"> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
             </div>
             <div class="d-flex align-items-center">
-                <button class="btn btn-sm btn-outline-secondary me-3" id="themeToggle">
+                <button class="btn btn-sm btn-outline-secondary me-3" id="themeToggle" title="Changer le thème">
                     <i class="bi bi-moon-stars"></i>
                 </button>
-                <span class="text-muted me-3 d-none d-md-inline">Espace Administrateur</span>
-                <a href="{% url 'profil_admin' %}" class="user-badge">{{ request.user.first_name|first|default:"A" }}{{ request.user.last_name|first|default:"D" }}</a>
+                <div class="vr me-3" style="height: 32px;"></div>
+                    <a href="{% url 'profil_admin' %}" class="user-badge text-decoration-none me-2">
+                        {{ request.user.first_name|first|default:"A" }}{{ request.user.last_name|first|default:"D" }}
+                    </a>
+                    <div class="d-flex flex-column lh-sm">
+                        <span class="text-muted" style="font-size: 0.8rem;">Administrateur</span>
+                    </div>
             </div>
         </div>
         <div class="p-4">
