@@ -3476,6 +3476,12 @@ def marquer_cheque_retire(request, paiement_id):
             paiement.piece_identite_retirant = form.cleaned_data['piece_identite_retirant']
             paiement.save()
 
+            if paiement.piece_identite_retirant:
+                PieceJointe.objects.create(
+                    sinistre=paiement.sinistre,
+                    fichier=paiement.piece_identite_retirant,
+                )
+
             HistoriqueSinistre.objects.create(
                 sinistre = paiement.sinistre,
                 statut='Chèque retiré',

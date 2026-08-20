@@ -147,7 +147,7 @@ def clean(self):
         
         if not quittance_valide_existe:
             raise forms.ValidationError(
-                "Aucun contrat actif n'a été trouvé pour cette date de survenance. "
+                "Aucun contrat actif n'a été trouvé pour cette date de survenance."
                 "Veuillez vérifier la date, ou contacter votre point mde vente si vous pensez qu'il s'agit d'une erreur."
             )
             
@@ -298,57 +298,6 @@ class ModifierChefAdminForm(forms.ModelForm):
             'telephone': forms.TextInput(attrs={'class': 'form-control'}),
             'agence': forms.Select(attrs={'class': 'form-control'}),
         }
-
-
-# class ModifierSinistreAdminForm(forms.ModelForm):
-#     class Meta:
-#         model = Sinistre
-#         fields = [
-#             'numero_sinistre',
-#             'statut',
-#             'nature',
-#             'agent_traitant',
-#             'nom_conducteur',
-#             'contact_declarant',
-#             'date_survenance',
-#             'heure_approximative',
-#             'region',
-#             'commune',
-#             'ville',
-#             'quartier',
-#             'circonstances',
-#             'dommage',
-#             'montant_estime',
-#             'nombre_blesses',
-#             'nombre_morts',
-#             'taux_responsabilite',
-#         ]
-#         widgets = {
-#             'numero_sinistre': forms.TextInput(attrs={'class': 'form-control'}),
-#             'statut': forms.Select(attrs={'class': 'form-control'}),
-#             'nature': forms.Select(attrs={'class': 'form-control'}),
-#             'agent_traitant': forms.TextInput(attrs={'class': 'form-control'}),
-#             'nom_conducteur': forms.TextInput(attrs={'class': 'form-control'}),
-#             'contact_declarant': forms.TextInput(attrs={'class': 'form-control'}),
-#             'date_survenance': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
-#             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-#             'region': forms.Select(attrs={'class': 'form-control'}),
-#             'commune': forms.Select(attrs={'class': 'form-control'}),
-#             'ville': forms.Select(attrs={'class': 'form-control'}),
-#             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
-#             'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-#             'dommage': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-#             'montant_estime': forms.NumberInput(attrs={'class': 'form-control'}),
-#             'nombre_blesses': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
-#             'nombre_morts': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
-#             'taux_responsabilite': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-#         }
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         # Pré-remplit correctement le champ datetime-local à partir de la valeur existante
-#         if self.instance and self.instance.date_survenance:
-#             self.initial['date_survenance'] = self.instance.date_survenance.strftime('%Y-%m-%dT%H:%M')
             
     
 class ModifierSinistreAdminForm(forms.ModelForm):

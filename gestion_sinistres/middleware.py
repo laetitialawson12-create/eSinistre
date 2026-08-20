@@ -19,7 +19,7 @@ class InactiviteMiddleware:
             derniere_activite = request.session.get('derniere_activite')
             maintenant = timezone.now().timestamp()
 
-            # Si une drnière activité existe et que le délai d'inactivité est dépassé
+            # Si une dernière activité existe et que le délai d'inactivité est dépassé
             if derniere_activite and (maintenant - derniere_activite) > self.DELAI_INACTIVITE.total_seconds():
                 logout(request)
                 return redirect('login')

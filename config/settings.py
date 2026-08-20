@@ -47,11 +47,11 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'gestion_sinistres.middleware.InactiviteMiddleware',
-    'gestion_sinistres.middleware.PolitiqueConfidentialiteMiddleware',
+    'gestion_sinistres.middleware.InactiviteMiddleware', # Deconnexion après inactivité
+    'gestion_sinistres.middleware.PolitiqueConfidentialiteMiddleware', # Forcer l'acceptation de la politique de confidentialité
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'gestion_sinistres.middleware.MotDePasseTemporaireMiddleware',
+    'gestion_sinistres.middleware.MotDePasseTemporaireMiddleware', # Forcer le changement du mot de passe à la première connexion
 ]
 
 
@@ -86,6 +86,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 #}
 
 
+# CONFIGURATION POUR LA BASE DE DONNEES MYSQL
 DATABASES = {
     'default' :{
         'ENGINE': 'django.db.backends.mysql',
@@ -101,6 +102,14 @@ DATABASES = {
     }
 }
 
+
+# CONFIGURATION POUR LA BASE DE DONNEES SQLITE3
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'dajngo.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
