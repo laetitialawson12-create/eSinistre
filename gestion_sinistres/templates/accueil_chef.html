@@ -67,7 +67,11 @@
             <tbody>
                 {% for s in derniers_sinistres %}
                 <tr>
-                    <td><strong>{{ s.numero_sinistre }}</strong></td>
+                    {% if s.numero_sinistre %}
+                        <td><strong>{{ s.numero_sinistre }}</strong></td>
+                    {% else %}
+                        <td><strong><center>-</center></strong></td>
+                    {% endif %}
                     <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
                     <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
                     <td>{{ s.get_nature_display }}</td>

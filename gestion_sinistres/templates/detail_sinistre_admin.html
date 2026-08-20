@@ -322,6 +322,7 @@
 <div class="card shadow-sm border-0 mb-4" id="messagerie">
     <div class="card-header bg-white fw-bold">💬 Messagerie</div>
     <div class="card-body">
+        <div id="messagerie-scroll" style="height: 350px; overflow-y: auto;" class="p-2 mb-2 bg-light rounded">
         {% for m in discussion %}
             <div class="mb-2 {% if m.auteur == request.user %}text-end{% endif %}">
                 <div class="d-inline-block p-2 px-3 rounded shadow-sm
@@ -337,10 +338,21 @@
         <form method="post" class="mt-3">
             {% csrf_token %}
             <textarea name="contenu" class="form-control mb-2" rows="2" placeholder="Écrire un message..." required></textarea>
+            <div class="p-3 text-end">
             <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">
                 <i class="bi bi-send me-1"></i> Envoyer
             </button>
+            </div>
+        </div>
         </form>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var boiteMessages = document.getElementById('messagerie-scroll');
+        if (boiteMessages) {
+            boiteMessages.scrollTop = boiteMessages.scrollHeight;
+        }
+    });
+</script>
 {% endblock %}

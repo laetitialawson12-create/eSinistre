@@ -13,9 +13,17 @@
                     </div>
                 {% endfor %}
             {% endif %}
-
+            <div>
+                <a href="{% url 'detail_sinistre_agent' sinistre.id %}" class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
+                style="border: 1px solid #003366; color: #003366; font-weight: 500; border-radius: 6px; padding: 6px 14px; transition: all 0.15s;"
+                onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
+                onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            </div>
             <div class="card shadow border-0 rounded-3">
-                <div class="card-header bg-dark text-white py-3">
+                
+                <div class="card-header text-white py-3" style="background-color: #003366;">
                     <h4 class="card-title mb-0">
                         <i class="bi bi-bank me-2"></i>Émission d'un Chèque d'Indemnisation
                     </h4>

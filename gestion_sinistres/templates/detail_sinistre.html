@@ -10,7 +10,7 @@
     </a>
 <div class="d-flex align-items-center justify-content-between mb-4">
     <!-- Titre principal -->
-    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' %}
+    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' and sinistre.statut != 'ATTENTE_COMPLEMENTS' %}
         <h3 class="mb-4">📋 Suivi du sinistre : {{ sinistre.numero_sinistre }}</h3>
     {% else %}
         <h3 class="mb-4">📋 Suivi du sinistre : - </h3>
@@ -226,7 +226,7 @@
             <!-- Messagerie -->
             <div class="card shadow-sm border-0" id="messagerie">
                 <div class="card-header bg-white fw-bold">💬 Messagerie</div>
-                <div class="p-3" style="height: 350px; overflow-y: auto; background: #f8f9fa;">
+                <div class="p-3" id="messagerie-scroll" style="height: 350px; overflow-y: auto; background: #f8f9fa;">
                     {% for msg in sinistre.messages.all %}
                         <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
                             <div class="p-2 px-3 rounded shadow-sm d-inline-block 
@@ -255,4 +255,12 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var boiteMessages = document.getElementById('messagerie-scroll');
+        if (boiteMessages) {
+            boiteMessages.scrollTop = boiteMessages.scrollHeight;
+        }
+    });
+</script>
 {% endblock %}

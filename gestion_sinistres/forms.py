@@ -300,18 +300,73 @@ class ModifierChefAdminForm(forms.ModelForm):
         }
 
 
+# class ModifierSinistreAdminForm(forms.ModelForm):
+#     class Meta:
+#         model = Sinistre
+#         fields = [
+#             'numero_sinistre',
+#             'statut',
+#             'nature',
+#             'agent_traitant',
+#             'nom_conducteur',
+#             'contact_declarant',
+#             'date_survenance',
+#             'heure_approximative',
+#             'region',
+#             'commune',
+#             'ville',
+#             'quartier',
+#             'circonstances',
+#             'dommage',
+#             'montant_estime',
+#             'nombre_blesses',
+#             'nombre_morts',
+#             'taux_responsabilite',
+#         ]
+#         widgets = {
+#             'numero_sinistre': forms.TextInput(attrs={'class': 'form-control'}),
+#             'statut': forms.Select(attrs={'class': 'form-control'}),
+#             'nature': forms.Select(attrs={'class': 'form-control'}),
+#             'agent_traitant': forms.TextInput(attrs={'class': 'form-control'}),
+#             'nom_conducteur': forms.TextInput(attrs={'class': 'form-control'}),
+#             'contact_declarant': forms.TextInput(attrs={'class': 'form-control'}),
+#             'date_survenance': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
+#             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+#             'region': forms.Select(attrs={'class': 'form-control'}),
+#             'commune': forms.Select(attrs={'class': 'form-control'}),
+#             'ville': forms.Select(attrs={'class': 'form-control'}),
+#             'quartier': forms.TextInput(attrs={'class': 'form-control'}),
+#             'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+#             'dommage': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+#             'montant_estime': forms.NumberInput(attrs={'class': 'form-control'}),
+#             'nombre_blesses': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+#             'nombre_morts': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+#             'taux_responsabilite': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+#         }
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         # Pré-remplit correctement le champ datetime-local à partir de la valeur existante
+#         if self.instance and self.instance.date_survenance:
+#             self.initial['date_survenance'] = self.instance.date_survenance.strftime('%Y-%m-%dT%H:%M')
+            
+    
 class ModifierSinistreAdminForm(forms.ModelForm):
     class Meta:
         model = Sinistre
-        # Champs administratifs/déclaratifs modifiables par l'admin
-        # (prix_retenu et les validations restent gérés par leurs actions dédiées)
         fields = [
             'numero_sinistre',
             'statut',
             'nature',
             'agent_traitant',
+            'assure',
+            'vehicule',
+            'immatriculation',
             'nom_conducteur',
             'contact_declarant',
+            'est_declarant_tiers',
+            'nom_declarant',
+            'email_declarant',
             'date_survenance',
             'heure_approximative',
             'region',
@@ -321,17 +376,39 @@ class ModifierSinistreAdminForm(forms.ModelForm):
             'circonstances',
             'dommage',
             'montant_estime',
+            'prix_retenu',
             'nombre_blesses',
             'nombre_morts',
             'taux_responsabilite',
+            'niveau_responsabilite',
+            'pv_verifie',
+            'autre_vehicule_implique',
+            'vehicule_adverse_immatriculation',
+            'vehicule_adverse_marque',
+            'vehicule_adverse_modele',
+            'vehicule_adverse_compagnie',
+            'numero_point_vente',
+            'quittances',
+            'lettre_derogation',
+            'attestation_generee',
+            'date_attestation',
+            'indemnisation_validee',
+            'chef_validateur',
+            'date_cloture',
         ]
         widgets = {
             'numero_sinistre': forms.TextInput(attrs={'class': 'form-control'}),
             'statut': forms.Select(attrs={'class': 'form-control'}),
             'nature': forms.Select(attrs={'class': 'form-control'}),
             'agent_traitant': forms.TextInput(attrs={'class': 'form-control'}),
+            'assure': forms.Select(attrs={'class': 'form-control'}),
+            'vehicule': forms.Select(attrs={'class': 'form-control'}),
+            'immatriculation': forms.TextInput(attrs={'class': 'form-control'}),
             'nom_conducteur': forms.TextInput(attrs={'class': 'form-control'}),
             'contact_declarant': forms.TextInput(attrs={'class': 'form-control'}),
+            'est_declarant_tiers': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'nom_declarant': forms.TextInput(attrs={'class': 'form-control'}),
+            'email_declarant': forms.EmailInput(attrs={'class': 'form-control'}),
             'date_survenance': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'region': forms.Select(attrs={'class': 'form-control'}),
@@ -341,18 +418,39 @@ class ModifierSinistreAdminForm(forms.ModelForm):
             'circonstances': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'dommage': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'montant_estime': forms.NumberInput(attrs={'class': 'form-control'}),
+            'prix_retenu': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'nombre_blesses': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'nombre_morts': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'taux_responsabilite': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'niveau_responsabilite': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'pv_verifie': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'autre_vehicule_implique': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'vehicule_adverse_immatriculation': forms.TextInput(attrs={'class': 'form-control'}),
+            'vehicule_adverse_marque': forms.TextInput(attrs={'class': 'form-control'}),
+            'vehicule_adverse_modele': forms.TextInput(attrs={'class': 'form-control'}),
+            'vehicule_adverse_compagnie': forms.TextInput(attrs={'class': 'form-control'}),
+            'numero_point_vente': forms.TextInput(attrs={'class': 'form-control'}),
+            'quittances': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'lettre_derogation': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'attestation_generee': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'date_attestation': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
+            'indemnisation_validee': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'chef_validateur': forms.Select(attrs={'class': 'form-control'}),
+            'date_cloture': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Pré-remplit correctement le champ datetime-local à partir de la valeur existante
-        if self.instance and self.instance.date_survenance:
-            self.initial['date_survenance'] = self.instance.date_survenance.strftime('%Y-%m-%dT%H:%M')
-            
-            
+        # Pré-remplit correctement les champs datetime-local à partir des valeurs existantes
+        if self.instance:
+            if self.instance.date_survenance:
+                self.initial['date_survenance'] = self.instance.date_survenance.strftime('%Y-%m-%dT%H:%M')
+            if self.instance.date_attestation:
+                self.initial['date_attestation'] = self.instance.date_attestation.strftime('%Y-%m-%dT%H:%M')
+            if self.instance.date_cloture:
+                self.initial['date_cloture'] = self.instance.date_cloture.strftime('%Y-%m-%dT%H:%M')
+                
+                        
 class DemanderComplementsForm(forms.Form):
     # Champ de texte pour rédiger le motif des pièces manquantes à réclamer à l'assuré
     motif = forms.CharField(

@@ -742,8 +742,8 @@ def marquer_conforme(request, sinistre_id):
     if request.method != 'POST':
         return redirect(f"{detail_url}?next={retour_url}")
 
-    nature = request.POST.get('nature')
-    pv_verifie = request.POST.get('pv_verifie') == 'on'
+    nature = request.POST.get('nature') or sinistre.nature
+    pv_verifie = request.POST.get('pv_verifie') == 'on' if 'pv_verifie' in request.POST else sinistre.pv_verifie
     taux_responsabilite = request.POST.get('taux_responsabilite')
 
     if not nature:
@@ -1590,12 +1590,13 @@ def renvoyer_a_agent(request, sinistre_id):
         else:
             messages.warning(
                 request,
-                f"Le dossier {sinistre.numero_sinistre} a été renvoyé à l'agent ({sinistre.agent_traitant}) pour révision."
+                f"Le dossier {sinistre.numero_sinistre} a été renvoyé au rédacteur ({sinistre.agent_traitant}) pour révision."
             )
             
         return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
     return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
+
 
 # Procédure permettant au chef de  valider une indemnisation saisie par l'assuré
 @login_required
@@ -1611,6 +1612,7 @@ def valider_indemnisation(request, sinistre_id):
         return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
 
     sinistre.indemnisation_validee = True
+    sinistre.statut = 'EN_COURS'
     sinistre.save()
     if sinistre.prix_retenu == 0:
         commentaire = "Sinistre non indemnisable (prix retenu fixé à 0 FCFA), validé par le chef de département."
@@ -1916,7 +1918,6 @@ def voir_attestation(request, sinistre_id):
     sinistre = get_object_or_404(
         Sinistre, 
         id=sinistre_id, 
-        statut__in=['EN_COURS', 'CLOTURE', 'SANS_SUITE']
     )
     is_owner = (getattr(sinistre, 'assure', None) == request.user or getattr(sinistre, 'assure_id', None) == request.user.id)
     
@@ -3445,6 +3446,14 @@ def modifier_statut_cheque(request, paiement_id):
             commentaires=f"Le statut du chèque N° {paiement.numero_cheque} est passé à: {paiement.get_statut_display()}.",
             auteur=request.user
         )
+        
+        if nouveau_statut == 'DISPONIBLE':
+            Message.objects.create(
+                sinistre=paiement.sinistre,
+                auteur=request.user,
+                contenu=f"Votre chèque N° {paiement.numero_cheque} d'un montant de {paiement.montant} FCFA est prêt pour retrait. Merci de vous présenter avec votre pièce d'identité."
+            )
+            
         messages.success(request, f"Le statut du chèque {paiement.numero_cheque} a été mis à jour avec succès.")
     else:
         messages.error(request, "Statut invalide.")

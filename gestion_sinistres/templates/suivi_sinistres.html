@@ -21,7 +21,7 @@
             <tbody>
                 {% for sinistre in sinistres %}
                 <tr>
-                    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' %}
+                    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' and sinistre.statut != 'ATTENTE_COMPLEMENTS' %}
                         <td><strong>{{ sinistre.numero_sinistre }}</strong></td>
                     {% else %}
                         <td class="ps-4"><center><strong>-</strong></center></td>
