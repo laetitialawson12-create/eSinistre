@@ -8,6 +8,7 @@
    onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
     <i class="bi bi-arrow-left"></i> Retour
     </a>
+<div class="d-flex align-items-center justify-content-between mb-4">
     <!-- Titre principal -->
     {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' %}
         <h3 class="mb-4">📋 Suivi du sinistre : {{ sinistre.numero_sinistre }}</h3>
@@ -15,6 +16,15 @@
         <h3 class="mb-4">📋 Suivi du sinistre : - </h3>
     {% endif %}
 
+    <a href="#messagerie" class="position-relative text-decoration-none" title="Aller à la messagerie">
+        <i class="bi bi-bell{% if nb_non_lus > 0 %}-fill{% endif %} fs-4 text-secondary"></i>
+        {% if nb_non_lus > 0 %}
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                {{ nb_non_lus }}
+            </span>
+        {% endif %}
+    </a>
+</div>
     {% if sinistre.est_declaration_tiers %}
     <div class="alert alert-info">
         Déclaration faite par un tiers : <strong>{{ sinistre.nom_declarant }}</strong> — {{ sinistre.contact_declarant }}
@@ -214,7 +224,7 @@
             </div>
 
             <!-- Messagerie -->
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0" id="messagerie">
                 <div class="card-header bg-white fw-bold">💬 Messagerie</div>
                 <div class="p-3" style="height: 350px; overflow-y: auto; background: #f8f9fa;">
                     {% for msg in sinistre.messages.all %}

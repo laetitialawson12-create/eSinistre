@@ -269,7 +269,7 @@ def declarer_sinistre(request):
 
 # Vue permettant à un tiers de faire une déclaration de sinistre
 def _resoudre_compte_et_vehicule(numero_police, immatriculation):
-    """Retourne (user_assure, vehicule) à partir d'un n° de police ou d'une immatriculation."""
+    """Retourne (user_assure, vehicule) à partir d'un n° de police et d'une immatriculation."""
     vehicule = None
     user_assure = None
 
@@ -360,6 +360,7 @@ def declarer_sinistre_tiers(request):
 @login_required
 def detail_sinistre(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, assure=request.user)
+    nb_non_lus = sinistre.messages.exclude(auteur=request.user).filter(lu=False).count()
     
     if request.method == 'POST' and 'contenu' in request.POST:
         Message.objects.create(
@@ -389,11 +390,14 @@ def detail_sinistre(request, sinistre_id):
         else:
             historique_filetre.append(h)
 
+    sinistre.messages.exclude(auteur=request.user).filter(lu=False).update(lu=True)
+    
     context = {
         'sinistre': sinistre,
         'documents': sinistre.pieces.all(),
-        'historique': historique_filetre,  # On envoie l'historique nettoyé
+        'historique': historique_filetre,
         'discussion': sinistre.messages.all().order_by('date_envoi'),
+        'nb_non_lus': nb_non_lus,
     }
     return render(request, 'detail_sinistre.html', context)
 
@@ -658,6 +662,8 @@ def detail_sinistre_agent(request, sinistre_id):
     assure_profile = getattr(sinistre.assure, 'assure', None)
     retour_url = get_retour_url(request, 'tous_sinistres_agent')
 
+    nb_non_lus = sinistre.messages.exclude(auteur=request.user).filter(lu=False).count()
+    
     # Récupération des quittances éligibles
     quittances_disponibles = Quittance.objects.none()
     if assure_profile and sinistre.date_survenance:
@@ -708,6 +714,7 @@ def detail_sinistre_agent(request, sinistre_id):
             messages.success(request, "Message transmis.")
             return redirect(f"{detail_url}?next={retour_url}")
 
+    sinistre.messages.exclude(auteur=request.user).filter(lu=False).update(lu=True)
     context = {
         'agent': agent,
         'sinistre': sinistre,
@@ -716,6 +723,7 @@ def detail_sinistre_agent(request, sinistre_id):
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
         'quittances_disponibles': quittances_disponibles,
+        'nb_non_lus': nb_non_lus,
     }
     return render(request, 'detail_sinistre_agent.html', context)
 
@@ -1490,6 +1498,7 @@ def detail_sinistre_chef(request, sinistre_id):
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
     retour_url = get_retour_url(request, 'dossiers_en_cours_chef')
+    nb_non_lus = sinistre.messages.exclude(auteur=request.user).filter(lu=False).count()
     
     if request.method == 'POST' and 'contenu' in request.POST:
         Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
@@ -1499,6 +1508,8 @@ def detail_sinistre_chef(request, sinistre_id):
     nom_chef = request.user.get_full_name() or request.user.username
     chef_est_traitant = sinistre.agent_traitant == nom_chef
     
+    sinistre.messages.exclude(auteur=request.user).filter(lu=False).update(lu=True)
+
     context = {
         'chef': chef,
         'sinistre': sinistre,
@@ -1507,6 +1518,7 @@ def detail_sinistre_chef(request, sinistre_id):
         'historique': sinistre.historique.all().order_by('date_changement'),
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
+        'nb_non_lus': nb_non_lus,
     }
     return render(request, 'detail_sinistre_chef.html', context)
 
@@ -2800,6 +2812,7 @@ def liste_contrats_admin(request):
 @user_passes_test(lambda u: u.is_staff)
 def detail_sinistre_admin(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+    nb_non_lus = sinistre.messages.exclude(auteur=request.user).filter(lu=False).count()
 
     if request.method == 'POST' and 'contenu' in request.POST:
         Message.objects.create(sinistre=sinistre, auteur=request.user, contenu=request.POST.get('contenu'))
@@ -2808,12 +2821,15 @@ def detail_sinistre_admin(request, sinistre_id):
     nom_operateur = request.user.get_full_name() or request.user.username
     chef_est_traitant = sinistre.agent_traitant == nom_operateur
 
+    sinistre.messages.exclude(auteur=request.user).filter(lu=False).update(lu=True)
+
     context = {
         'sinistre': sinistre,
         'chef_est_traitant': chef_est_traitant,
         'historique': sinistre.historique.all().order_by('date_changement'),
         'discussion': sinistre.messages.all().order_by('date_envoi'),
         'documents': sinistre.pieces.all(),
+        'nb_non_lus': nb_non_lus,
     }
     return render(request, 'detail_sinistre_admin.html', context)
 

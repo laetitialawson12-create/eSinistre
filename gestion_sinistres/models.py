@@ -241,7 +241,8 @@ class Message(models.Model):
     auteur = models.ForeignKey(User, on_delete=models.CASCADE)
     contenu = models.TextField()
     date_envoi = models.DateTimeField(auto_now_add=True)
-
+    lu = models.BooleanField(default=False)
+    
     def __str__(self):
         return f"Message de {self.auteur.username} le {self.date_envoi.strftime('%d/%m')}"
     
