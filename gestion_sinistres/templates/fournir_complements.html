@@ -16,8 +16,13 @@
             {% csrf_token %}
             
             <div class="mb-3">
-                <label for="precisions" class="form-label">Vos précisions ou circonstances détaillées :</label>
-                <textarea class="form-control" id="precisions" name="precisions" rows="5" required>{{ sinistre.precision }}</textarea>
+                <label for="circonstances" class="form-label">Circonstances détaillées</label>
+                <textarea class="form-control" id="circonstances" name="circonstances" rows="5"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="precisions" class="form-label">Vos précisions</label>
+                <textarea class="form-control" id="precisions" name="precisions" rows="5"></textarea>
             </div>
 
             <div class="mb-3">

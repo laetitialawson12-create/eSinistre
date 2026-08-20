@@ -468,7 +468,7 @@ def finaliser_envoi(request):
 
         if sinistre:
             if sinistre.quittances.exists():
-                messages.success(request, f"Votre sinistre N° {sinistre.numero_sinistre} a été enregistré avec succès.")
+                messages.success(request, f"Votre sinistre a été enregistré avec succès.")
             else:
                 messages.info(
                     request,
@@ -548,8 +548,8 @@ def accueil_agent(request):
     fin_jour = timezone.make_aware(datetime.combine(today, time.max))
     
     sinistres_du_jour = sinistres.filter(
-        date_survenance__gte=debut_jour,
-        date_survenance__lte=fin_jour,
+        date_declaration__gte=debut_jour,
+        date_declaration__lte=fin_jour,
     ).order_by('-date_declaration')
     
     
@@ -732,14 +732,15 @@ def detail_sinistre_agent(request, sinistre_id):
 @login_required
 def marquer_conforme(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
+    retour_url = get_retour_url(request, 'tous_sinistres_agent')
+    detail_url = reverse('detail_sinistre_agent', args=[sinistre_id])
 
     if not sinistre.numero_sinistre:
         messages.error(request, "Le numéro de sinistre doit être ajouté avant de marquer le dossier comme conforme.")
-        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre_id)
-    
-    
+        return redirect(f"{detail_url}?next={retour_url}")
+
     if request.method != 'POST':
-        return redirect(get_url_detail_dossier(request.user),  sinistre_id=sinistre_id)
+        return redirect(f"{detail_url}?next={retour_url}")
 
     nature = request.POST.get('nature')
     pv_verifie = request.POST.get('pv_verifie') == 'on'
@@ -747,10 +748,10 @@ def marquer_conforme(request, sinistre_id):
 
     if not nature:
         messages.error(request, "Veuillez renseigner la nature du sinistre.")
-        return redirect(get_url_detail_dossier(request.user),  sinistre_id=sinistre_id)
+        return redirect(f"{detail_url}?next={retour_url}")
     if not pv_verifie:
         messages.error(request, "Le PV doit être vérifié avant l'envoi au Chef.")
-        return redirect(get_url_detail_dossier(request.user),  sinistre_id=sinistre_id)
+        return redirect(f"{detail_url}?next={retour_url}")
 
     sinistre.nature = nature
     sinistre.pv_verifie = pv_verifie
@@ -759,7 +760,7 @@ def marquer_conforme(request, sinistre_id):
             sinistre.taux_responsabilite = Decimal(taux_responsabilite)
         except InvalidOperation:
             messages.error(request, "Taux de responsabilité invalide.")
-            return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre_id)
+            return redirect(f"{detail_url}?next={retour_url}")
 
     if sinistre.statut == 'A_CORRIGER':
         sinistre.statut = 'ATTENTE_VALIDATION'
@@ -779,7 +780,7 @@ def marquer_conforme(request, sinistre_id):
         )
 
     messages.success(request, f"Dossier {sinistre.numero_sinistre} transmis au Chef.")
-    return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre_id)
+    return redirect(f"{detail_url}?next={retour_url}")
 
 
 # Permet à l'agent de demander des pièces ou informations manquantes ou complémentaires
@@ -820,7 +821,9 @@ def saisir_prix_retenu(request, sinistre_id):
         return redirect('accueil_assure')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
-    
+    retour_url = get_retour_url(request, 'tous_sinistres_agent')
+    detail_url = reverse('detail_sinistre_agent', args=[sinistre_id])
+
     autorise = sinistre.statut == 'EN_COURS' or (
         sinistre.statut == 'A_CORRIGER' and sinistre.attestation_generee
     )
@@ -830,12 +833,11 @@ def saisir_prix_retenu(request, sinistre_id):
             request,
             "Le prix retenu ne peut être saisi qu'après validation du dossier par le Chef de département."
         )
-        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
+        return redirect(f"{detail_url}?next={retour_url}")
 
-    # Vérification si le prix peut être modifié (par exemple, si non validé par le chef)
     if getattr(sinistre, 'indemnisation_validee', False):
         messages.error(request, "Le prix retenu a été validé par le Chef. Il ne peut plus être modifié.")
-        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre.id)
+        return redirect(f"{detail_url}?next={retour_url}")
 
     if request.method == 'POST':
         nouveau_prix = request.POST.get('prix_retenu')
@@ -855,8 +857,7 @@ def saisir_prix_retenu(request, sinistre_id):
                     commentaire = f"Prix modifié : sinistre jugé non indemnisable (ancien prix : {prix_existant} FCFA)."
                 else:
                     commentaire = f"Prix modifié : {nouveau_prix} FCFA (ancien prix : {prix_existant} FCFA)."
-                    
-                
+
             HistoriqueSinistre.objects.create(
                 sinistre=sinistre,
                 statut=sinistre.statut,
@@ -864,8 +865,8 @@ def saisir_prix_retenu(request, sinistre_id):
                 auteur=request.user,
             )
             messages.success(request, "Le prix retenu a été enrégistré avec succès.")
-        return redirect(get_url_detail_dossier(request.user), sinistre_id=sinistre_id)
-
+        return redirect(f"{detail_url}?next={retour_url}")
+    
     
 # Permet à l'agent d'enregistrer les détails du paiement pour un sinistre clôturé
 @login_required
@@ -1235,8 +1236,8 @@ def accueil_chef(request):
     fin_jour = timezone.make_aware(datetime.combine(today, time.max))
         
     sinistres_du_jour = sinistres.filter(
-        date_survenance__gte=debut_jour,
-        date_survenance__lte=fin_jour,
+        date_declaration__gte=debut_jour,
+        date_declaration__lte=fin_jour,
     ).order_by('-date_declaration')
         
     context = {
@@ -1969,8 +1970,8 @@ def accueil_admin(request):
     fin_jour = timezone.make_aware(datetime.combine(today, time.max))
     
     sinistres_du_jour = sinistres.filter(
-        date_survenance__gte=debut_jour,
-        date_survenance__lte=fin_jour,
+        date_declaration__gte=debut_jour,
+        date_declaration__lte=fin_jour,
     ).order_by('-date_declaration')
     
     

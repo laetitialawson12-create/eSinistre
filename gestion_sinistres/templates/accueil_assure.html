@@ -54,6 +54,9 @@
 <div class="card shadow-sm border-0">
     <div class="card-header bg-white py-3">
         <h6 class="mb-0 fw-bold">Dernières déclarations</h6>
+        <div class="p-3 text-end">
+            <a href="{% url 'suivi_sinistres' %}" class="btn btn-sm btn-outline-primary">Voir tous mes dossiers</a>
+        </div>
     </div>
     <div class="card-body p-0">
         {% if derniers %}
@@ -88,9 +91,6 @@
                 {% endfor %}
             </tbody>
         </table>
-        <div class="p-3 text-end">
-            <a href="{% url 'suivi_sinistres' %}" class="btn btn-sm btn-outline-primary">Voir tous mes dossiers</a>
-        </div>
         {% else %}
         <p class="text-muted text-center py-5">Vous n'avez encore déclaré aucun sinistre.</p>
         {% endif %}

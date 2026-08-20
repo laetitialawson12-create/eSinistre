@@ -52,7 +52,7 @@
                     <td>{{ s.get_nature_display }}</td>
                     <td><span class="badge bg-primary">{{ s.get_statut_display }}</span></td>
                     <td>
-                        <a href="{% url 'detail_sinistre_agent' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
+                        <a href="{% url 'detail_sinistre_agent' s.id %}?next={% url 'accueil_agent' %}" class="btn btn-sm btn-outline-secondary">Voir</a>
                     </td>
                 </tr>
                 {% empty %}
