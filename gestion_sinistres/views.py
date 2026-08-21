@@ -1,4 +1,5 @@
 import os
+import io
 import unicodedata
 import pandas as pd
 import openpyxl
@@ -16,8 +17,11 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.db.models import Q
+from django.template.loader import render_to_string
 from django.db import IntegrityError, transaction
 from django.urls import reverse
+from xhtml2pdf import pisa 
+from django.conf import settings
 from decimal import Decimal, InvalidOperation
 from .forms import (
     SinistreForm, ModifierProfilForm, AgentCreationForm, AssureAdminForm,
@@ -1935,23 +1939,56 @@ def voir_attestation(request, sinistre_id):
 
 
 # Fonction permettant de télécharger une attestation
+def link_callback_pdf(uri, rel):
+    """Résout les chemins static/media en chemins de fichiers locaux pour xhtml2pdf."""
+    if uri.startswith(settings.STATIC_URL):
+        path = os.path.join(settings.STATIC_ROOT, uri.replace(settings.STATIC_URL, ""))
+        if not os.path.isfile(path):
+            for static_dir in settings.STATICFILES_DIRS:
+                candidate = os.path.join(static_dir, uri.replace(settings.STATIC_URL, ""))
+                if os.path.isfile(candidate):
+                    path = candidate
+                    break
+        return path
+    elif uri.startswith(settings.MEDIA_URL):
+        return os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ""))
+    return uri
+
+
 @login_required
 def telecharger_attestation(request, sinistre_id):
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, attestation_generee=True)
     is_owner = (getattr(sinistre, 'assure', None) == request.user or getattr(sinistre, 'assure_id', None) == request.user.id)
-    
+
     if not (is_owner or hasattr(request.user, 'agent') or hasattr(request.user, 'chef')):
         return redirect('accueil_assure')
 
     quittances = sinistre.quittances.all().order_by('date_debut')
     date_effet = quittances.first().date_debut if quittances.exists() else None
     date_echeance = quittances.first().date_fin if quittances.exists() else None
-    return render(request, 'attestation.html', {
+
+    logo_path = os.path.join(settings.STATICFILES_DIRS[0], "Logo Fidelia.jpeg")
+    signature_path = ""
+    if sinistre.chef_validateur and getattr(sinistre.chef_validateur.chef, 'signature', None):
+        signature_path = sinistre.chef_validateur.chef.signature.path
+
+    html_string = render_to_string('attestation_pdf.html', {
         'sinistre': sinistre,
-        'download_pdf': True,
         'date_effet': date_effet,
         'date_echeance': date_echeance,
-        })
+        'logo_path': logo_path,
+        'signature_path': signature_path,
+    }, request=request)
+
+    result = io.BytesIO()
+    pisa_status = pisa.CreatePDF(html_string, dest=result, link_callback=link_callback_pdf)
+
+    if pisa_status.err:
+        return HttpResponse('Erreur lors de la génération du PDF', status=500)
+
+    response = HttpResponse(result.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="attestation_{sinistre.numero_sinistre}.pdf"'
+    return response
 
 
 #-------------------------------------------------------------------
@@ -2551,7 +2588,7 @@ def importer_donnees_admin(request):
                         continue
 
                     marque = get_val(row, ['MARQUE', 'MARQUE_VEHICULE']) or ''
-                    modele = get_val(row, ['MODELE', 'MODELE_VEHICULE']) or None
+                    categorie = get_val(row, ['CATEGORIE', 'CATEGORIE_VEHICULE']) or None
                     immatriculation = get_val(row, ['IMMATRICULATION', 'IMMAT'])
 
                     user, user_created = User.objects.get_or_create(
@@ -2592,7 +2629,7 @@ def importer_donnees_admin(request):
 
                     date_debut = get_val(row, ['DATE_DEBUT', 'DATE DEBUT', 'DATE_EFFET', 'DATE EFFET'])
                     date_fin = get_val(row, ['DATE_FIN', 'DATE FIN', 'DATE_ECHEANCE', 'DATE ECHEANCE'])
-                    prime = get_val(row, ['PRIME_NETTE', 'PRIME NETTE', 'PRIME'])
+                    prime = get_val(row, ['PRIME_TTC', 'PRIME TTC', 'PRIME'])
 
                     quittance, _ = Quittance.objects.update_or_create(
                         numero_quittance=numero_quittance,
@@ -2610,7 +2647,7 @@ def importer_donnees_admin(request):
                             immatriculation=immatriculation,
                             defaults={
                                 'marque': marque,
-                                'modele': modele,
+                                'categorie': categorie,
                                 'proprietaire': user,
                                 'quittance': quittance,
                             }
@@ -2908,7 +2945,7 @@ def exporter_contrats_admin(request):
 
     entetes =  ["N° Police", "Nom", "Prénom(s)", "Email", "Téléphone",
                 "N° Quittance", "Type de contrat", "Date effet", 
-                "Date échéance", "Prime nette(FCFA)", "Véhicule(s)"]
+                "Date échéance", "Prime TTC(FCFA)", "Véhicule(s)"]
 
     ws.append(entetes)
     for cell in ws[1]:
@@ -3181,7 +3218,7 @@ def importer_sinistres_admin(request):
                                 immatriculation=immatriculation,
                                 defaults={
                                     'marque': get_val(row, ['MARQUE']) or '',
-                                    'modele': get_val(row, ['MODELE']),
+                                    'categorie': get_val(row, ['CATEGORIE']),
                                     'proprietaire': assure.user,
                                 }
                             )

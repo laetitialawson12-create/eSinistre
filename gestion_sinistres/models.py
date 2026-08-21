@@ -25,13 +25,13 @@ class Ville(models.Model):
 class Vehicule(models.Model):
     immatriculation = models.CharField(max_length=20, unique=True)
     marque = models.CharField(max_length=50)
-    modele = models.CharField(max_length=50, null=True, blank=True)
+    categorie = models.CharField(max_length=50, null=True, blank=True)
     annee = models.IntegerField(null=True, blank=True)
     proprietaire = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vehicules', null=True, blank=True)
     quittance = models.ForeignKey('Quittance', on_delete=models.CASCADE, related_name='vehicules', null=True, blank=True)
 
     def __str__(self):
-        return f"{self.immatriculation} - {self.marque} {self.modele or 'Modèle non spécifié'}"
+        return f"{self.immatriculation} - {self.marque} {self.categorie or 'Modèle non spécifié'}"
     
 
 class Quittance(models.Model):
@@ -140,7 +140,7 @@ class Sinistre(models.Model):
     autre_vehicule_implique = models.BooleanField(default=False)
     vehicule_adverse_immatriculation = models.CharField(max_length=50, blank=True, null=True)
     vehicule_adverse_marque = models.CharField(max_length=50, blank=True, null=True)
-    vehicule_adverse_modele = models.CharField(max_length=50, blank=True, null=True)
+    vehicule_adverse_categorie = models.CharField(max_length=50, blank=True, null=True)
     vehicule_adverse_compagnie = models.CharField(max_length=100, blank=True, null=True, verbose_name="Compagnie d'assurance (véhicule adverse)")
     nombre_blesses = models.PositiveSmallIntegerField(default=0)
     nombre_morts = models.PositiveSmallIntegerField(default=0)
