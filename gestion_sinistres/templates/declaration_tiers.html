@@ -19,6 +19,15 @@
             align-items: center;
             font-family: 'Segoe UI', sans-serif;
         }
+
+        /* Astérisque rouge automatique après le label des champs obligatoires */
+        label:has(+ input[required])::after,
+        label:has(+ select[required])::after,
+        label:has(+ textarea[required])::after {
+            content: " *";
+            color: #dc3545;
+            font-weight: bold;
+        }
         </style>
     </head>
     <body class="bg-light">
@@ -116,7 +125,7 @@
                         <div class="mb-3" id="derogation-container" style="display: none;">
                             {{ form.lettre_derogation.label_tag }}
                             {{ form.lettre_derogation }}
-                            <small class="text-muted d-block">À fournir si le sinistre date de plus de 5 jours.</small>
+                            {% for error in form.lettre_derogation.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                         </div>
                         <div class="mb-4">
                             {{ form.fichiers_justificatifs.label_tag }}
@@ -139,10 +148,12 @@
         document.addEventListener('DOMContentLoaded', function(){
             const dateField = document.querySelector('input[name="date_survenance"]');
             const derogationContainer = document.getElementById('derogation-container');
+            const lettreDerogationInput = document.getElementById('id_lettre_derogation');
 
             function checkDate() {
                 if (!dateField.value) {
                     derogationContainer.style.display = 'none';
+                    if (lettreDerogationInput) lettreDerogationInput.required = false;
                     return;
                 }
 
@@ -154,8 +165,10 @@
 
                 if (diffDays > 5){
                     derogationContainer.style.display = 'block';
+                    if(lettreDerogationInput) lettreDerogationInput.required = true;
                 }else{
                     derogationContainer.style.display = 'none';
+                    if (lettreDerogationInput) lettreDerogationInput.required = false;
                 }
             }
 

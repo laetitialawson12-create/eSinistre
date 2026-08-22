@@ -76,7 +76,7 @@
                     </div>
                 {% else %}
                     <div class="alert alert-secondary mb-0">
-                        <p class="text-muted mb-0">Votre attestation est en cours de validation par le département.</p>
+                        <p class="text-muted mb-0">Votre déclaration est en cours de traitement par le département.</p>
                     </div>
                 {% endif %}
             </div>
@@ -222,11 +222,7 @@
                 <!-- Messagerie -->
                 <div class="card shadow-sm border-0" id="messagerie">
                     <div class="card-header bg-white fw-bold">💬 Messagerie</div>
-                    <div class="p-3"
-                         id="messagerie-scroll"
-                         style="height: 350px;
-                                overflow-y: auto;
-                                background: #f8f9fa">
+                    <div class="p-3 bg-light" id="messagerie-scroll" style="height: 350px; overflow-y: auto;">
                         {% for msg in sinistre.messages.all %}
                             <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
                                 <div class="p-2 px-3 rounded shadow-sm d-inline-block {% if msg.auteur == request.user %}bg-primary text-white{% else %}bg-white border{% endif %}">

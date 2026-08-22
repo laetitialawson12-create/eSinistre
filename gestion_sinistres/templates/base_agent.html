@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="fr" ^data-bs-theme="light">
+<html lang="fr" data-bs-theme="light">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -66,7 +66,35 @@
         .main-content { margin-left: 250px; }
         .header-user { background: var(--header-bg); padding: 20px 30px; border-bottom: 1px solid var(--header-border); position: sticky; top: 0; z-index: 1020;}
         .user-badge { width: 40px; height: 40px; border-radius: 50%; background: var(--fidelia-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .sidebar-toggle { display: none; background: transparent; border: none; color: white; font-size: 1.5rem; }
+                .sidebar-toggle { display: none; background: transparent; border: none; font-size: 1.5rem; }
+
+                [data-bs-theme="dark"] h1,
+        [data-bs-theme="dark"] h2,
+        [data-bs-theme="dark"] h3,
+        [data-bs-theme="dark"] h4,
+        [data-bs-theme="dark"] h5,
+        [data-bs-theme="dark"] h6 {
+            color: #ffffff !important;
+        }
+
+        [data-bs-theme="dark"] .table-light {
+            --bs-table-bg: #1e1e1e;
+            --bs-table-color: #e9ecef;
+            --bs-table-border-color: #333333;
+            background-color: #1e1e1e !important;
+            color: #e9ecef !important;
+        }
+
+        label:has(+ input[required])::after,
+
+
+        label:has(+ input[required])::after,
+        label:has(+ select[required])::after,
+        label:has(+ textarea[required])::after{
+            content: "*";
+            color: #dc3545;
+            font-weight: bold;
+        }
         @media (max-width: 991px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; z-index: 1050; }
             .sidebar.active { transform: translateX(0); }

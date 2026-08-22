@@ -735,9 +735,13 @@ def detail_sinistre_agent(request, sinistre_id):
 # Permet à l'agent de marquer un dossier comme conforme et l'envoyer au chef
 @login_required
 def marquer_conforme(request, sinistre_id):
+    operateur = get_profil_operateur(request.user)
+    if not operateur:
+        return redirect('accueil_assure')
+    
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
     retour_url = get_retour_url(request, 'tous_sinistres_agent')
-    detail_url = reverse('detail_sinistre_agent', args=[sinistre_id])
+    detail_url = reverse(get_url_detail_dossier(request.user), args=[sinistre_id])
 
     if not sinistre.numero_sinistre:
         messages.error(request, "Le numéro de sinistre doit être ajouté avant de marquer le dossier comme conforme.")
@@ -826,7 +830,7 @@ def saisir_prix_retenu(request, sinistre_id):
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id)
     retour_url = get_retour_url(request, 'tous_sinistres_agent')
-    detail_url = reverse('detail_sinistre_agent', args=[sinistre_id])
+    detail_url = reverse(get_url_detail_dossier(request.user), args=[sinistre_id])
 
     autorise = sinistre.statut == 'EN_COURS' or (
         sinistre.statut == 'A_CORRIGER' and sinistre.attestation_generee
@@ -3425,6 +3429,18 @@ def emettre_cheque(request, sinistre_id):
         beneficiaire_telephone = request.POST.get('beneficiaire_telephone')
         date_emission = request.POST.get('date_emission')
 
+        # Vérification : la date d'émission ne peut pas être dans le futur
+        try:
+            date_emission_obj = datetime.strptime(date_emission, '%Y-%m-%d').date()
+        except (TypeError, ValueError):
+            messages.error(request, "Date d'émission invalide.")
+            return redirect('emettre_cheque', sinistre_id=sinistre.id)
+        
+        if date_emission_obj > timezone.now().date():
+            messages.error(request, "La date d'émission du chèque ne peut pas être dans le futur.")
+            return redirect('emettre_cheque', sinistre_id=sinistre.id)
+        
+        
         # Vérification : le montant ne doit pas dépasser le reste à payer
         try:
             montant_decimal = Decimal(montant)

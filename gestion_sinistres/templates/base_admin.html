@@ -110,7 +110,14 @@
             color: white; 
         }
 
-        .sidebar-toggle { display: none; background: transparent; border: none; font-size: 1.5rem; }
+        .sidebar-toggle { display: none; background: transparent; border:none; font-size: 1.5rem; }
+        label:has(+ input[required])::after,
+        label:has(+ select[required])::after,
+        label:has(+ textarea[required])::after{
+            content: "*";
+            color: #dc3545;
+            font-weight: bold;
+        }
 
         @media (max-width: 991px) {
             .sidebar { transform: translateX(-100%); }

@@ -69,7 +69,14 @@
         .user-badge { width: 40px; height: 40px; border-radius: 50%; background: var(--fidelia-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
         
         /* Bouton toggle caché sur grand écran, visible sur mobile */
-        .sidebar-toggle { display: none; background: transparent; border: none; color: #003366; font-size: 1.5rem; }
+        .sidebar-toggle { display: none; background: transparent; border:none; font-size:1.5rem; }
+        label:has(+ input[required])::after,
+        label:has(+ select[required])::after,
+        label:has(+ textarea[required])::after{
+            content: "*";
+            color: #dc3545;
+            font-weight: bold;
+        }
 
         @media (max-width: 991px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; }

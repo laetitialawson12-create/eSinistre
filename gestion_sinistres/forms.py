@@ -1,6 +1,7 @@
 from django import forms
 from django.utils import timezone
 from datetime import timedelta
+from datetime import date
 from .models import Sinistre, Agent, Agence, ChefDepartement, Assure, Quittance, Vehicule, Cheque, Region, Ville, Commune, Paiement
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
@@ -92,7 +93,7 @@ class SinistreForm(forms.ModelForm):
         widgets = {
             'vehicule': forms.Select(attrs={'class': 'form-control'}),
             'nom_conducteur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du conducteur'}),
-            'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'max': date.today().isoformat()}),
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'contact_declarant' : forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+228 00 00 00 00'}),            
             'region': forms.Select(attrs={'class': 'form-control'}),
@@ -133,11 +134,18 @@ class SinistreForm(forms.ModelForm):
         # Texte par défaut dans le menu déroulant des véhicules
         self.fields['vehicule'].empty_label = "Sélectionnez votre véhicule"
 
+        self.fields['contact_declarant'].required = True
+        
 def clean(self):
     cleaned_data = super().clean()
     date_survenance = cleaned_data.get('date_survenance')
     assure_profile = getattr(self.user, 'assure', None) if self.user else None
     
+    if date_survenance:
+        date_only = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
+        if date_only > timezone.now().date():
+            self.add_error('date_survenance', "La date de survenance ne peut pas être dans le futur.")
+            
     if date_survenance and assure_profile:
         quittance_valide_existe = Quittance.objects.filter(
             contrat=assure_profile,
@@ -149,6 +157,18 @@ def clean(self):
             raise forms.ValidationError(
                 "Aucun contrat actif n'a été trouvé pour cette date de survenance."
                 "Veuillez vérifier la date, ou contacter votre point mde vente si vous pensez qu'il s'agit d'une erreur."
+            )
+            
+    if date_survenance:
+        date_only = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
+        delai = (timezone.now().date() - date_only).days
+        lettre_derogation = cleaned_data.get('lettre_derogation')
+        a_deja_une_lettre = self.instance and self.instance.pk and self.instance.lettre_derogation
+        
+        if delai > 5 and not lettre_derogation and not a_deja_une_lettre:
+            self.add_error(
+                'lettre_derogation',
+                "La lettre de dérogation est obligatoire lorsque le sinistre date de plus de 5 jours."
             )
             
     return cleaned_data
@@ -180,7 +200,7 @@ class DeclarationTiersForm(forms.ModelForm):
         ]
         widgets = {
             'nom_conducteur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Le nom du conducteur du véhicule'}),
-            'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'date_survenance': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'max': date.today().isoformat()}),
             'heure_approximative': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'contact_declarant': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Votre numéro '}),
             'email_declarant': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Votre adresse mail'}),
@@ -200,10 +220,31 @@ class DeclarationTiersForm(forms.ModelForm):
             'lettre_derogation': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['contact_declarant'].required = True
+        
     def clean(self):
         cleaned = super().clean()
         if not cleaned.get('contact_declarant'):
             self.add_error('contact_declarant', "Votre numéro de contact est obligatoire.")
+            
+        date_survenance = cleaned.get('date_survenance')
+        
+        if date_survenance:
+            date_only = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
+            if date_only > timezone.now().date():
+                self.add_error('date_survenance', "La date de survenance ne peut pas être dans le futur.")
+                
+        if date_survenance:
+            date_only = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
+            delai = (timezone.now().date() - date_only).days
+            if delai > 5 and not cleaned.get('lettre_derogation'):
+                self.add_error(
+                    'lettre_derogation',
+                    'La lettre de dérogation est obligatoire lorsque le sinistre date de plus de 5 jours.'
+                )
+                
         return cleaned
     
     
@@ -223,7 +264,7 @@ class AjouterNumeroSinistreForm(forms.ModelForm):
         
         
 class ModifierProfilForm(forms.Form):
-    email = forms.EmailField(label='Email', widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(label='Email', required=False, widget=forms.EmailInput(attrs={'class': 'form-control'}))
     telephone = forms.CharField(label='Téléphone', max_length=20, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))        
         
         
@@ -247,8 +288,8 @@ class AgentCreationForm(forms.Form):
     # Champ de création d'un agent
     nom = forms.CharField(max_length=100, label="Nom", widget=forms.TextInput(attrs={'class': 'form-control'}))
     prenom = forms.CharField(max_length=100, label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    email = forms.EmailField(required=False, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    telephone = forms.CharField(max_length=20, required=False, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(required=True, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    telephone = forms.CharField(max_length=20, required=True, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
     agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Point de vente", widget=forms.Select(attrs={'class': 'form-select'}))
 
     def clean_matricule(self):
@@ -263,10 +304,10 @@ class ChefCreationForm(forms.Form):
     # Champ de création d'un chef
     nom = forms.CharField(max_length=100, label="Nom", widget=forms.TextInput(attrs={'class': 'form-control'}))
     prenom = forms.CharField(max_length=100, label="Prénom", widget=forms.TextInput(attrs={'class': 'form-control'}))
-    email = forms.EmailField(required=False, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    telephone = forms.CharField(max_length=20, required=False, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(required=True, label="Email", widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    telephone = forms.CharField(max_length=20, required=True, label="Téléphone", widget=forms.TextInput(attrs={'class': 'form-control'}))
     agence = forms.ModelChoiceField(queryset=Agence.objects.all(), label="Point de vente", widget=forms.Select(attrs={'class': 'form-select'}))
-    signature = forms.ImageField(required=False, label="Signature", widget=forms.ClearableFileInput(attrs={'class':'form-control'}))
+    signature = forms.ImageField(required=True, label="Signature", widget=forms.ClearableFileInput(attrs={'class':'form-control'}))
     
     def clean_matricule(self):
         matricule = self.cleaned_data['matricule']
