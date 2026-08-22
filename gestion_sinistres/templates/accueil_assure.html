@@ -1,86 +1,88 @@
 {% extends 'base_assure.html' %}
-
 {% block title %}Accueil{% endblock %}
-
 {% block content %}
-<h3 class="mb-4" style="color: #003366;">
-    <i class="bi bi-house-door"></i> Bonjour, {{ request.user.first_name|default:request.user.username }}
-</h3>
-
-<!-- Cartes de statistiques -->
-<div class="row g-4 mb-4">
-    <div class="col-md-4">
-        <div class="card stat-card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <div class="stat-number">{{ total }}</div>
-                <div class="text-muted">Dossier(s) au total</div>
+    <h3 class="mb-4" style="color: #003366;">
+        <i class="bi bi-house-door"></i> Bonjour, {{ request.user.first_name|default:request.user.username }}
+    </h3>
+    <!-- Cartes de statistiques -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="stat-number">{{ total }}</div>
+                    <div class="text-muted">Dossier(s) au total</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="stat-number">{{ soumis }}</div>
+                    <div class="text-muted">Dossier(s) en attente de prise en charge</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm border-0 h-100 d-flex align-items-center justify-content-center">
+                <a href="{% url 'declarer_sinistre' %}"
+                   class="btn btn-lg w-100 h-100 d-flex align-items-center justify-content-center"
+                   style="background-color: #003366;
+                          color: white">
+                    <i class="bi bi-plus-circle me-2"></i> Nouvelle déclaration
+                </a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="stat-number">{{ en_cours }}</div>
+                    <div class="text-muted">Dossier(s) en cours</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="stat-number">{{ clotures }}</div>
+                    <div class="text-muted">Dossier(s) clôturés</div>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card stat-card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <div class="stat-number">{{ soumis }}</div>
-                <div class="text-muted">Dossier(s) en attente de prise en charge</div>
+    <!-- Table des dernières déclarations -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h6 class="mb-0 fw-bold">Dernières déclarations</h6>
+            <div class="p-3 text-end">
+                <a href="{% url 'suivi_sinistres' %}"
+                   class="btn btn-sm btn-outline-primary">Voir tous mes dossiers</a>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card stat-card shadow-sm border-0 h-100 d-flex align-items-center justify-content-center">
-            <a href="{% url 'declarer_sinistre' %}" class="btn btn-lg w-100 h-100 d-flex align-items-center justify-content-center" style="background-color: #003366; color: white;">
-                <i class="bi bi-plus-circle me-2"></i> Nouvelle déclaration
-            </a>
-        </div>
-    </div>
-     <div class="col-md-4">
-        <div class="card stat-card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <div class="stat-number">{{ en_cours }}</div>
-                <div class="text-muted">Dossier(s) en cours</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card stat-card shadow-sm border-0 h-100">
-            <div class="card-body">
-                <div class="stat-number">{{ clotures }}</div>
-                <div class="text-muted">Dossier(s) clôturés</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Table des dernières déclarations -->
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3">
-        <h6 class="mb-0 fw-bold">Dernières déclarations</h6>
-        <div class="p-3 text-end">
-            <a href="{% url 'suivi_sinistres' %}" class="btn btn-sm btn-outline-primary">Voir tous mes dossiers</a>
-        </div>
-    </div>
-    <div class="card-body p-0">
-        {% if derniers %}
-        <table class="table table-hover align-middle mb-0">
-            <thead class="thead-fidelia">
-                <tr>
-                    <th class="ps-4">N° Sinistre</th>
-                    <th>Date déclaration</th>
-                    <th>Nature</th>
-                    <th>Statut</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sinistre in derniers %}
-                <tr>
-                    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' %}
-                        <td class="ps-4"><strong>{{ sinistre.numero_sinistre }}</strong></td>
-                    {% else %}
-                        <td class="ps-4"><center><strong>-</strong></center></td>
-                    {% endif %}
-                    <td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
-                    <td>{{ sinistre.get_nature_display }}</td>
-                    <td>
-                        {% if sinistre.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ sinistre.get_statut_display }}</span>
+        <div class="card-body p-0">
+            {% if derniers %}
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="thead-fidelia">
+                        <tr>
+                            <th class="ps-4">N° Sinistre</th>
+                            <th>Date déclaration</th>
+                            <th>Nature</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sinistre in derniers %}
+                            <tr>
+                                {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' %}
+                                    <td class="ps-4"><strong>{{ sinistre.numero_sinistre }}</strong></td>
+                                {% else %}
+                                    <td class="ps-4">
+                                        <center><strong>-</strong></center>
+                                    </td>
+                                {% endif %}
+                                <td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
+                                <td>{{ sinistre.get_nature_display }}</td>
+                                <td>
+                                    {% if sinistre.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ sinistre.get_statut_display }}</span>
                         {% elif sinistre.statut == 'ATTENTE' %}<span class="badge bg-warning text-dark">{{ sinistre.get_statut_display }}</span>
                         {% elif sinistre.statut == 'EN_COURS' %}<span class="badge bg-info text-dark">{{ sinistre.get_statut_display }}</span>
                         {% elif sinistre.statut == 'CLOTURE' %}<span class="badge bg-success">{{ sinistre.get_statut_display }}</span>
@@ -88,12 +90,12 @@
                         {% endif %}
                     </td>
                 </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="text-muted text-center py-5">Vous n'avez encore déclaré aucun sinistre.</p>
-        {% endif %}
-    </div>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p class="text-muted text-center py-5">Vous n'avez encore déclaré aucun sinistre.</p>
+{% endif %}
+</div>
 </div>
 {% endblock %}

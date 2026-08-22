@@ -1,92 +1,98 @@
 {% extends 'base_admin.html' %}
-
 {% block content %}
-<div class="container-fluid px-4 py-4">
-    <h2 class="mb-4">Gestion des points de vente</h2>
-
-    <!-- Messages de notification -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="row">
-        <!-- Formulaire d'ajout -->
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-3">
-                <div class="card-header text-white" style="background-color: #0b2545;">Ajouter un point de vente</div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="mb-2">
-                            <label class="form-label small text-muted">Nom du point de vente</label>
-                            {{ form.nom }}
-                        </div>
-                        <div class="mb-2">
-                            <label class="form-label small text-muted">Ville</label>
-                            {{ form.ville }}
-                        </div>
-                        <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
-                    </form>
+    <div class="container-fluid px-4 py-4">
+        <h2 class="mb-4">Gestion des points de vente</h2>
+        <!-- Messages de notification -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <div class="row">
+            <!-- Formulaire d'ajout -->
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header text-white" style="background-color: #0b2545;">Ajouter un point de vente</div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-2">
+                                <label class="form-label small text-muted">Nom du point de vente</label>
+                                {{ form.nom }}
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label small text-muted">Ville</label>
+                                {{ form.ville }}
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary w-100 mt-2">Ajouter</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Tableau de la liste des agences -->
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header text-white" style="background-color: #0b2545;">Liste des points de vente</div>
-                <div class="card-body p-0">
-                    <form method="get" class="p-3 border-bottom">
-                        <div class="row g-2 align-items-end">
-                            <div class="col-8">
-                                <input type="text" name="q" class="form-control form-control-sm" value="{{ recherche }}" placeholder="Nom ou ville">
+            <!-- Tableau de la liste des agences -->
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header text-white" style="background-color: #0b2545;">Liste des points de vente</div>
+                    <div class="card-body p-0">
+                        <form method="get" class="p-3 border-bottom">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-8">
+                                    <input type="text"
+                                           name="q"
+                                           class="form-control form-control-sm"
+                                           value="{{ recherche }}"
+                                           placeholder="Nom ou ville">
+                                </div>
+                                <div class="col-4 d-flex gap-2">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">Filtrer</button>
+                                </div>
                             </div>
-                            <div class="col-4 d-flex gap-2">
-                                <button type="submit" class="btn btn-outline-primary btn-sm w-100">Filtrer</button>
-                            </div>
-                        </div>
-                        {% if recherche %}
-                        <div class="mt-2">
-                            <a href="{% url 'gestion_agences' %}" class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Réinitialiser
-                            </a>
-                        </div>
-                        {% endif %}
-                    </form>
-                    <table class="table table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Nom du point de vente</th>
-                                <th>Ville</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for agence in agences %}
-                            <tr>
-                                <td>{{ agence.nom }}</td>
-                                <td>{{ agence.ville.nom|default:"--" }}</td>
-                                <td class="text-end">
-                                    <a href="#" class="btn btn-sm btn-outline-danger" onclick="return confirm('Supprimer cette agence ?');">
-                                        <i class="bi bi-trash"></i>
+                            {% if recherche %}
+                                <div class="mt-2">
+                                    <a href="{% url 'gestion_agences' %}"
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-x-circle"></i> Réinitialiser
                                     </a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                               <td colspan="3" class="text-muted text-center py-3">Aucun point de vente enregistrée en ce nom.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </div>
+                            {% endif %}
+                        </form>
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nom du point de vente</th>
+                                    <th>Ville</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for agence in agences %}
+                                    <tr>
+                                        <td>{{ agence.nom }}</td>
+                                        <td>{{ agence.ville.nom|default:"--" }}</td>
+                                        <td class="text-end">
+                                            <a href="#"
+                                               class="btn btn-sm btn-outline-danger"
+                                               onclick="return confirm('Supprimer cette agence ?');">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="text-muted text-center py-3">Aucun point de vente enregistrée en ce nom.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

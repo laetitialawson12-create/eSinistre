@@ -1,67 +1,75 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nouveau mot de passe - Fidélia</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Nouveau mot de passe - Fidélia</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+              rel="stylesheet">
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+        <style>
         :root { --fidelia-blue: #003366; }
         body { background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%); min-height: 100vh; display: flex; align-items: center; font-family: 'Segoe UI', sans-serif; }
         .login-card { max-width: 460px; width: 100%; border-radius: 12px; overflow: hidden; }
         .login-header { background: var(--fidelia-blue); color: white; padding: 30px; text-align: center; }
         .login-body { background: white; padding: 30px; }
         .login-footer { background: #f4f7f9; text-align: center; padding: 15px; font-size: 0.85rem; color: #6c757d; }
-    </style>
-</head>
-<body>
-    <div class="card mx-auto shadow login-card">
-        <div class="login-header">
-            <div><i class="bi bi-shield-lock-fill" style="font-size: 2rem;"></i></div>
-            <h3 class="fw-bold mt-2 mb-1">Définis ton nouveau mot de passe</h3>
-        </div>
-
-        <div class="login-body">
-            {% if form.errors %}
-            <div class="alert alert-danger">
-                {% for field in form %}{% for error in field.errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+        </style>
+    </head>
+    <body>
+        <div class="card mx-auto shadow login-card">
+            <div class="login-header">
+                <div>
+                    <i class="bi bi-shield-lock-fill" style="font-size: 2rem;"></i>
+                </div>
+                <h3 class="fw-bold mt-2 mb-1">Définis ton nouveau mot de passe</h3>
             </div>
-            {% endif %}
-
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Nouveau mot de passe</label>
-                    <div class="input-group">
-                        <input type="password" name="new_password1" id="pwd1" class="form-control" required>
-                        <button class="btn btn-outline-secondary" type="button" id="togglePassword1">
-                            <i class="bi bi-eye" id="toggleIcon1"></i>
-                        </button>
+            <div class="login-body">
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        {% for field in form %}{% for error in field.errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
                     </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Confirmation du mot de passe</label>
-                    <div class="input-group">
-                        <input type="password" name="new_password2" id="pwd2" class="form-control" required>
-                        <button class="btn btn-outline-secondary" type="button" id="togglePassword2">
-                            <i class="bi bi-eye" id="toggleIcon2"></i>
-                        </button>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nouveau mot de passe</label>
+                        <div class="input-group">
+                            <input type="password"
+                                   name="new_password1"
+                                   id="pwd1"
+                                   class="form-control"
+                                   required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword1">
+                                <i class="bi bi-eye" id="toggleIcon1"></i>
+                            </button>
+                        </div>
                     </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary w-100 fw-bold" style="background-color: var(--fidelia-blue);">Réinitialiser mon mot de passe</button>
-            </form>
-
-            <p class="text-center mt-3 small">
-                <a href="{% url 'login' %}"><i class="bi bi-arrow-left"></i> Retour à la connexion</a>
-            </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Confirmation du mot de passe</label>
+                        <div class="input-group">
+                            <input type="password"
+                                   name="new_password2"
+                                   id="pwd2"
+                                   class="form-control"
+                                   required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword2">
+                                <i class="bi bi-eye" id="toggleIcon2"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit"
+                            class="btn btn-primary w-100 fw-bold"
+                            style="background-color: var(--fidelia-blue)">Réinitialiser mon mot de passe</button>
+                </form>
+                <p class="text-center mt-3 small">
+                    <a href="{% url 'login' %}"><i class="bi bi-arrow-left"></i> Retour à la connexion</a>
+                </p>
+            </div>
+            <div class="login-footer">© 2026 Fidélia Assurances — Tous droits réservés</div>
         </div>
-
-        <div class="login-footer">© 2026 Fidélia Assurances — Tous droits réservés</div>
-    </div>
-
-    <script>
+        <script>
         function setupToggle(toggleId, inputId, iconId) {
             const btn = document.getElementById(toggleId);
             const input = document.getElementById(inputId);
@@ -77,6 +85,6 @@
         }
         setupToggle('togglePassword1', 'pwd1', 'toggleIcon1');
         setupToggle('togglePassword2', 'pwd2', 'toggleIcon2');
-    </script>
-</body>
+        </script>
+    </body>
 </html>

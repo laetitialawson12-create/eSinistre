@@ -1,266 +1,270 @@
 {% extends "base_assure.html" %}
-
 {% block content %}
-<div class="container-fluid mt-4">
-    <a href="{% url 'suivi_sinistres' %}" class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
-   style="border: 1px solid #003366; color: #003366; font-weight: 500; border-radius: 6px; padding: 6px 14px; transition: all 0.15s;"
-   onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
-   onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
-    <i class="bi bi-arrow-left"></i> Retour
-    </a>
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <!-- Titre principal -->
-    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' and sinistre.statut != 'ATTENTE_COMPLEMENTS' %}
-        <h3 class="mb-4">📋 Suivi du sinistre : {{ sinistre.numero_sinistre }}</h3>
-    {% else %}
-        <h3 class="mb-4">📋 Suivi du sinistre : - </h3>
-    {% endif %}
-
-    <a href="#messagerie" class="position-relative text-decoration-none" title="Aller à la messagerie">
-        <i class="bi bi-bell{% if nb_non_lus > 0 %}-fill{% endif %} fs-4 text-secondary"></i>
-        {% if nb_non_lus > 0 %}
-            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
-                {{ nb_non_lus }}
-            </span>
+    <div class="container-fluid mt-4">
+        <a href="{% url 'suivi_sinistres' %}"
+           class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
+           style="border: 1px solid #003366;
+                  color: #003366;
+                  font-weight: 500;
+                  border-radius: 6px;
+                  padding: 6px 14px;
+                  transition: all 0.15s"
+           onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
+           onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <!-- Titre principal -->
+            {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' and sinistre.statut != 'ATTENTE_COMPLEMENTS' %}
+                <h3 class="mb-4">📋 Suivi du sinistre : {{ sinistre.numero_sinistre }}</h3>
+            {% else %}
+                <h3 class="mb-4">📋 Suivi du sinistre : -</h3>
+            {% endif %}
+            <a href="#messagerie"
+               class="position-relative text-decoration-none"
+               title="Aller à la messagerie">
+                <i class="bi bi-bell{% if nb_non_lus > 0 %}-fill{% endif %} fs-4 text-secondary"></i>
+                {% if nb_non_lus > 0 %}
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          style="font-size: 0.65rem">{{ nb_non_lus }}</span>
+                {% endif %}
+            </a>
+        </div>
+        {% if sinistre.est_declaration_tiers %}
+            <div class="alert alert-info">
+                Déclaration faite par un tiers : <strong>{{ sinistre.nom_declarant }}</strong> — {{ sinistre.contact_declarant }}
+            </div>
         {% endif %}
-    </a>
-</div>
-    {% if sinistre.est_declaration_tiers %}
-    <div class="alert alert-info">
-        Déclaration faite par un tiers : <strong>{{ sinistre.nom_declarant }}</strong> — {{ sinistre.contact_declarant }}
-    </div>
-    {% endif %}
-
-    <!-- Cartes d'information en haut -->
-    <div class="row mb-4">
-        <div class="col-md-4 sticky-top" style="top: 20px;">
-            <div class="card p-3 shadow-sm border-0">
-                <p class="text-uppercase text-muted small fw-bold mb-1">Date déclaration</p>
-                <h5 class="fw-bold">{{ sinistre.date_declaration|date:"d/m/Y" }}</h5>
+        <!-- Cartes d'information en haut -->
+        <div class="row mb-4">
+            <div class="col-md-4 sticky-top" style="top: 20px;">
+                <div class="card p-3 shadow-sm border-0">
+                    <p class="text-uppercase text-muted small fw-bold mb-1">Date déclaration</p>
+                    <h5 class="fw-bold">{{ sinistre.date_declaration|date:"d/m/Y" }}</h5>
+                </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card p-3 shadow-sm border-0">
-                <p class="text-uppercase text-muted small fw-bold mb-1">Statut actuel</p>
-                <h5 class="fw-bold text-primary">{{ sinistre.get_statut_display }}</h5>
+            <div class="col-md-4">
+                <div class="card p-3 shadow-sm border-0">
+                    <p class="text-uppercase text-muted small fw-bold mb-1">Statut actuel</p>
+                    <h5 class="fw-bold text-primary">{{ sinistre.get_statut_display }}</h5>
+                </div>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card p-3 shadow-sm border-0">
-                <p class="text-uppercase text-muted small fw-bold mb-1">Agent traitant</p>
-                <h5 class="fw-bold">{{ sinistre.agent_traitant|default:"Non assigné" }}</h5>
-            </div>
-        </div>
-    </div>
-
-    
-    <!-- Section Attestation -->
-    <div class="row mb-4">
-        <div class="col-12">
-            {% if sinistre.attestation_generee %}
-                <div class="alert alert-success mb-0">
-                    <p class="mb-2">Votre déclaration a été validée et votre attestation est disponible !</p>
-                    <div class="btn-group" role="group">
-                        <a href="{% url 'voir_attestation' sinistre.id %}" class="btn btn-info me-2" target="_blank">
-                            <i class="fas fa-eye"></i> Voir l'attestation
-                        </a>
-                        <a href="{% url 'telecharger_attestation' sinistre.id %}" class="btn btn-primary">
-                            <i class="fas fa-download"></i> Télécharger mon attestation
-                        </a>
-                    </div>
-                </div>
-            {% else %}
-                <div class="alert alert-secondary mb-0">
-                    <p class="text-muted mb-0">Votre attestation est en cours de validation par le département.</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Section Statut d'indemnisation (basée sur les champs du modèle, pas sur le texte de l'historique) -->
-    {% if sinistre.indemnisation_validee %}
-    <div class="row mb-4">
-        <div class="col-12">
-            {% if sinistre.prix_retenu == 0 %}
-                <div class="alert alert-secondary mb-0">
-                    Après étude de votre dossier, votre sinistre a été jugé <strong>non indemnisable</strong>.
-                </div>
-            {% else %}
-                <div class="alert alert-success mb-0">
-                    Votre sinistre a été <strong>indemnisé</strong>. Consultez la section « Mes chèques / Paiements » ci-dessous pour le détail des versements.
-                </div>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- Détails de la déclaration -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white fw-bold">📝 Détails de la déclaration</div>
-                <div class="card-body">
-                    <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
-                    <p><strong>Contact :</strong> {{ sinistre.contact_declarant }}</p>
-                    {% if sinistre.est_declaration_tiers %}<p><strong>Adresse mail :</strong> {{ sinistre.email_declarant|default:"-" }}</p>{% endif %}
-                    <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
-                    <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
-                    <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}
-                        {% if sinistre.heure_approximative %} à {{ sinistre.heure_approximative|time:"H:i" }}{% endif %}
-                    </p>
-                    <p><strong>Lieu :</strong>
-                        {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} ({{ sinistre.region }})
-                    </p>
-                    <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
-
-                    {% if sinistre.nombre_blesses or sinistre.nombre_morts %}
-                    <p><strong>Victimes :</strong> {{ sinistre.nombre_blesses }} blessé(s), {{ sinistre.nombre_morts }} mort(s)</p>
-                    {% endif %}
-
-                    {% if sinistre.autre_vehicule_implique %}
-                    <p><strong>Véhicule adverse :</strong>
-                        {{ sinistre.vehicule_adverse_immatriculation|default:"—" }} —
-                        {{ sinistre.vehicule_adverse_marque|default:"—" }} {{ sinistre.vehicule_adverse_modele|default:"—" }}
-                        ({{ sinistre.vehicule_adverse_compagnie|default:"—" }})
-                    </p>
-                    {% endif %}
-
-                    <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
-
-                    <p><strong>Dommages :</strong> {{ sinistre.dommage }} </p>
+            <div class="col-md-4">
+                <div class="card p-3 shadow-sm border-0">
+                    <p class="text-uppercase text-muted small fw-bold mb-1">Agent traitant</p>
+                    <h5 class="fw-bold">{{ sinistre.agent_traitant|default:"Non assigné" }}</h5>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Corps principal : Chèques puis Historique à gauche, Documents et Messagerie à droite -->
-    <div class="row">
-        <!-- Colonne de gauche : Chèques et Historique -->
-        <div class="col-md-8">
-            <!-- Section : Suivi des chèques / paiements pour l'assuré (Placé avant l'historique) -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white fw-bold">💳 Mes chèques / Paiements d'indemnisation</div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>N° Chèque</th>
-                                    <th>Banque</th>
-                                    <th>Montant</th>
-                                    <th>Bénéficiaire</th>
-                                    <th>Date</th>
-                                    <th>Statut</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for paiement in sinistre.paiements.all %}
-                                <tr>
-                                    <td><strong>{{ paiement.numero_cheque }}</strong></td>
-                                    <td>{{ paiement.banque_cheque }}</td>
-                                    <td class="text-success fw-bold">{{ paiement.montant }} FCFA</td>
-                                    <td>{{ paiement.beneficiaire_prenoms }} {{ paiement.beneficiaire_nom }}</td>
-                                    <td>{{ paiement.date_emission|date:"d/m/Y" }}</td>
-                                    <td>
-                                        {% if paiement.statut == 'EMIS' %}
-                                            <span class="badge bg-primary">Émis</span>
-                                        {% elif paiement.statut == 'DISPONIBLE' %}
-                                            <span class="badge bg-warning text-dark">Prêt pour retrait</span>
-                                        {% elif paiement.statut == 'RETIRE' %}
-                                            <span class="badge bg-success">Retiré</span>
-                                        {% else %}
-                                            <span class="badge bg-danger">Annulé</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-3">Aucun chèque émis pour le moment.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Historique du dossier -->
-            <h4>Évolutions du dossier</h4>
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
-                <div class="card-body">
-                    {# Le filtrage (exclusion des lignes "Prix") et la réécriture des lignes #}
-                    {# d'indemnisation sont déjà faits côté vue (detail_sinistre dans views.py) : #}
-                    {# on affiche donc directement ce qui est envoyé, sans re-filtrer ici. #}
-                    {% for h in historique %}
-                        <p class="mb-1">
-                            <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span> 
-                            <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }} 
-                            <span class="text-muted">{% if h.auteur %} ({{ h.auteur.get_full_name|default:h.auteur.username }}) {% endif %}</span>
-                        </p>
-                    {% empty %}
-                        <p class="text-muted">Aucun historique pour ce dossier.</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Colonne de droite : Documents et Messagerie -->
-        <div class="col-md-4">
-            <!-- Documents joints -->
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white fw-bold">📁 Documents joints</div>
-                <ul class="list-group list-group-flush">
-                    {% for piece in documents %}
-                    <li class="list-group-item">
-                        <a href="{{ piece.fichier.url }}" target="_blank">
-                            {{ piece.fichier.name|cut:"sinistres/documents/" }}
-                        </a>
-                    </li>
-                    {% empty %}
-                    <li class="list-group-item text-muted">Aucun document joint.</li>
-                    {% endfor %}
-                </ul>
-            </div>
-
-            <!-- Messagerie -->
-            <div class="card shadow-sm border-0" id="messagerie">
-                <div class="card-header bg-white fw-bold">💬 Messagerie</div>
-                <div class="p-3" id="messagerie-scroll" style="height: 350px; overflow-y: auto; background: #f8f9fa;">
-                    {% for msg in sinistre.messages.all %}
-                        <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
-                            <div class="p-2 px-3 rounded shadow-sm d-inline-block 
-                                {% if msg.auteur == request.user %}bg-primary text-white{% else %}bg-white border{% endif %}">
-                                {{ msg.contenu }}
-                            </div>
-                            <small class="d-block text-muted mt-1" style="font-size: 0.7rem;">
-                                {{ msg.date_envoi|date:"d/m/Y H:i" }}
-                            </small>
+        <!-- Section Attestation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                {% if sinistre.attestation_generee %}
+                    <div class="alert alert-success mb-0">
+                        <p class="mb-2">Votre déclaration a été validée et votre attestation est disponible !</p>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'voir_attestation' sinistre.id %}"
+                               class="btn btn-info me-2"
+                               target="_blank">
+                                <i class="fas fa-eye"></i> Voir l'attestation
+                            </a>
+                            <a href="{% url 'telecharger_attestation' sinistre.id %}"
+                               class="btn btn-primary">
+                                <i class="fas fa-download"></i> Télécharger mon attestation
+                            </a>
                         </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary mb-0">
+                        <p class="text-muted mb-0">Votre attestation est en cours de validation par le département.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Section Statut d'indemnisation (basée sur les champs du modèle, pas sur le texte de l'historique) -->
+        {% if sinistre.indemnisation_validee %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    {% if sinistre.prix_retenu == 0 %}
+                        <div class="alert alert-secondary mb-0">
+                            Après étude de votre dossier, votre sinistre a été jugé <strong>non indemnisable</strong>.
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success mb-0">
+                            Votre sinistre a été <strong>indemnisé</strong>. Consultez la section « Mes chèques / Paiements » ci-dessous pour le détail des versements.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        <!-- Détails de la déclaration -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white fw-bold">📝 Détails de la déclaration</div>
+                    <div class="card-body">
+                        <p><strong>N° Police :</strong> {{ sinistre.assure.assure.numero_police|default:"—" }}</p>
+                        <p><strong>Contact :</strong> {{ sinistre.contact_declarant }}</p>
+                        {% if sinistre.est_declaration_tiers %}<p><strong>Adresse mail :</strong> {{ sinistre.email_declarant|default:"-" }}</p>{% endif %}
+                        <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
+                        <p><strong>Véhicule :</strong> {{ sinistre.vehicule.immatriculation|default:"—" }}</p>
+                        <p>
+                            <strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}
+                            {% if sinistre.heure_approximative %}à {{ sinistre.heure_approximative|time:"H:i" }}{% endif %}
+                        </p>
+                        <p>
+                            <strong>Lieu :</strong>
+                            {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} ({{ sinistre.region }})
+                        </p>
+                        <p><strong>Nature :</strong> {{ sinistre.get_nature_display }}</p>
+                        {% if sinistre.nombre_blesses or sinistre.nombre_morts %}
+                            <p><strong>Victimes :</strong> {{ sinistre.nombre_blesses }} blessé(s), {{ sinistre.nombre_morts }} mort(s)</p>
+                        {% endif %}
+                        {% if sinistre.autre_vehicule_implique %}
+                            <p>
+                                <strong>Véhicule adverse :</strong>
+                                {{ sinistre.vehicule_adverse_immatriculation|default:"—" }} —
+                                {{ sinistre.vehicule_adverse_marque|default:"—" }} {{ sinistre.vehicule_adverse_categorie|default:"—" }}
+                                ({{ sinistre.vehicule_adverse_compagnie|default:"—" }})
+                            </p>
+                        {% endif %}
+                        <p><strong>Circonstances :</strong> {{ sinistre.circonstances }}</p>
+                        <p><strong>Dommages :</strong> {{ sinistre.dommage }} </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Corps principal : Chèques puis Historique à gauche, Documents et Messagerie à droite -->
+        <div class="row">
+            <!-- Colonne de gauche : Chèques et Historique -->
+            <div class="col-md-8">
+                <!-- Section : Suivi des chèques / paiements pour l'assuré (Placé avant l'historique) -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold">💳 Mes chèques / Paiements d'indemnisation</div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>N° Chèque</th>
+                                        <th>Banque</th>
+                                        <th>Montant</th>
+                                        <th>Bénéficiaire</th>
+                                        <th>Date</th>
+                                        <th>Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for paiement in sinistre.paiements.all %}
+                                        <tr>
+                                            <td><strong>{{ paiement.numero_cheque }}</strong></td>
+                                            <td>{{ paiement.banque_cheque }}</td>
+                                            <td class="text-success fw-bold">{{ paiement.montant }} FCFA</td>
+                                            <td>{{ paiement.beneficiaire_prenoms }} {{ paiement.beneficiaire_nom }}</td>
+                                            <td>{{ paiement.date_emission|date:"d/m/Y" }}</td>
+                                            <td>
+                                                {% if paiement.statut == 'EMIS' %}
+                                                    <span class="badge bg-primary">Émis</span>
+                                                {% elif paiement.statut == 'DISPONIBLE' %}
+                                                    <span class="badge bg-warning text-dark">Prêt pour retrait</span>
+                                                {% elif paiement.statut == 'RETIRE' %}
+                                                    <span class="badge bg-success">Retiré</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Annulé</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted py-3">Aucun chèque émis pour le moment.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Historique du dossier -->
+                <h4>Évolutions du dossier</h4>
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold">🕓 Historique du dossier</div>
+                    <div class="card-body">
+                        {# Le filtrage (exclusion des lignes "Prix") et la réécriture des lignes #}
+                        {# d'indemnisation sont déjà faits côté vue (detail_sinistre dans views.py) : #}
+                        {# on affiche donc directement ce qui est envoyé, sans re-filtrer ici. #}
+                        {% for h in historique %}
+                            <p class="mb-1">
+                                <span class="badge bg-secondary">{{ h.date_changement|date:"d/m/Y H:i" }}</span>
+                                <strong>{{ h.get_statut_display|default:h.statut }}</strong> — {{ h.commentaires }}
+                                <span class="text-muted">{% if h.auteur %} ({{ h.auteur.get_full_name|default:h.auteur.username }}) {% endif %}</span>
+                            </p>
+                        {% empty %}
+                            <p class="text-muted">Aucun historique pour ce dossier.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- Colonne de droite : Documents et Messagerie -->
+            <div class="col-md-4">
+                <!-- Documents joints -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-white fw-bold">📁 Documents joints</div>
+                    <ul class="list-group list-group-flush">
+                        {% for piece in documents %}
+                            <li class="list-group-item">
+                                <a href="{{ piece.fichier.url }}" target="_blank">{{ piece.fichier.name|cut:"sinistres/documents/" }}</a>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item text-muted">Aucun document joint.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <!-- Messagerie -->
+                <div class="card shadow-sm border-0" id="messagerie">
+                    <div class="card-header bg-white fw-bold">💬 Messagerie</div>
+                    <div class="p-3"
+                         id="messagerie-scroll"
+                         style="height: 350px;
+                                overflow-y: auto;
+                                background: #f8f9fa">
+                        {% for msg in sinistre.messages.all %}
+                            <div class="mb-3 {% if msg.auteur == request.user %}text-end{% endif %}">
+                                <div class="p-2 px-3 rounded shadow-sm d-inline-block {% if msg.auteur == request.user %}bg-primary text-white{% else %}bg-white border{% endif %}">
+                                    {{ msg.contenu }}
+                                </div>
+                                <small class="d-block text-muted mt-1" style="font-size: 0.7rem;">{{ msg.date_envoi|date:"d/m/Y H:i" }}</small>
+                            </div>
                         {% empty %}
                             <p class="text-muted text-center mt-4">Aucun message pour le moment.</p>
                         {% endfor %}
-                </div>
-                <!-- Zone de saisie -->
-                <div class="card-footer bg-white border-top-0">
-                    <form method="post">
-                        {% csrf_token %}
-                        <div class="input-group">
-                            <input type="text" name="contenu" class="form-control" placeholder="Répondre..." required>
-                            <button class="btn" style="background: var(--fidelia-blue); color: white;" type="submit">Envoyer</button>
-                        </div>
-                    </form>
+                    </div>
+                    <!-- Zone de saisie -->
+                    <div class="card-footer bg-white border-top-0">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text"
+                                       name="contenu"
+                                       class="form-control"
+                                       placeholder="Répondre..."
+                                       required>
+                                <button class="btn"
+                                        style="background: var(--fidelia-blue);
+                                               color: white"
+                                        type="submit">Envoyer</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<script>
+    <script>
     document.addEventListener('DOMContentLoaded', function () {
         var boiteMessages = document.getElementById('messagerie-scroll');
         if (boiteMessages) {
             boiteMessages.scrollTop = boiteMessages.scrollHeight;
         }
     });
-</script>
+    </script>
 {% endblock %}

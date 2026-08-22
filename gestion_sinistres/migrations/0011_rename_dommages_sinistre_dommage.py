@@ -10,9 +10,19 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name='sinistre',
-            old_name='dommages',
-            new_name='dommage',
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="ALTER TABLE gestion_sinistres_sinistre CHANGE COLUMN dommages dommage longtext NOT NULL;",
+                    reverse_sql="ALTER TABLE gestion_sinistres_sinistre CHANGE COLUMN dommage dommages longtext NOT NULL;",
+                ),
+            ],
+            state_operations=[
+                migrations.RenameField(
+                    model_name='sinistre',
+                    old_name='dommages',
+                    new_name='dommage',
+                ),
+            ],
         ),
     ]

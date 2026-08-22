@@ -20,7 +20,7 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 from django.db import IntegrityError, transaction
 from django.urls import reverse
-from xhtml2pdf import pisa 
+from xhtml2pdf import pisa
 from django.conf import settings
 from decimal import Decimal, InvalidOperation
 from .forms import (
@@ -1533,7 +1533,7 @@ def detail_sinistre_chef(request, sinistre_id):
 def valider_declaration(request, sinistre_id):
     chef = getattr(request.user, 'chef', None)
     if not chef and not request.user.is_staff:
-        return redirect('accueil_assure')
+        return redirect('accueil_chef')
 
     sinistre = get_object_or_404(Sinistre, id=sinistre_id, statut='ATTENTE_VALIDATION')
     sinistre.statut = 'EN_COURS'
@@ -1968,6 +1968,8 @@ def telecharger_attestation(request, sinistre_id):
     date_echeance = quittances.first().date_fin if quittances.exists() else None
 
     logo_path = os.path.join(settings.STATICFILES_DIRS[0], "Logo Fidelia.jpeg")
+    brand_path = os.path.join(settings.STATICFILES_DIRS[0], "images", "brand_scriptbold.png")
+    
     signature_path = ""
     if sinistre.chef_validateur and getattr(sinistre.chef_validateur.chef, 'signature', None):
         signature_path = sinistre.chef_validateur.chef.signature.path
@@ -1977,6 +1979,7 @@ def telecharger_attestation(request, sinistre_id):
         'date_effet': date_effet,
         'date_echeance': date_echeance,
         'logo_path': logo_path,
+        'brand_path': brand_path,
         'signature_path': signature_path,
     }, request=request)
 
@@ -2563,9 +2566,10 @@ def importer_donnees_admin(request):
                                     return val
                     return None
 
+                lignes_importees = 0
                 for index, row in df.iterrows():
-                    type_contrat = str(get_val(row, ['TYPE_CONTRAT', 'TYPE CONTRAT', 'CONTRAT']) or '').strip()
-                    if type_contrat.lower() != 'automobile':
+                    branche = str(get_val(row, ['BRANCHE', 'TYPE CONTRAT', 'CONTRAT']) or '').strip()
+                    if branche.lower() != 'automobile':
                         continue  
                         
                     email_excel = get_val(row, ['EMAIL', 'COURRIEL', 'MAIL'])
@@ -2635,7 +2639,7 @@ def importer_donnees_admin(request):
                         numero_quittance=numero_quittance,
                         defaults={
                             'contrat': assure,
-                            'type_contrat': type_contrat,
+                            'branche': branche,
                             'date_debut': date_debut,
                             'date_fin': date_fin,
                             'prime': prime
@@ -2643,6 +2647,7 @@ def importer_donnees_admin(request):
                     )
 
                     if immatriculation and marque:
+                        lignes_importees += 1
                         Vehicule.objects.update_or_create(
                             immatriculation=immatriculation,
                             defaults={
@@ -2653,8 +2658,11 @@ def importer_donnees_admin(request):
                             }
                         )
                 
-                messages.success(request, "Importation des contrats et de leurs quittances réussie avec succès !")
-                return redirect('accueil_admin')
+                if lignes_importees > 0:
+                    messages.success(request, f"{lignes_importees} contrat(s) importé(s) avec succès !")
+                else:
+                    messages.warning(request, "Aucune ligne n'a pu être importée. Vérifiez les valeurs de TYPE_CONTRAT, EMAIL, NUMERO_POLICE et NUMERO_QUITTANCE dans votre fichier.")
+                return redirect('liste_contrats')
                 
             except Exception as e:
                 messages.error(request, f"Erreur lors de l'importation : {e}")
@@ -2795,7 +2803,7 @@ def liste_contrats_admin(request):
     quittances = Quittance.objects.select_related('contrat', 'contrat__user').order_by('contrat__user__last_name', 'contrat__user__first_name')
     query_police = request.GET.get('police', '').strip()
     query_nom = request.GET.get('nom', '').strip()
-    query_type = request.GET.get('type_contrat', '').strip()
+    query_type = request.GET.get('branche', '').strip()
     query_quittance = request.GET.get('quittance', '').strip()
     periode_option = request.GET.get('periode_option', '')
     date_effet_debut = request.GET.get('date_effet_debut', '')
@@ -2825,7 +2833,7 @@ def liste_contrats_admin(request):
             Q(contrat__user__first_name__icontains=query_nom)
         )
     if query_type:
-        quittances = quittances.filter(type_contrat__icontains=query_type)
+        quittances = quittances.filter(branche__icontains=query_type)
     if query_quittance:
         quittances = quittances.filter(numero_quittance__icontains=query_quittance)
     if date_effet_debut:
@@ -2944,7 +2952,7 @@ def exporter_contrats_admin(request):
     ws.title = "Contrats"
 
     entetes =  ["N° Police", "Nom", "Prénom(s)", "Email", "Téléphone",
-                "N° Quittance", "Type de contrat", "Date effet", 
+                "N° Quittance", "Branche", "Date effet", 
                 "Date échéance", "Prime TTC(FCFA)", "Véhicule(s)"]
 
     ws.append(entetes)
@@ -2961,7 +2969,7 @@ def exporter_contrats_admin(request):
             q.contrat.user.email,
             q.contrat.telephone or '',
             q.numero_quittance,
-            q.type_contrat or '',
+            q.branche or '',
             q.date_debut.strftime('%d/%m/%Y') if q.date_debut else '',
             q.date_fin.strftime('%d/%m/%Y') if q.date_fin else '',
             float(q.prime),

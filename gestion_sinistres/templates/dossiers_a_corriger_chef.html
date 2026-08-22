@@ -1,86 +1,119 @@
 {% extends "base_chef.html" %}
 {% block title %}Dossiers à corriger{% endblock %}
 {% block content %}
-<h4 class="mb-4">⚠️ Dossiers à corriger</h4>
-
-<div class="card border-0 shadow-sm p-3 mb-4">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-3">
-            <label class="form-label small text-secondary text-uppercase">Nature</label>
-            <select name="nature" class="form-select">
-                <option value="">Toutes</option>
-                {% for value, label in nature_choices %}
-                <option value="{{ value }}" {% if value == nature_selectionnee %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-5">
-            <label class="form-label small text-secondary text-uppercase">Rechercher (n° sinistre ou n° police)</label>
-            <input type="text" name="q" class="form-control" value="{{ recherche }}" placeholder="Ex: 2026001M000012">
-        </div>
-        <div class="col-12">
-            <label class="form-label small text-secondary text-uppercase">Période (date de l'accident)</label>
-            <div class="d-flex flex-wrap gap-2 mb-2">
-                <button type="submit" name="periode_option" value="auj" class="btn btn-sm btn-outline-secondary {% if periode_option == 'auj' %}active{% endif %}">Aujourd'hui</button>
-                <button type="submit" name="periode_option" value="7j" class="btn btn-sm btn-outline-secondary {% if periode_option == '7j' %}active{% endif %}">7 derniers jours</button>
-                <button type="submit" name="periode_option" value="mois" class="btn btn-sm btn-outline-secondary {% if periode_option == 'mois' %}active{% endif %}">Ce mois-ci</button>
-                <button type="submit" name="periode_option" value="trimestre" class="btn btn-sm btn-outline-secondary {% if periode_option == 'trimestre' %}active{% endif %}">Ce trimestre</button>
-                <button type="submit" name="periode_option" value="annee" class="btn btn-sm btn-outline-secondary {% if periode_option == 'annee' %}active{% endif %}">Cette année</button>
+    <h4 class="mb-4">⚠️ Dossiers à corriger</h4>
+    <div class="card border-0 shadow-sm p-3 mb-4">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-secondary text-uppercase">Nature</label>
+                <select name="nature" class="form-select">
+                    <option value="">Toutes</option>
+                    {% for value, label in nature_choices %}
+                        <option value="{{ value }}"
+                                {% if value == nature_selectionnee %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <input type="date" name="date_debut" value="{{ date_debut }}" class="form-control form-control-sm">
+            <div class="col-md-5">
+                <label class="form-label small text-secondary text-uppercase">Rechercher (n° sinistre ou n° police)</label>
+                <input type="text"
+                       name="q"
+                       class="form-control"
+                       value="{{ recherche }}"
+                       placeholder="Ex: 2026001M000012">
+            </div>
+            <div class="col-12">
+                <label class="form-label small text-secondary text-uppercase">Période (date de l'accident)</label>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <button type="submit"
+                            name="periode_option"
+                            value="auj"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'auj' %}active{% endif %}">Aujourd'hui</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="7j"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == '7j' %}active{% endif %}">7 derniers jours</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="mois"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'mois' %}active{% endif %}">Ce mois-ci</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="trimestre"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'trimestre' %}active{% endif %}">Ce trimestre</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="annee"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'annee' %}active{% endif %}">Cette année</button>
                 </div>
-                <div class="col-md-3">
-                    <input type="date" name="date_fin" value="{{ date_fin }}" class="form-control form-control-sm">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <input type="date"
+                               name="date_debut"
+                               value="{{ date_debut }}"
+                               class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date"
+                               name="date_fin"
+                               value="{{ date_fin }}"
+                               class="form-control form-control-sm">
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-4 d-flex gap-2">
-            <button type="submit" class="btn flex-fill" style="background: #003366; color: white; white-space: nowrap;">Filtrer</button>
-            {% if nature_selectionnee or recherche or date_debut or date_fin %}
-            <a href="{% url 'dossiers_a_corriger_chef' %}" class="btn flex-fill d-flex align-items-center justify-content-center gap-1" style="background: #003366; color: white; white-space: nowrap;">
-                <i class="bi bi-x-circle"></i> Réinitialiser
-            </a>
-            {% endif %}
-        </div>
-    </form>
-</div>
-
-<div class="card shadow-sm border-0">
-    <div class="card-body p-0">
-        <table class="table mb-0">
-            <thead>
-                <tr>
-                    <th>N° Sinistre</th>
-                    <th>Date</th>
-                    <th>Assuré</th>
-                    <th>Nature</th>
-                    <th>Statut</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for s in sinistres_a_corriger %}
-                <tr>
-                    <td><strong>{{ s.numero_sinistre }}</strong></td>
-                    <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
-                    <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
-                    <td>{{ s.get_nature_display }}</td>
-                    <td>
-                        <span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
-                    </td>
-                    <td>
-                        <a href="{% url 'detail_sinistre_chef' s.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-outline-secondary">Voir</a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center text-muted py-3">Aucun dossier à corriger pour le moment.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit"
+                        class="btn flex-fill"
+                        style="background: #003366;
+                               color: white;
+                               white-space: nowrap">Filtrer</button>
+                {% if nature_selectionnee or recherche or date_debut or date_fin %}
+                    <a href="{% url 'dossiers_a_corriger_chef' %}"
+                       class="btn flex-fill d-flex align-items-center justify-content-center gap-1"
+                       style="background: #003366;
+                              color: white;
+                              white-space: nowrap">
+                        <i class="bi bi-x-circle"></i> Réinitialiser
+                    </a>
+                {% endif %}
+            </div>
+        </form>
     </div>
-</div>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>N° Sinistre</th>
+                        <th>Date</th>
+                        <th>Assuré</th>
+                        <th>Nature</th>
+                        <th>Statut</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sinistres_a_corriger %}
+                        <tr>
+                            <td><strong>{{ s.numero_sinistre }}</strong></td>
+                            <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+                            <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
+                            <td>{{ s.get_nature_display }}</td>
+                            <td>
+                                <span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'detail_sinistre_chef' s.id %}?next={{ request.get_full_path|urlencode }}"
+                                   class="btn btn-sm btn-outline-secondary">Voir</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">Aucun dossier à corriger pour le moment.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}

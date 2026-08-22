@@ -1,39 +1,43 @@
 {% extends 'base_admin.html' %}
-
 {% block title %}Confirmer la suppression{% endblock %}
-
 {% block content %}
-<center>
-<div class="container-fluid px-4">
-    <h1 class="mt-4" style="color: #0b2545;">Confirmation de suppression</h1>
-
-    <div class="card mb-4 mt-4 shadow-sm" style="max-width: 600px; border-top: 5px solid #990000 !important;">
-        <div class="card-header text-white" style="background-color: #990000;">
-            <i class="fas fa-exclamation-triangle me-1"></i> Avertissement de suppression
-        </div>
-        <div class="card-body">
-            <p class="fs-5">
-                Êtes-vous sûr de vouloir supprimer définitivement le sinistre
-                <strong>{{ sinistre.numero_sinistre|default:sinistre.id }}</strong> ?
-            </p>
-            <p class="text-muted">
-                Cette action est irréversible. L'historique, les pièces jointes, messages
-                et paiements liés à ce dossier seront eux aussi définitivement supprimés.
-            </p>
-
-            <form method="POST" action="{% url 'supprimer_sinistre_admin' sinistre.id %}" class="mt-4">
-                {% csrf_token %}
-                <div class="d-flex justify-content-between">
-                    <a href="{% url 'detail_sinistre_admin' sinistre.id %}" class="btn btn-secondary w-50 me-2">
-                        <i class="fas fa-arrow-left"></i> Annuler
-                    </a>
-                    <button type="submit" class="btn btn-danger w-50 ms-2" style="background-color: #990000; border-color: #990000;">
-                        <i class="fas fa-trash"></i> Oui, supprimer
-                    </button>
+    <center>
+        <div class="container-fluid px-4">
+            <h1 class="mt-4" style="color: #0b2545;">Confirmation de suppression</h1>
+            <div class="card mb-4 mt-4 shadow-sm"
+                 style="max-width: 600px;
+                        border-top: 5px solid #990000 !important">
+                <div class="card-header text-white" style="background-color: #990000;">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Avertissement de suppression
                 </div>
-            </form>
+                <div class="card-body">
+                    <p class="fs-5">
+                        Êtes-vous sûr de vouloir supprimer définitivement le sinistre
+                        <strong>{{ sinistre.numero_sinistre|default:sinistre.id }}</strong> ?
+                    </p>
+                    <p class="text-muted">
+                        Cette action est irréversible. L'historique, les pièces jointes, messages
+                        et paiements liés à ce dossier seront eux aussi définitivement supprimés.
+                    </p>
+                    <form method="POST"
+                          action="{% url 'supprimer_sinistre_admin' sinistre.id %}"
+                          class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'detail_sinistre_admin' sinistre.id %}"
+                               class="btn btn-secondary w-50 me-2">
+                                <i class="fas fa-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit"
+                                    class="btn btn-danger w-50 ms-2"
+                                    style="background-color: #990000;
+                                           border-color: #990000">
+                                <i class="fas fa-trash"></i> Oui, supprimer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
-</center>
+    </center>
 {% endblock %}

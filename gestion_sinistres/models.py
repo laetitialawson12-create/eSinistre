@@ -38,12 +38,12 @@ class Quittance(models.Model):
     # Contrat (Assuré) auquel cette quittance est rattachée
     contrat = models.ForeignKey('Assure', on_delete=models.CASCADE, related_name='quittances')
     numero_quittance = models.CharField(max_length=50, unique=True)
-    type_contrat = models.CharField(max_length=100, blank=True, null=True)
+    branche = models.CharField(max_length=100, blank=True, null=True)
     date_debut = models.DateField()
     date_fin = models.DateField()
     
     # Champs financiers
-    prime = models.DecimalField(max_digits=12, decimal_places=2)  # Représente la prime nette
+    prime = models.DecimalField(max_digits=12, decimal_places=2)  # Représente la prime TTC
     prix_retenu = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     prix_valide = models.BooleanField(default=False)
     

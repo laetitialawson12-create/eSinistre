@@ -1,149 +1,175 @@
 {% extends 'base_admin.html' %}
-
 {% block title %}Supervision des sinistres{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Supervision des sinistres</h3>
-    <div class="d-flex gap-2">
-        <a href="{% url 'importer_sinistres' %}" class="btn btn-outline-primary">
-            <i class="bi bi-file-earmark-arrow-up"></i> Importer des sinistres
-        </a>
-        <a href="{% url 'exporter_sinistres' %}?statut={{ statut_selectionne }}&nature={{ nature_selectionnee }}&q={{ recherche }}" class="btn btn-outline-success">
-            <i class="bi bi-file-earmark-excel"></i> Exporter la liste filtrée
-        </a>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Supervision des sinistres</h3>
+        <div class="d-flex gap-2">
+            <a href="{% url 'importer_sinistres' %}" class="btn btn-outline-primary">
+                <i class="bi bi-file-earmark-arrow-up"></i> Importer des sinistres
+            </a>
+            <a href="{% url 'exporter_sinistres' %}?statut={{ statut_selectionne }}&nature={{ nature_selectionnee }}&q={{ recherche }}"
+               class="btn btn-outline-success">
+                <i class="bi bi-file-earmark-excel"></i> Exporter la liste filtrée
+            </a>
+        </div>
     </div>
-</div>
-
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-{% endif %}
-
-<div class="card border-0 shadow-sm p-3 mb-4">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-3">
-            <label class="form-label small text-secondary text-uppercase">Statut</label>
-            <select name="statut" class="form-select">
-                <option value="">Tous</option>
-                {% for value, label in statut_choices %}
-                <option value="{{ value }}" {% if value == statut_selectionne %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small text-secondary text-uppercase">Nature</label>
-            <select name="nature" class="form-select">
-                <option value="">Toutes</option>
-                {% for value, label in nature_choices %}
-                <option value="{{ value }}" {% if value == nature_selectionnee %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label small text-secondary text-uppercase">Recherche (n° sinistre ou n° police)</label>
-            <input type="text" name="q" class="form-control" value="{{ recherche }}" placeholder="Ex: 2026001M000012">
-        </div>
-        <div class="col-md-2 d-flex gap-2">
-            <button type="submit" class="btn w-100" style="background: var(--fidelia-blue); color: white;">Filtrer</button>
-        </div>
-    </form>
-    {% if statut_selectionne or nature_selectionnee or recherche %}
-    <div class="mt-2">
-        <a href="{% url 'supervision_sinistres' %}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-x-circle"></i> Réinitialiser les filtres
-        </a>
-    </div>
-    {% endif %}
-</div>
-
-<div class="card border-0 shadow-sm p-3">
-    <form method="post" action="{% url 'action_lot_sinistres' %}" id="form-lot-sinistres">
-        {% csrf_token %}
-
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-            <div class="text-secondary small">{{ sinistres|length }} résultat{{ sinistres|length|pluralize }}</div>
-            {% if sinistres %}
-            <div class="d-flex align-items-center gap-2">
-                <span class="small text-secondary"><span id="count-selection-sinistres">0</span> sélectionné(s)</span>
-                <select name="action" class="form-select form-select-sm w-auto">
-                    <option value="exporter">Exporter</option>
-                    <option value="supprimer">Supprimer</option>
-                </select>
-                <button type="submit" class="btn btn-sm btn-outline-primary" id="btn-appliquer-lot-sinistres">
-                    Appliquer à la sélection
-                </button>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm"
+                 role="alert">
+                {{ message }}
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert"
+                        aria-label="Close"></button>
             </div>
-            {% endif %}
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead>
-                    <tr>
-                        <th style="width:30px;"><input type="checkbox" id="select-all-sinistres"></th>
-                        <th>N° Sinistre</th>
-                        <th>Assuré</th>
-                        <th>N° Police</th>
-                        <th>Nature</th>
-                        <th>Statut</th>
-                        <th>Agent traitant</th>
-                        <th>Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for s in sinistres %}
-                    <tr>
-                        <td><input type="checkbox" name="selection" value="{{ s.id }}" class="check-sinistre"></td>
-                        <td>{{ s.numero_sinistre|default:"—" }}</td>
-                        <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
-                        <td>{{ s.assure.assure.numero_police|default:"—" }}</td>
-                        <td>{{ s.get_nature_display|default:"—" }}</td>
-                        <td>
-                            {% if s.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
-                            {% elif s.statut == 'ATTENTE_COMPLEMENTS' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
-                            {% elif s.statut == 'ATTENTE_VALIDATION' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
-                            {% elif s.statut == 'A_CORRIGER' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
-                            {% elif s.statut == 'EN_COURS' %}<span class="badge bg-info text-dark">{{ s.get_statut_display }}</span>
-                            {% elif s.statut == 'CLOTURE' %}<span class="badge bg-success">{{ s.get_statut_display }}</span>
-                            {% elif s.statut == 'SANS_SUITE' %}<span class="badge bg-dark">{{ s.get_statut_display }}</span>
-                            {% elif s.statut == 'REOUVERT' %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
-                            {% else %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ s.agent_traitant|default:"—" }}</td>
-                        <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
-                        <td>
-                            <div class="d-flex gap-1">
-                                <a href="{% url 'detail_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-secondary" title="Voir">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'modifier_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
-                                    <i class="bi bi-pencil-square"></i>
-                                </a>
-                                <a href="{% url 'exporter_sinistres' %}?id={{ s.id }}" class="btn btn-sm btn-outline-success" title="Exporter">
-                                    <i class="bi bi-file-earmark-excel"></i>
-                                </a>
-                                <a href="{% url 'supprimer_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="9" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>
+        {% endfor %}
+    {% endif %}
+    <div class="card border-0 shadow-sm p-3 mb-4">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-secondary text-uppercase">Statut</label>
+                <select name="statut" class="form-select">
+                    <option value="">Tous</option>
+                    {% for value, label in statut_choices %}
+                        <option value="{{ value }}"
+                                {% if value == statut_selectionne %}selected{% endif %}>{{ label }}</option>
                     {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </form>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-secondary text-uppercase">Nature</label>
+                <select name="nature" class="form-select">
+                    <option value="">Toutes</option>
+                    {% for value, label in nature_choices %}
+                        <option value="{{ value }}"
+                                {% if value == nature_selectionnee %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-secondary text-uppercase">Recherche (n° sinistre ou n° police)</label>
+                <input type="text"
+                       name="q"
+                       class="form-control"
+                       value="{{ recherche }}"
+                       placeholder="Ex: 2026001M000012">
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit"
+                        class="btn w-100"
+                        style="background: var(--fidelia-blue);
+                               color: white">Filtrer</button>
+            </div>
+        </form>
+        {% if statut_selectionne or nature_selectionnee or recherche %}
+            <div class="mt-2">
+                <a href="{% url 'supervision_sinistres' %}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    <div class="card border-0 shadow-sm p-3">
+        <form method="post"
+              action="{% url 'action_lot_sinistres' %}"
+              id="form-lot-sinistres">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <div class="text-secondary small">{{ sinistres|length }} résultat{{ sinistres|length|pluralize }}</div>
+                {% if sinistres %}
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="small text-secondary"><span id="count-selection-sinistres">0</span> sélectionné(s)</span>
+                        <select name="action" class="form-select form-select-sm w-auto">
+                            <option value="exporter">Exporter</option>
+                            <option value="supprimer">Supprimer</option>
+                        </select>
+                        <button type="submit"
+                                class="btn btn-sm btn-outline-primary"
+                                id="btn-appliquer-lot-sinistres">Appliquer à la sélection</button>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:30px;">
+                                <input type="checkbox" id="select-all-sinistres">
+                            </th>
+                            <th>N° Sinistre</th>
+                            <th>Assuré</th>
+                            <th>N° Police</th>
+                            <th>Nature</th>
+                            <th>Statut</th>
+                            <th>Agent traitant</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in sinistres %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox"
+                                           name="selection"
+                                           value="{{ s.id }}"
+                                           class="check-sinistre">
+                                </td>
+                                <td>{{ s.numero_sinistre|default:"—" }}</td>
+                                <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
+                                <td>{{ s.assure.assure.numero_police|default:"—" }}</td>
+                                <td>{{ s.get_nature_display|default:"—" }}</td>
+                                <td>
+                                    {% if s.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
+                        {% elif s.statut == 'ATTENTE_COMPLEMENTS' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                        {% elif s.statut == 'ATTENTE_VALIDATION' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
+                        {% elif s.statut == 'A_CORRIGER' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                        {% elif s.statut == 'EN_COURS' %}<span class="badge bg-info text-dark">{{ s.get_statut_display }}</span>
+                        {% elif s.statut == 'CLOTURE' %}<span class="badge bg-success">{{ s.get_statut_display }}</span>
+                        {% elif s.statut == 'SANS_SUITE' %}<span class="badge bg-dark">{{ s.get_statut_display }}</span>
+                        {% elif s.statut == 'REOUVERT' %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
+                        {% else %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ s.agent_traitant|default:"—" }}</td>
+                    <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'detail_sinistre_admin' s.id %}"
+                               class="btn btn-sm btn-outline-secondary"
+                               title="Voir">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'modifier_sinistre_admin' s.id %}"
+                               class="btn btn-sm btn-outline-warning"
+                               title="Modifier">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <a href="{% url 'exporter_sinistres' %}?id={{ s.id }}"
+                               class="btn btn-sm btn-outline-success"
+                               title="Exporter">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </a>
+                            <a href="{% url 'supprimer_sinistre_admin' s.id %}"
+                               class="btn btn-sm btn-outline-danger"
+                               title="Supprimer">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+{% empty %}
+    <tr>
+        <td colspan="9" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td>
+    </tr>
+{% endfor %}
+</tbody>
+</table>
 </div>
-
+</form>
+</div>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const selectAll = document.getElementById('select-all-sinistres');

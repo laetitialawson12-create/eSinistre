@@ -1,128 +1,153 @@
 {% extends 'base_agent.html' %}
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-9">
-
-            <!-- Affichage esthétique des messages d'erreur ou de succès -->
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-            <div>
-                <a href="{% url 'detail_sinistre_agent' sinistre.id %}" class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
-                style="border: 1px solid #003366; color: #003366; font-weight: 500; border-radius: 6px; padding: 6px 14px; transition: all 0.15s;"
-                onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
-                onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
-                    <i class="bi bi-arrow-left"></i> Retour
-                </a>
-            </div>
-            <div class="card shadow border-0 rounded-3">
-                
-                <div class="card-header text-white py-3" style="background-color: #003366;">
-                    <h4 class="card-title mb-0">
-                        <i class="bi bi-bank me-2"></i>Émission d'un Chèque d'Indemnisation
-                    </h4>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-9">
+                <!-- Affichage esthétique des messages d'erreur ou de succès -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4"
+                             role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ message }}
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="alert"
+                                    aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+                <div>
+                    <a href="{% url 'detail_sinistre_agent' sinistre.id %}"
+                       class="btn btn-sm mb-3 d-inline-flex align-items-center gap-1"
+                       style="border: 1px solid #003366;
+                              color: #003366;
+                              font-weight: 500;
+                              border-radius: 6px;
+                              padding: 6px 14px;
+                              transition: all 0.15s"
+                       onmouseover="this.style.backgroundColor='#003366'; this.style.color='#fff';"
+                       onmouseout="this.style.backgroundColor='transparent'; this.style.color='#003366';">
+                        <i class="bi bi-arrow-left"></i> Retour
+                    </a>
                 </div>
-                
-                <div class="card-body p-4">
-                    <!-- Récapitulatif Financier du Sinistre -->
-                    <div class="alert alert-light border mb-4">
-                        <div class="row g-2">
-                            <div class="col-md-4">
-                                <strong>N° Sinistre :</strong> {{ sinistre.numero_sinistre }}<br>
-                                <strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Montant Retenu :</strong> <span class="badge bg-success">{{ sinistre.prix_retenu|default:"0" }} FCFA</span><br>
-                                <strong>Déjà payé :</strong> <span class="badge bg-primary">{{ sinistre.total_paye|default:"0" }} FCFA</span>
-                            </div>
-                            <div class="col-md-4 text-md-end">
-                                <strong>Reste à payer :</strong><br>
-                                <span class="badge bg-warning text-dark fs-6">{{ sinistre.reste_a_payer|default:"0" }} FCFA</span>
-                            </div>
-                        </div>
+                <div class="card shadow border-0 rounded-3">
+                    <div class="card-header text-white py-3"
+                         style="background-color: #003366">
+                        <h4 class="card-title mb-0">
+                            <i class="bi bi-bank me-2"></i>Émission d'un Chèque d'Indemnisation
+                        </h4>
                     </div>
-
-                    <!-- Formulaire structuré -->
-                    <form method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-
-                        <div class="row">
-                            <!-- Banque émettrice en champ SELECT -->
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Banque tirée (Émettrice) <span class="text-danger">*</span></label>
-                                <select name="banque_cheque" class="form-select" required>
-                                    <option value="">-- Choisir une banque --</option>
-                                    <option value="Ecobank Togo">Ecobank Togo</option>
-                                    <option value="NSIA Banque Togo">NSIA Banque Togo</option>
-                                    <option value="Orabank Togo">Orabank Togo</option>
-                                    <option value="Société Générale Togo">Société Générale Togo</option>
-                                    <option value="Coris Bank International">Coris Bank International</option>
-                                    <option value="Boa Togo (Bank of Africa)">BOA Togo</option>
-                                    <option value="UTB (Union Togolaise de Banque)">UTB</option>
-                                    <option value="BIA Togo">BIA Togo</option>
-                                    <option value="Autre">Autre banque</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">N° de Chèque <span class="text-danger">*</span></label>
-                                <input type="text" name="numero_cheque" class="form-control" placeholder="Ex: CHQ-2026-XXXX" required>
+                    <div class="card-body p-4">
+                        <!-- Récapitulatif Financier du Sinistre -->
+                        <div class="alert alert-light border mb-4">
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <strong>N° Sinistre :</strong> {{ sinistre.numero_sinistre }}
+                                    <br>
+                                    <strong>Assuré :</strong> {{ sinistre.assure.get_full_name|default:sinistre.assure.username }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Montant Retenu :</strong> <span class="badge bg-success">{{ sinistre.prix_retenu|default:"0" }} FCFA</span>
+                                    <br>
+                                    <strong>Déjà payé :</strong> <span class="badge bg-primary">{{ sinistre.total_paye|default:"0" }} FCFA</span>
+                                </div>
+                                <div class="col-md-4 text-md-end">
+                                    <strong>Reste à payer :</strong>
+                                    <br>
+                                    <span class="badge bg-warning text-dark fs-6">{{ sinistre.reste_a_payer|default:"0" }} FCFA</span>
+                                </div>
                             </div>
                         </div>
-
-                        <div class="mb-3 bg-light p-3 border rounded">
-                            <label class="form-label fw-bold text-primary">
-                                <i class="bi bi-cash-coin me-1"></i> Montant du chèque (FCFA) <span class="text-danger">*</span>
-                            </label>
-                            <input type="number" 
-                                   step="0.01" 
-                                   name="montant" 
-                                   class="form-control form-control-lg fw-bold text-success" 
-                                   max="{{ sinistre.reste_a_payer }}" 
-                                   value="{{ sinistre.reste_a_payer }}" 
-                                   required>
-                            <div class="form-text">Maximum autorisé pour ce versement : <strong>{{ sinistre.reste_a_payer }} FCFA</strong></div>
-                        </div>
-
-                        <h5 class="border-bottom pb-2 mb-3 text-secondary fs-6"><i class="bi bi-person-badge me-1"></i> Payez à l'ordre de (Bénéficiaire)</h5>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Nom <span class="text-danger">*</span></label>
-                                <input type="text" name="beneficiaire_nom" class="form-control" value="{{ sinistre.assure.last_name }}" required>
+                        <!-- Formulaire structuré -->
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="row">
+                                <!-- Banque émettrice en champ SELECT -->
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Banque tirée (Émettrice) <span class="text-danger">*</span></label>
+                                    <select name="banque_cheque" class="form-select" required>
+                                        <option value="">-- Choisir une banque --</option>
+                                        <option value="Ecobank Togo">Ecobank Togo</option>
+                                        <option value="NSIA Banque Togo">NSIA Banque Togo</option>
+                                        <option value="Orabank Togo">Orabank Togo</option>
+                                        <option value="Société Générale Togo">Société Générale Togo</option>
+                                        <option value="Coris Bank International">Coris Bank International</option>
+                                        <option value="Boa Togo (Bank of Africa)">BOA Togo</option>
+                                        <option value="UTB (Union Togolaise de Banque)">UTB</option>
+                                        <option value="BIA Togo">BIA Togo</option>
+                                        <option value="Autre">Autre banque</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">N° de Chèque <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           name="numero_cheque"
+                                           class="form-control"
+                                           placeholder="Ex: CHQ-2026-XXXX"
+                                           required>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Prénoms <span class="text-danger">*</span></label>
-                                <input type="text" name="beneficiaire_prenoms" class="form-control" value="{{ sinistre.assure.first_name }}" required>
+                            <div class="mb-3 bg-light p-3 border rounded">
+                                <label class="form-label fw-bold text-primary">
+                                    <i class="bi bi-cash-coin me-1"></i> Montant du chèque (FCFA) <span class="text-danger">*</span>
+                                </label>
+                                <input type="number"
+                                       step="0.01"
+                                       name="montant"
+                                       class="form-control form-control-lg fw-bold text-success"
+                                       max="{{ sinistre.reste_a_payer }}"
+                                       value="{{ sinistre.reste_a_payer }}"
+                                       required>
+                                <div class="form-text">Maximum autorisé pour ce versement : <strong>{{ sinistre.reste_a_payer }} FCFA</strong></div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Téléphone du bénéficiaire <span class="text-danger">*</span></label>
-                                <input type="text" name="beneficiaire_telephone" class="form-control" value="{{ sinistre.assure.assure.telephone|default:'' }}" placeholder="+228 XX XX XX XX" required>
+                            <h5 class="border-bottom pb-2 mb-3 text-secondary fs-6"><i class="bi bi-person-badge me-1"></i> Payez à l'ordre de (Bénéficiaire)</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Nom <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           name="beneficiaire_nom"
+                                           class="form-control"
+                                           value="{{ sinistre.assure.last_name }}"
+                                           required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Prénoms <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           name="beneficiaire_prenoms"
+                                           class="form-control"
+                                           value="{{ sinistre.assure.first_name }}"
+                                           required>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold">Date d'émission <span class="text-danger">*</span></label>
-                                <input type="date" name="date_emission" class="form-control" value="{% now 'Y-m-d' %}" required>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Téléphone du bénéficiaire <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           name="beneficiaire_telephone"
+                                           class="form-control"
+                                           value="{{ sinistre.assure.assure.telephone|default:'' }}"
+                                           placeholder="+228 XX XX XX XX"
+                                           required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold">Date d'émission <span class="text-danger">*</span></label>
+                                    <input type="date"
+                                           name="date_emission"
+                                           class="form-control"
+                                           value="{% now 'Y-m-d' %}"
+                                           required>
+                                </div>
                             </div>
-                        </div>
-
-                        <!-- Boutons d'action -->
-                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-                            <button type="submit" class="btn btn-success px-4 fw-bold">
-                                <i class="bi bi-check2-circle me-1"></i> Enregistrer le chèque émis
-                            </button>
-                        </div>
-                    </form>
+                            <!-- Boutons d'action -->
+                            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                                <button type="submit" class="btn btn-success px-4 fw-bold">
+                                    <i class="bi bi-check2-circle me-1"></i> Enregistrer le chèque émis
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

@@ -1,40 +1,44 @@
 {% extends 'base.html' %}
 {% load static %}
-
 {% block title %}Détails du Contrat — {{ contrat.numero_police }}{% endblock %}
-
 {% block content %}
-<div class="container my-4">
-    <div class="card shadow-sm mx-auto" style="max-width: 800px; border: 1.5px solid #002D62;">
-        <div class="card-body p-4">
-            <div class="d-flex align-items-center gap-2 mb-3">
-                <img src="{% static 'Logo Fidelia.jpeg' %}" alt="Logo" style="height: 40px; width: auto;">
-                <div class="fw-bold" style="color: #002D62; font-size: 18px; font-style: italic;">Fidélia Assurances</div>
-            </div>
-
-            <h3 class="fw-bold text-primary mb-4" style="border-bottom: 2px solid #002D62; padding-bottom: 8px; font-size: 1.25rem;">
-                Détails de la Police / Contrat
-            </h3>
-
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <p><strong>N° de Police :</strong> <span class="text-primary fw-bold">{{ contrat.numero_police }}</span></p>
-                    <p><strong>Véhicule :</strong> {{ contrat.vehicule|default:"—" }}</p>
-                    <p><strong>Immatriculation :</strong> {{ contrat.immatriculation|default:"—" }}</p>
+    <div class="container my-4">
+        <div class="card shadow-sm mx-auto"
+             style="max-width: 800px;
+                    border: 1.5px solid #002D62">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <img src="{% static 'Logo Fidelia.jpeg' %}"
+                         alt="Logo"
+                         style="height: 40px;
+                                width: auto">
+                    <div class="fw-bold"
+                         style="color: #002D62;
+                                font-size: 18px;
+                                font-style: italic">Fidélia Assurances</div>
                 </div>
-                <div class="col-md-6">
-                    <p><strong>Date d'effet :</strong> {{ contrat.date_debut|date:"d/m/Y"|default:"—" }}</p>
-                    <p><strong>Date d'échéance :</strong> {{ contrat.date_fin|date:"d/m/Y"|default:"—" }}</p>
-                    <p><strong>Statut :</strong> <span class="badge bg-success">Actif</span></p>
+                <h3 class="fw-bold text-primary mb-4"
+                    style="border-bottom: 2px solid #002D62;
+                           padding-bottom: 8px;
+                           font-size: 1.25rem">Détails de la Police / Contrat</h3>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p><strong>N° de Police :</strong> <span class="text-primary fw-bold">{{ contrat.numero_police }}</span></p>
+                        <p><strong>Véhicule :</strong> {{ contrat.vehicule|default:"—" }}</p>
+                        <p><strong>Immatriculation :</strong> {{ contrat.immatriculation|default:"—" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Date d'effet :</strong> {{ contrat.date_debut|date:"d/m/Y"|default:"—" }}</p>
+                        <p><strong>Date d'échéance :</strong> {{ contrat.date_fin|date:"d/m/Y"|default:"—" }}</p>
+                        <p><strong>Statut :</strong> <span class="badge bg-success">Actif</span></p>
+                    </div>
                 </div>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center mt-4">
-                <a href="{% url 'mes_contrats' %}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> Retour à mes contrats
-                </a>
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <a href="{% url 'mes_contrats' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Retour à mes contrats
+                    </a>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

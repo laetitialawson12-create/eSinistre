@@ -1,104 +1,137 @@
 {% extends "base_chef.html" %}
-
 {% block title %}Tous les sinistres{% endblock %}
-
 {% block content %}
-<h3 class="fw-bold mb-4" style="color: #003366;">Tous les sinistres</h3>
-
-<div class="card border-0 shadow-sm p-3 mb-4">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-3">
-            <label class="form-label small text-secondary text-uppercase">Statut</label>
-            <select name="statut" class="form-select">
-                <option value="">Tous</option>
-                {% for value, label in statut_choices %}
-                <option value="{{ value }}" {% if value == statut_selectionne %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small text-secondary text-uppercase">Nature</label>
-            <select name="nature" class="form-select">
-                <option value="">Toutes</option>
-                {% for value, label in nature_choices %}
-                <option value="{{ value }}" {% if value == nature_selectionnee %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label small text-secondary text-uppercase">Rechercher (n° sinistre ou n° police)</label>
-            <input type="text" name="q" class="form-control" value="{{ recherche }}" placeholder="Ex: 2026001M000012">
-        </div>
-        <div class="col-12">
-            <label class="form-label small text-secondary text-uppercase">Période (date de l'accident)</label>
-            <div class="d-flex flex-wrap gap-2 mb-2">
-                <button type="submit" name="periode_option" value="auj" class="btn btn-sm btn-outline-secondary {% if periode_option == 'auj' %}active{% endif %}">Aujourd'hui</button>
-                <button type="submit" name="periode_option" value="7j" class="btn btn-sm btn-outline-secondary {% if periode_option == '7j' %}active{% endif %}">7 derniers jours</button>
-                <button type="submit" name="periode_option" value="mois" class="btn btn-sm btn-outline-secondary {% if periode_option == 'mois' %}active{% endif %}">Ce mois-ci</button>
-                <button type="submit" name="periode_option" value="trimestre" class="btn btn-sm btn-outline-secondary {% if periode_option == 'trimestre' %}active{% endif %}">Ce trimestre</button>
-                <button type="submit" name="periode_option" value="annee" class="btn btn-sm btn-outline-secondary {% if periode_option == 'annee' %}active{% endif %}">Cette année</button>
+    <h3 class="fw-bold mb-4" style="color: #003366;">Tous les sinistres</h3>
+    <div class="card border-0 shadow-sm p-3 mb-4">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-secondary text-uppercase">Statut</label>
+                <select name="statut" class="form-select">
+                    <option value="">Tous</option>
+                    {% for value, label in statut_choices %}
+                        <option value="{{ value }}"
+                                {% if value == statut_selectionne %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <input type="date" name="date_debut" value="{{ date_debut }}" class="form-control form-control-sm" placeholder="Du">
+            <div class="col-md-3">
+                <label class="form-label small text-secondary text-uppercase">Nature</label>
+                <select name="nature" class="form-select">
+                    <option value="">Toutes</option>
+                    {% for value, label in nature_choices %}
+                        <option value="{{ value }}"
+                                {% if value == nature_selectionnee %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small text-secondary text-uppercase">Rechercher (n° sinistre ou n° police)</label>
+                <input type="text"
+                       name="q"
+                       class="form-control"
+                       value="{{ recherche }}"
+                       placeholder="Ex: 2026001M000012">
+            </div>
+            <div class="col-12">
+                <label class="form-label small text-secondary text-uppercase">Période (date de l'accident)</label>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <button type="submit"
+                            name="periode_option"
+                            value="auj"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'auj' %}active{% endif %}">Aujourd'hui</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="7j"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == '7j' %}active{% endif %}">7 derniers jours</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="mois"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'mois' %}active{% endif %}">Ce mois-ci</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="trimestre"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'trimestre' %}active{% endif %}">Ce trimestre</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="annee"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'annee' %}active{% endif %}">Cette année</button>
                 </div>
-                <div class="col-md-3">
-                    <input type="date" name="date_fin" value="{{ date_fin }}" class="form-control form-control-sm" placeholder="Au">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <input type="date"
+                               name="date_debut"
+                               value="{{ date_debut }}"
+                               class="form-control form-control-sm"
+                               placeholder="Du">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date"
+                               name="date_fin"
+                               value="{{ date_fin }}"
+                               class="form-control form-control-sm"
+                               placeholder="Au">
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="col-md-4 d-flex gap-2">
-            <button type="submit" class="btn flex-fill" style="background: #003366; color: white; white-space: nowrap;">Filtrer</button>
-            {% if statut_selectionne or nature_selectionnee or recherche or date_debut or date_fin %}
-            <a href="{% url 'tous_sinistres_chef' %}" class="btn btn-outline-secondary flex-fill d-flex align-items-center justify-content-center gap-1" style="white-space: nowrap;">
-                <i class="bi bi-x-circle"></i> Réinitialiser
-            </a>
-            {% endif %}
-        </div>
-    </form>
-</div>
-
-<div class="card border-0 shadow-sm p-3">
-    <div class="mb-2 text-secondary small">{{ sinistres|length }} résultat{{ sinistres|length|pluralize }}</div>
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr>
-                <th>N° Sinistre</th>
-                <th>Assuré</th>
-                <th>N° Police</th>
-                <th>Nature</th>
-                <th>Statut</th>
-                <th>Date</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for s in sinistres %}
-            <tr>
-                <td>{{ s.numero_sinistre|default:"—" }}</td>
-                <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
-                <td>{{ s.n_police }}</td>
-                <td>{{ s.get_nature_display|default:"—" }}</td>
-                <td>
-                    {% if s.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'ATTENTE_COMPLEMENTS' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'ATTENTE_VALIDATION' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'A_CORRIGER' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'EN_COURS' %}<span class="badge bg-info text-dark">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'CLOTURE' %}<span class="badge bg-success">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'SANS_SUITE' %}<span class="badge bg-dark">{{ s.get_statut_display }}</span>
-                    {% elif s.statut == 'REOUVERT' %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
-                    {% else %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
-                    {% endif %}
-                </td>
-                <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
-                <td class="text-end"><a href="{% url 'detail_sinistre_chef' s.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm btn-outline-secondary">Voir</a></td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="7" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit"
+                        class="btn flex-fill"
+                        style="background: #003366;
+                               color: white;
+                               white-space: nowrap">Filtrer</button>
+                {% if statut_selectionne or nature_selectionnee or recherche or date_debut or date_fin %}
+                    <a href="{% url 'tous_sinistres_chef' %}"
+                       class="btn btn-outline-secondary flex-fill d-flex align-items-center justify-content-center gap-1"
+                       style="white-space: nowrap">
+                        <i class="bi bi-x-circle"></i> Réinitialiser
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    <div class="card border-0 shadow-sm p-3">
+        <div class="mb-2 text-secondary small">{{ sinistres|length }} résultat{{ sinistres|length|pluralize }}</div>
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>N° Sinistre</th>
+                    <th>Assuré</th>
+                    <th>N° Police</th>
+                    <th>Nature</th>
+                    <th>Statut</th>
+                    <th>Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sinistres %}
+                    <tr>
+                        <td>{{ s.numero_sinistre|default:"—" }}</td>
+                        <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
+                        <td>{{ s.n_police }}</td>
+                        <td>{{ s.get_nature_display|default:"—" }}</td>
+                        <td>
+                            {% if s.statut == 'SOUMIS' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
+                {% elif s.statut == 'ATTENTE_COMPLEMENTS' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                {% elif s.statut == 'ATTENTE_VALIDATION' %}<span class="badge bg-primary">{{ s.get_statut_display }}</span>
+                {% elif s.statut == 'A_CORRIGER' %}<span class="badge bg-warning text-dark">{{ s.get_statut_display }}</span>
+                {% elif s.statut == 'EN_COURS' %}<span class="badge bg-info text-dark">{{ s.get_statut_display }}</span>
+                {% elif s.statut == 'CLOTURE' %}<span class="badge bg-success">{{ s.get_statut_display }}</span>
+                {% elif s.statut == 'SANS_SUITE' %}<span class="badge bg-dark">{{ s.get_statut_display }}</span>
+                {% elif s.statut == 'REOUVERT' %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
+                {% else %}<span class="badge bg-secondary">{{ s.get_statut_display }}</span>
+                {% endif %}
+            </td>
+            <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+            <td class="text-end"><a href="{% url 'detail_sinistre_chef' s.id %}?next={{ request.get_full_path|urlencode }}"
+   class="btn btn-sm btn-outline-secondary">Voir</a></td>
+        </tr>
+{% empty %}
+    <tr>
+        <td colspan="7" class="text-muted fst-italic">Aucun sinistre ne correspond à ces critères.</td>
+    </tr>
+{% endfor %}
+</tbody>
+</table>
 </div>
 {% endblock %}

@@ -1,75 +1,75 @@
 {% extends 'base_assure.html' %}
-
 {% block title %}Mes Contrats et Véhicules{% endblock %}
-
 {% block content %}
-<div class="container py-4">
-    <h2 class="mb-4 fw-bold" style="color: #0b2545;">Mes Contrats d'Assurance</h2>
-
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered table-striped align-middle">
-                    <thead class="table-dark" style="background-color: #0b2545;">
-                        <tr>
-                            <th>Type contrat</th>
-                            <th>N° Police</th>
-                            <th>N° Quittance</th>
-                            <th>NOM</th>
-                            <th>Prénom(s)</th>
-                            <th>Téléphone</th>
-                            <th>Email</th>
-                            <th>Immatriculation</th>
-                            <th>Marque</th>
-                            <th>Categorie</th>
-                            <th>Date effet</th>
-                            <th>Date échéance</th>
-                            <th>Prime TTC</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for q in quittances %}
+    <div class="container py-4">
+        <h2 class="mb-4 fw-bold" style="color: #0b2545;">Mes Contrats d'Assurance</h2>
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-dark" style="background-color: #0b2545;">
                             <tr>
-                                <td><strong>{{ q.contrat.numero_police }}</strong></td>
-                                <td><strong>{{ q.numero_quittance|default:"N/A" }}</strong></td>
-                                <td class="text-center">{{ q.date_debut|date:"d/m/Y" }}</td>
-                                <td class="text-center">{{ q.date_fin|date:"d/m/Y" }}</td>
-                                <td>
-                                    {% for v in q.vehicules.all %}
-                                        <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">
-                                            {{ v.marque }} {{ v.modele }}
-                                        </span>
-                                    {% empty %}
-                                        <span class="text-muted">N/A</span>
-                                    {% endfor %}
-                                </td>
-
-                                <td>
-                                    {% for v in q.vehicules.all %}
-                                        <span class="badge bg-light text-dark border d-block mb-1 text-start py-1">
-                                            <code class="text-dark fw-bold">{{ v.immatriculation }}</code>
-                                        </span>
-                                    {% empty %}
-                                        <span class="text-danger">N/A</span>
-                                    {% endfor %}
-                                </td>
-                                <td class="text-end text-success fw-bold">{{ q.prime|floatformat:0 }} FCFA</td>
-                                <td>{{ q.contrat.user.last_name }}</td>
-                                <td>{{ q.contrat.user.first_name }}</td>
-                                <td><small>{{ q.contrat.user.email }}</small></td>
-                                <td>{{ q.contrat.telephone|default:"N/A" }}</td>
+                                <th>Branche</th>
+                                <th>N° Police</th>
+                                <th>N° Quittance</th>
+                                <th>NOM</th>
+                                <th>Prénom(s)</th>
+                                <th>Téléphone</th>
+                                <th>Email</th>
+                                <th>Immatriculation</th>
+                                <th>Marque</th>
+                                <th>Categorie</th>
+                                <th>Date effet</th>
+                                <th>Date échéance</th>
+                                <th>Prime TTC</th>
                             </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="11" class="text-center py-4 text-muted">
-                                    Vous n'avez aucun contrat enregistré pour le moment.
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for q in quittances %}
+                                <tr>
+                                    <td>{{ q.branche|default:"N/A" }}</td>
+                                    <td><strong>{{ q.contrat.numero_police }}</strong></td>
+                                    <td><strong>{{ q.numero_quittance|default:"N/A" }}</strong></td>
+                                    <td>{{ q.contrat.user.last_name }}</td>
+                                    <td>{{ q.contrat.user.first_name }}</td>
+                                    <td>{{ q.contrat.telephone|default:"N/A" }}</td>
+                                    <td><small>{{ q.contrat.user.email }}</small></td>
+                                    <td>
+                                        {% for v in q.vehicules.all %}
+                                            <span class="badge bg-light text-dark border d-block mb-1 text-start py-1">
+                                                <code class="text-dark fw-bold">{{ v.immatriculation }}</code>
+                                            </span>
+                                        {% empty %}
+                                            <span class="text-danger">N/A</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for v in q.vehicules.all %}
+                                            <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">{{ v.marque }}</span>
+                                        {% empty %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td>
+                                        {% for v in q.vehicules.all %}
+                                            <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">{{ v.categorie|default:"—" }}</span>
+                                        {% empty %}
+                                            <span class="text-muted">N/A</span>
+                                        {% endfor %}
+                                    </td>
+                                    <td class="text-center">{{ q.date_debut|date:"d/m/Y" }}</td>
+                                    <td class="text-center">{{ q.date_fin|date:"d/m/Y" }}</td>
+                                    <td class="text-end text-success fw-bold">{{ q.prime|floatformat:0 }} FCFA</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="13" class="text-center py-4 text-muted">Vous n'avez aucun contrat enregistré pour le moment.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

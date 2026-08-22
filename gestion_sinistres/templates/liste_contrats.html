@@ -1,10 +1,7 @@
 {% extends 'base_admin.html' %}
-
 {% block title %}Liste des contrats{% endblock %}
-
 {% block content %}
-
-<style>
+    <style>
     .table td, .table th {
         padding: 14px 12px !important;
         vertical-align: middle !important;
@@ -17,170 +14,223 @@
         background-color: #dc3545 !important;
         color: #fff !important;
     }
-</style>
-
-<div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
-        <h1 class="mb-0" style="color: #0b2545;">Gestion des contrats</h1>
-        <a href="{% url 'importer_donnees' %}" class="btn btn-outline-primary shadow-sm">
-            <i class="bi bi-file-earmark-arrow-up me-2"></i> Importer des contrats
-        </a>
-    </div>
-
-    <form method="get" class="row g-2 mb-4">
-        <div class="col-md-3">
-            <input type="text" name="police" value="{{ query_police }}" class="form-control" placeholder="N° de police">
-        </div>
-        <div class="col-md-3">
-            <input type="text" name="nom" value="{{ query_nom }}" class="form-control" placeholder="Nom / prénom">
-        </div>
-        <div class="col-md-3">
-            <input type="text" name="quittance" value="{{ query_quittance }}" class="form-control" placeholder="N° de quittance">
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
-        </div>
-        <div class="col-md-1">
-            <a href="{% url 'exporter_contrats' %}?police={{ query_police }}&nom={{ query_nom }}" class="btn btn-outline-success w-100">
-                <i class="bi bi-file-earmark-excel"></i>
+    </style>
+    <div class="container-fluid px-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
+            <h1 class="mb-0" style="color: #0b2545;">Gestion des contrats</h1>
+            <a href="{% url 'importer_donnees' %}"
+               class="btn btn-outline-primary shadow-sm">
+                <i class="bi bi-file-earmark-arrow-up me-2"></i> Importer des contrats
             </a>
         </div>
-
-        <div class="col-12">
-            <label class="form-label small text-secondary text-uppercase mb-1">Période (date d'effet)</label>
-            <div class="d-flex flex-wrap gap-2 mb-2">
-                <button type="submit" name="periode_option" value="auj" class="btn btn-sm btn-outline-secondary {% if periode_option == 'auj' %}active{% endif %}">Aujourd'hui</button>
-                <button type="submit" name="periode_option" value="7j" class="btn btn-sm btn-outline-secondary {% if periode_option == '7j' %}active{% endif %}">7 derniers jours</button>
-                <button type="submit" name="periode_option" value="mois" class="btn btn-sm btn-outline-secondary {% if periode_option == 'mois' %}active{% endif %}">Ce mois-ci</button>
-                <button type="submit" name="periode_option" value="trimestre" class="btn btn-sm btn-outline-secondary {% if periode_option == 'trimestre' %}active{% endif %}">Ce trimestre</button>
-                <button type="submit" name="periode_option" value="annee" class="btn btn-sm btn-outline-secondary {% if periode_option == 'annee' %}active{% endif %}">Cette année</button>
+        <form method="get" class="row g-2 mb-4">
+            <div class="col-md-3">
+                <input type="text"
+                       name="police"
+                       value="{{ query_police }}"
+                       class="form-control"
+                       placeholder="N° de police">
             </div>
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <input type="date" name="date_effet_debut" value="{{ date_effet_debut }}" class="form-control form-control-sm">
-                </div>
-                <div class="col-md-3">
-                    <input type="date" name="date_effet_fin" value="{{ date_effet_fin }}" class="form-control form-control-sm">
-                </div>
-                {% if query_police or query_nom or query_quittance or periode_option or date_effet_debut or date_effet_fin %}
-                <div class="col-md-2">
-                    <a href="{% url 'liste_contrats' %}" class="btn btn-sm btn-outline-secondary w-100">
-                        <i class="bi bi-x-circle"></i> Réinitialiser
-                    </a>
-                </div>
-                {% endif %}
+            <div class="col-md-3">
+                <input type="text"
+                       name="nom"
+                       value="{{ query_nom }}"
+                       class="form-control"
+                       placeholder="Nom / prénom">
             </div>
-        </div>
-    </form>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="col-md-3">
+                <input type="text"
+                       name="quittance"
+                       value="{{ query_quittance }}"
+                       class="form-control"
+                       placeholder="N° de quittance">
             </div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header text-white" style="background-color: #0b2545;">
-            <i class="fas fa-table me-1"></i> Liste des contrats automobiles enregistrés
-        </div>
-        
-        <div class="card-body">
-            <form method="post" action="{% url 'action_lot_contrats' %}" id="form-lot-contrats">
-                {% csrf_token %}
-                {% if quittances %}
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <span class="small text-secondary"><span id="count-selection-contrats">0</span> sélectionné(s)</span>
-                    <select name="action" class="form-select form-select-sm w-auto">
-                        <option value="exporter">Exporter</option>
-                        <option value="supprimer">Supprimer</option>
-                    </select>
-                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                        Appliquer à la sélection
-                    </button>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Filtrer</button>
+            </div>
+            <div class="col-md-1">
+                <a href="{% url 'exporter_contrats' %}?police={{ query_police }}&nom={{ query_nom }}"
+                   class="btn btn-outline-success w-100">
+                    <i class="bi bi-file-earmark-excel"></i>
+                </a>
+            </div>
+            <div class="col-12">
+                <label class="form-label small text-secondary text-uppercase mb-1">Période (date d'effet)</label>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    <button type="submit"
+                            name="periode_option"
+                            value="auj"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'auj' %}active{% endif %}">Aujourd'hui</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="7j"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == '7j' %}active{% endif %}">7 derniers jours</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="mois"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'mois' %}active{% endif %}">Ce mois-ci</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="trimestre"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'trimestre' %}active{% endif %}">Ce trimestre</button>
+                    <button type="submit"
+                            name="periode_option"
+                            value="annee"
+                            class="btn btn-sm btn-outline-secondary {% if periode_option == 'annee' %}active{% endif %}">Cette année</button>
                 </div>
-                {% endif %}
-
-                <!-- Ajout du scroll vertical (max-height) et horizontal si nécessaire -->
-                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                    <table class="table table-bordered table-striped align-middle" style="font-size: 0.9rem;">
-                        <thead class="table-dark text-center align-middle sticky-top" style="background-color: #0b2545; color: white; z-index: 1;">
-                            <tr>
-                                <th style="width:30px;"><input type="checkbox" id="select-all-contrats"></th>
-                                <th>N° Police</th>
-                                <th>N° Quittance</th>
-                                <th>Date effet</th>
-                                <th>Date échéance</th>
-                                <th>Véhicule</th>
-                                <th>Immatriculation</th>
-                                <th>Prime Nette</th>
-                                <th>NOM</th>
-                                <th>Prénom(s)</th>
-                                <th>Email</th>
-                                <th>Téléphone</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for quittance in quittances %}
-                                <tr class="{% if quittance.date_fin < today %}table-danger{% endif %}">
-                                    <td><input type="checkbox" name="selection" value="{{ quittance.contrat.id }}" class="check-contrat"></td>
-                                    <td><strong>{{ quittance.contrat.numero_police }}</strong></td>
-                                    <td><strong>{{ quittance.numero_quittance|default:"N/A" }}</strong></td>
-                                    <td class="text-center">{{ quittance.date_debut|date:"d/m/Y" }}</td>
-                                    <td class="text-center">{{ quittance.date_fin|date:"d/m/Y" }}</td>
-                                    <td>
-                                        {% for v in quittance.vehicules.all %}
-                                            <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">
-                                                {{ v.marque }} {{ v.modele }}
-                                            </span>
-                                        {% empty %}
-                                            <span class="text-muted">N/A</span>
-                                        {% endfor %}
-                                    </td>
-                                
-                                    <td>
-                                        {% for v in quittance.vehicules.all %}
-                                            <span class="badge bg-light text-dark border d-block mb-1 text-start py-1">
-                                                <code class="text-dark fw-bold">{{ v.immatriculation }}</code>
-                                            </span>
-                                        {% empty %}
-                                            <span class="text-danger">N/A</span>
-                                        {% endfor %}
-                                    </td>
-                                    <td class="text-end"><strong>{{ quittance.prime|floatformat:0 }} FCFA</strong></td>
-                                    <td>{{ quittance.contrat.user.last_name }}</td>
-                                    <td>{{ quittance.contrat.user.first_name }}</td>
-                                    <td><small>{{ quittance.contrat.user.email }}</small></td>
-                                    <td>{{ quittance.contrat.telephone|default:"N/A" }}</td>
-                                    
-                                    <td class="text-center">
-                                        <div class="d-flex justify-content-center gap-2">
-                                            <a href="{% url 'modifier_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-warning text-warning" title="Modifier">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <a href="{% url 'supprimer_contrat_admin' quittance.contrat.id %}" class="btn btn-sm btn-outline-danger text-danger" title="Supprimer">
-                                                <i class="bi bi-trash"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% empty %}
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <input type="date"
+                               name="date_effet_debut"
+                               value="{{ date_effet_debut }}"
+                               class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date"
+                               name="date_effet_fin"
+                               value="{{ date_effet_fin }}"
+                               class="form-control form-control-sm">
+                    </div>
+                    {% if query_police or query_nom or query_quittance or periode_option or date_effet_debut or date_effet_fin %}
+                        <div class="col-md-2">
+                            <a href="{% url 'liste_contrats' %}"
+                               class="btn btn-sm btn-outline-secondary w-100">
+                                <i class="bi bi-x-circle"></i> Réinitialiser
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                     role="alert">
+                    {{ message }}
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header text-white" style="background-color: #0b2545;">
+                <i class="fas fa-table me-1"></i> Liste des contrats automobiles enregistrés
+            </div>
+            <div class="card-body">
+                <form method="post"
+                      action="{% url 'action_lot_contrats' %}"
+                      id="form-lot-contrats">
+                    {% csrf_token %}
+                    {% if quittances %}
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="small text-secondary"><span id="count-selection-contrats">0</span> sélectionné(s)</span>
+                            <select name="action" class="form-select form-select-sm w-auto">
+                                <option value="exporter">Exporter</option>
+                                <option value="supprimer">Supprimer</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Appliquer à la sélection</button>
+                        </div>
+                    {% endif %}
+                    <!-- Ajout du scroll vertical (max-height) et horizontal si nécessaire -->
+                    <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                        <table class="table table-bordered table-striped align-middle"
+                               style="font-size: 0.9rem">
+                            <thead class="table-dark text-center align-middle sticky-top"
+                                   style="background-color: #0b2545;
+                                          color: white;
+                                          z-index: 1">
                                 <tr>
-                                    <td colspan="13" class="text-center py-4 text-muted">Aucun contrat automobile trouvé.</td>
+                                    <th style="width:30px;">
+                                        <input type="checkbox" id="select-all-contrats">
+                                    </th>
+                                    <th>Branche</th>
+                                    <th>N° Police</th>
+                                    <th>N° Quittance</th>
+                                    <th>NOM</th>
+                                    <th>Prénom(s)</th>
+                                    <th>Téléphone</th>
+                                    <th>Email</th>
+                                    <th>Immatriculation</th>
+                                    <th>Marque</th>
+                                    <th>Categorie</th>
+                                    <th>Date effet</th>
+                                    <th>Date échéance</th>
+                                    <th>Prime TTC</th>
+                                    <th>Actions</th>
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </form>
+                            </thead>
+                            <tbody>
+                                {% for quittance in quittances %}
+                                    <tr class="{% if quittance.date_fin < today %}table-danger{% endif %}">
+                                        <td>
+                                            <input type="checkbox"
+                                                   name="selection"
+                                                   value="{{ quittance.contrat.id }}"
+                                                   class="check-contrat">
+                                        </td>
+                                        <td>{{ quittance.branche|default:"N/A" }}</td>
+                                        <td><strong>{{ quittance.contrat.numero_police }}</strong></td>
+                                        <td><strong>{{ quittance.numero_quittance|default:"N/A" }}</strong></td>
+                                        <td>{{ quittance.contrat.user.last_name }}</td>
+                                        <td>{{ quittance.contrat.user.first_name }}</td>
+                                        <td>{{ quittance.contrat.telephone|default:"N/A" }}</td>
+                                        <td><small>{{ quittance.contrat.user.email }}</small></td>
+                                        <td>
+                                            {% for v in quittance.vehicules.all %}
+                                                <span class="badge bg-light text-dark border d-block mb-1 text-start py-1">
+                                                    <code class="text-dark fw-bold">{{ v.immatriculation }}</code>
+                                                </span>
+                                            {% empty %}
+                                                <span class="text-danger">N/A</span>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% for v in quittance.vehicules.all %}
+                                                <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">{{ v.marque }}</span>
+                                            {% empty %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% for v in quittance.vehicules.all %}
+                                                <span class="badge bg-light text-dark border d-block mb-1 text-start fw-normal py-1">{{ v.categorie|default:"—" }}</span>
+                                            {% empty %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endfor %}
+                                        </td>
+                                        <td class="text-center">{{ quittance.date_debut|date:"d/m/Y" }}</td>
+                                        <td class="text-center">{{ quittance.date_fin|date:"d/m/Y" }}</td>
+                                        <td class="text-end"><strong>{{ quittance.prime|floatformat:0 }} FCFA</strong></td>
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-center gap-2">
+                                                <a href="{% url 'modifier_contrat_admin' quittance.contrat.id %}"
+                                                   class="btn btn-sm btn-outline-warning text-warning"
+                                                   title="Modifier">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <a href="{% url 'supprimer_contrat_admin' quittance.contrat.id %}"
+                                                   class="btn btn-sm btn-outline-danger text-danger"
+                                                   title="Supprimer">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="15" class="text-center py-4 text-muted">Aucun contrat automobile trouvé.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
-
-<script>
+    <script>
 document.addEventListener('DOMContentLoaded', function () {
     const selectAll = document.getElementById('select-all-contrats');
     const checks = document.querySelectorAll('.check-contrat');
@@ -197,5 +247,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     checks.forEach(c => c.addEventListener('change', updateCounter));
 });
-</script>
+    </script>
 {% endblock %}

@@ -1,20 +1,26 @@
 {% extends "base_agent.html" %}
 {% block title %}Modifier mon profil{% endblock %}
 {% block content %}
-<h4 class="mb-4">Modifier mes informations</h4>
-<div class="card shadow-sm border-0" style="max-width: 500px;">
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="mb-3">
-                <label class="form-label fw-bold">{{ field.label }}</label>
-                {{ field }}
-            </div>
-            {% endfor %}
-            <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">Enregistrer</button>
-            <a href="{% url 'profil_agent' %}" class="btn" style="background: var(--fidelia-blue); color: white;">Annuler</a>
-        </form>
+    <h4 class="mb-4">Modifier mes informations</h4>
+    <div class="card shadow-sm border-0" style="max-width: 500px;">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ field.label }}</label>
+                        {{ field }}
+                    </div>
+                {% endfor %}
+                <button type="submit"
+                        class="btn"
+                        style="background: var(--fidelia-blue);
+                               color: white">Enregistrer</button>
+                <a href="{% url 'profil_agent' %}"
+                   class="btn"
+                   style="background: var(--fidelia-blue);
+                          color: white">Annuler</a>
+            </form>
+        </div>
     </div>
-</div>
 {% endblock %}

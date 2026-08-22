@@ -1,65 +1,63 @@
 {% extends "base_assure.html" %}
-
 {% block title %}Suivi de mes dossiers{% endblock %}
-
 {% block content %}
-<h3 class="mb-4" style="color: #003366;"><i class="bi bi-list-check"></i> Suivi de mes dossiers</h3>
-
-<div class="card shadow-sm border-0">
-    <div class="card-body">
-        {% if sinistres %}
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th>N° Sinistre</th>
-                    <th>Date déclaration</th>
-                    <th>Nature</th>
-                    <th>Statut</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for sinistre in sinistres %}
-                <tr>
-                    {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' and sinistre.statut != 'ATTENTE_COMPLEMENTS' %}
-                        <td><strong>{{ sinistre.numero_sinistre }}</strong></td>
-                    {% else %}
-                        <td class="ps-4"><center><strong>-</strong></center></td>
-                    {% endif %}
-                    <td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
-                    <td>{{ sinistre.get_nature_display }}</td>
-                    <td>
-                        {% if sinistre.statut == 'SOUMIS' %}
-                            <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span>
-                        {% elif sinistre.statut == 'ATTENTE_COMPLEMENTS' or sinistre.statut == 'ATTENTE_VALIDATION' %}
-                            <span class="badge bg-warning text-dark">{{ sinistre.get_statut_display }}</span>
-                        {% elif sinistre.statut == 'EN_COURS' %}
-                            <span class="badge bg-info text-dark">{{ sinistre.get_statut_display }}</span>
-                        {% elif sinistre.statut == 'CLOTURE' %}
-                            <span class="badge bg-success">{{ sinistre.get_statut_display }}</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ sinistre.get_statut_display }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-end">
-                        <a href="{% url 'detail_sinistre' sinistre.id %}" class="btn btn-sm btn-outline-primary">
-                            Voir
-                        </a>
-                        
-                        <!-- Bouton d'action pour fournir les compléments -->
-                        {% if sinistre.statut == 'ATTENTE_COMPLEMENTS' %}
-                            <a href="{% url 'fournir_complements' sinistre.id %}" class="btn btn-sm btn-warning ms-2">
-                                <i class="bi bi-file-earmark-plus"></i> Compléter
-                            </a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="text-muted text-center py-4">Vous n'avez encore déclaré aucun sinistre.</p>
-        {% endif %}
+    <h3 class="mb-4" style="color: #003366;"><i class="bi bi-list-check"></i> Suivi de mes dossiers</h3>
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if sinistres %}
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>N° Sinistre</th>
+                            <th>Date déclaration</th>
+                            <th>Nature</th>
+                            <th>Statut</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sinistre in sinistres %}
+                            <tr>
+                                {% if sinistre.numero_sinistre and sinistre.statut != 'SOUMIS' and sinistre.statut != 'ATTENTE_VALIDATION' and sinistre.statut != 'ATTENTE_COMPLEMENTS' %}
+                                    <td><strong>{{ sinistre.numero_sinistre }}</strong></td>
+                                {% else %}
+                                    <td class="ps-4">
+                                        <center><strong>-</strong></center>
+                                    </td>
+                                {% endif %}
+                                <td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
+                                <td>{{ sinistre.get_nature_display }}</td>
+                                <td>
+                                    {% if sinistre.statut == 'SOUMIS' %}
+                                        <span class="badge bg-primary">{{ sinistre.get_statut_display }}</span>
+                                    {% elif sinistre.statut == 'ATTENTE_COMPLEMENTS' or sinistre.statut == 'ATTENTE_VALIDATION' %}
+                                        <span class="badge bg-warning text-dark">{{ sinistre.get_statut_display }}</span>
+                                    {% elif sinistre.statut == 'EN_COURS' %}
+                                        <span class="badge bg-info text-dark">{{ sinistre.get_statut_display }}</span>
+                                    {% elif sinistre.statut == 'CLOTURE' %}
+                                        <span class="badge bg-success">{{ sinistre.get_statut_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ sinistre.get_statut_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'detail_sinistre' sinistre.id %}"
+                                       class="btn btn-sm btn-outline-primary">Voir</a>
+                                    <!-- Bouton d'action pour fournir les compléments -->
+                                    {% if sinistre.statut == 'ATTENTE_COMPLEMENTS' %}
+                                        <a href="{% url 'fournir_complements' sinistre.id %}"
+                                           class="btn btn-sm btn-warning ms-2">
+                                            <i class="bi bi-file-earmark-plus"></i> Compléter
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted text-center py-4">Vous n'avez encore déclaré aucun sinistre.</p>
+            {% endif %}
+        </div>
     </div>
-</div>
 {% endblock %}

@@ -1,29 +1,29 @@
 {% extends 'base_admin.html' %}
-
 {% block title %}Créer un chef{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">
-        <i class="bi bi-person-plus me-2"></i> Nouveau chef
-    </h3>
-</div>
-
-<form method="post" enctype="multipart/form-data" class="shadow-sm p-4 bg-white rounded">
-    {% csrf_token %}
-    <div class="row">
-        {% for field in form %}
-        <div class="col-md-4 mb-3">
-            <label class="form-label fw-bold">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">
+            <i class="bi bi-person-plus me-2"></i> Nouveau chef
+        </h3>
+    </div>
+    <form method="post"
+          enctype="multipart/form-data"
+          class="shadow-sm p-4 bg-white rounded">
+        {% csrf_token %}
+        <div class="row">
+            {% for field in form %}
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-    <div>
-        <button type="submit" class="btn" style="background: var(--fidelia-blue); color: white;">
-            Créer le chef
-        </button>
-    </div>
-</form>
+        <div>
+            <button type="submit"
+                    class="btn"
+                    style="background: var(--fidelia-blue);
+                           color: white">Créer le chef</button>
+        </div>
+    </form>
 {% endblock %}

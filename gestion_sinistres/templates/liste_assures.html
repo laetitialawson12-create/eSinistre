@@ -1,130 +1,161 @@
 {% extends 'base_admin.html' %}
-
 {% block title %}Gestion des assurés{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Gestion des assurés</h3>
-</div>
-
-<div class="card border-0 shadow-sm p-3 mb-4">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label small text-secondary text-uppercase">Recherche</label>
-            <input type="text" name="q" class="form-control" value="{{ recherche }}" placeholder="Nom, n° police ou email">
-        </div>
-        <div class="col-md-4">
-            <label class="form-label small text-secondary text-uppercase">Activation</label>
-            <select name="activation" class="form-select">
-                <option value="">Toutes</option>
-                <option value="active" {% if activation_selectionnee == 'active' %}selected{% endif %}>Activé par l'assuré</option>
-                <option value="attente" {% if activation_selectionnee == 'attente' %}selected{% endif %}>En attente d'activation</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label small text-secondary text-uppercase">Statut</label>
-            <select name="statut" class="form-select">
-                <option value="">Tous</option>
-                <option value="actif" {% if statut_selectionne == 'actif' %}selected{% endif %}>Actif</option>
-                <option value="inactif" {% if statut_selectionne == 'inactif' %}selected{% endif %}>Désactivé</option>
-            </select>
-        </div>
-        <div class="col-md-2 d-flex gap-2">
-            <button type="submit" class="btn w-100" style="background: var(--fidelia-blue); color: white;">Filtrer</button>
-        </div>
-    </form>
-    {% if recherche or statut_selectionne or activation_selectionnee %}
-    <div class="mt-2">
-        <a href="{% url 'liste_assures' %}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-x-circle"></i> Réinitialiser les filtres
-        </a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Gestion des assurés</h3>
     </div>
-    {% endif %}
-</div>
-
-<div class="card border-0 shadow-sm p-3">
-    <div class="mb-2 text-secondary small">{{ assures|length }} assuré{{ assures|length|pluralize }}</div>
-
-    <form method="post" action="{% url 'action_lot_assures' %}" id="form-lot-assures">
-        {% csrf_token %}
-        {% if assures %}
-        <div class="d-flex align-items-center gap-2 p-3 border-top">
-            <span class="small text-secondary"><span id="count-selection-assures">0</span> sélectionné(s)</span>
-            <select name="action" class="form-select form-select-sm w-auto">
-                <option value="activer">Activer</option>
-                <option value="desactiver">Désactiver</option>
-                <option value="supprimer">Supprimer</option>
-            </select>
-            <button type="submit" class="btn btn-sm" style="background: var(--fidelia-blue); color: white;">
-                Appliquer à la sélection
-            </button>
-        </div>
-        {% endif %}
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th style="width:30px;"><input type="checkbox" id="select-all-assures"></th>
-                    <th>Nom</th>
-                    <th>N° Police</th>
-                    <th>Email</th>
-                    <th>Téléphone</th>
-                    <th>Activation</th>
-                    <th>Statut du compte</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for assure in assures %}
-                <tr>
-                    <td><input type="checkbox" name="selection" value="{{ assure.id }}" class="check-assure"></td>
-                    <td>{{ assure.user.get_full_name|default:assure.user.username }}</td>
-                    <td>{{ assure.numero_police }}</td>
-                    <td>{{ assure.user.email|default:"—" }}</td>
-                    <td>{{ assure.telephone|default:"—" }}</td>
-                    <td>
-                        {% if assure.compte_active %}
-                            <span class="badge bg-info">Activé par l'assuré</span>
-                        {% else %}
-                            <span class="badge bg-warning text-dark">En attente d'activation</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if assure.user.is_active %}
-                            <span class="badge bg-success">Actif</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Désactivé</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-end">
-                        <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
-                            <a href="{% url 'modifier_assure_admin' assure.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
-                            <button type="submit" form="toggle-{{ assure.id }}" class="btn btn-sm {% if assure.user.is_active %}btn-outline-secondary{% else %}btn-outline-success{% endif %}" title="{% if assure.user.is_active %}Désactiver{% else %}Réactiver{% endif %}">
-                                {% if assure.user.is_active %}<i class="bi bi-slash-circle"></i>{% else %}<i class="bi bi-check-circle"></i>{% endif %}
-                            </button>
-                            <a href="{% url 'supprimer_assure_admin' assure.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="8" class="text-muted fst-italic">Aucun assuré enregistré pour le moment.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </form>
-
-    <!-- Formulaires individuels de toggle (hors du form de sélection, référencés via l'attribut form="") -->
-    {% for assure in assures %}
-        <form method="post" action="{% url 'toggle_assure_actif' assure.id %}" id="toggle-{{ assure.id }}" class="d-none">
-            {% csrf_token %}
+    <div class="card border-0 shadow-sm p-3 mb-4">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-secondary text-uppercase">Recherche</label>
+                <input type="text"
+                       name="q"
+                       class="form-control"
+                       value="{{ recherche }}"
+                       placeholder="Nom, n° police ou email">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small text-secondary text-uppercase">Activation</label>
+                <select name="activation" class="form-select">
+                    <option value="">Toutes</option>
+                    <option value="active"
+                            {% if activation_selectionnee == 'active' %}selected{% endif %}>Activé par l'assuré</option>
+                    <option value="attente"
+                            {% if activation_selectionnee == 'attente' %}selected{% endif %}>En attente d'activation</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-secondary text-uppercase">Statut</label>
+                <select name="statut" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="actif"
+                            {% if statut_selectionne == 'actif' %}selected{% endif %}>Actif</option>
+                    <option value="inactif"
+                            {% if statut_selectionne == 'inactif' %}selected{% endif %}>Désactivé</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit"
+                        class="btn w-100"
+                        style="background: var(--fidelia-blue);
+                               color: white">Filtrer</button>
+            </div>
         </form>
-    {% endfor %}
-</div>
-
-<script>
+        {% if recherche or statut_selectionne or activation_selectionnee %}
+            <div class="mt-2">
+                <a href="{% url 'liste_assures' %}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    <div class="card border-0 shadow-sm p-3">
+        <div class="mb-2 text-secondary small">{{ assures|length }} assuré{{ assures|length|pluralize }}</div>
+        <form method="post"
+              action="{% url 'action_lot_assures' %}"
+              id="form-lot-assures">
+            {% csrf_token %}
+            {% if assures %}
+                <div class="d-flex align-items-center gap-2 p-3 border-top">
+                    <span class="small text-secondary"><span id="count-selection-assures">0</span> sélectionné(s)</span>
+                    <select name="action" class="form-select form-select-sm w-auto">
+                        <option value="activer">Activer</option>
+                        <option value="desactiver">Désactiver</option>
+                        <option value="supprimer">Supprimer</option>
+                    </select>
+                    <button type="submit"
+                            class="btn btn-sm"
+                            style="background: var(--fidelia-blue);
+                                   color: white">Appliquer à la sélection</button>
+                </div>
+            {% endif %}
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:30px;">
+                            <input type="checkbox" id="select-all-assures">
+                        </th>
+                        <th>Nom</th>
+                        <th>N° Police</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Activation</th>
+                        <th>Statut du compte</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assure in assures %}
+                        <tr>
+                            <td>
+                                <input type="checkbox"
+                                       name="selection"
+                                       value="{{ assure.id }}"
+                                       class="check-assure">
+                            </td>
+                            <td>{{ assure.user.get_full_name|default:assure.user.username }}</td>
+                            <td>{{ assure.numero_police }}</td>
+                            <td>{{ assure.user.email|default:"—" }}</td>
+                            <td>{{ assure.telephone|default:"—" }}</td>
+                            <td>
+                                {% if assure.compte_active %}
+                                    <span class="badge bg-info">Activé par l'assuré</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">En attente d'activation</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if assure.user.is_active %}
+                                    <span class="badge bg-success">Actif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Désactivé</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex align-items-center gap-1 flex-nowrap">
+                                    <a href="{% url 'modifier_assure_admin' assure.id %}"
+                                       class="btn btn-sm btn-outline-warning"
+                                       title="Modifier">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    <button type="submit"
+                                            form="toggle-{{ assure.id }}"
+                                            class="btn btn-sm {% if assure.user.is_active %}btn-outline-secondary{% else %}btn-outline-success{% endif %}"
+                                            title="{% if assure.user.is_active %}Désactiver{% else %}Réactiver{% endif %}">
+                                        {% if assure.user.is_active %}
+                                            <i class="bi bi-slash-circle"></i>
+                                        {% else %}
+                                            <i class="bi bi-check-circle"></i>
+                                        {% endif %}
+                                    </button>
+                                    <a href="{% url 'supprimer_assure_admin' assure.id %}"
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-muted fst-italic">Aucun assuré enregistré pour le moment.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </form>
+        <!-- Formulaires individuels de toggle (hors du form de sélection, référencés via l'attribut form="") -->
+        {% for assure in assures %}
+            <form method="post"
+                  action="{% url 'toggle_assure_actif' assure.id %}"
+                  id="toggle-{{ assure.id }}"
+                  class="d-none">
+                {% csrf_token %}
+            </form>
+        {% endfor %}
+    </div>
+    <script>
 document.addEventListener('DOMContentLoaded', function () {
     const selectAll = document.getElementById('select-all-assures');
     const checks = document.querySelectorAll('.check-assure');
@@ -141,5 +172,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     checks.forEach(c => c.addEventListener('change', updateCounter));
 });
-</script>
+    </script>
 {% endblock %}

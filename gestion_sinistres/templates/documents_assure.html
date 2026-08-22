@@ -1,43 +1,44 @@
 {% extends 'base_assure.html' %}
-
 {% block title %}Mes documents{% endblock %}
-
 {% block content %}
-<h3 class="mb-4" style="color: #003366;"><i class="bi bi-folder2-open"></i> Mes documents</h3>
-
-<div class="card shadow-sm border-0">
-    <div class="card-body">
-        {% if pieces %}
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Dossier</th>
-                    <th>Fichier</th>
-                    <th>Ajouté le</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for piece in pieces %}
-                <tr>
-                    <td><strong>{{ piece.sinistre.numero_sinistre }}</strong></td>
-                    <td>{{ piece.fichier.name|cut:"sinistres/documents/" }}</td>
-                    <td>{{ piece.date_ajout|date:"d/m/Y H:i" }}</td>
-                    <td class="text-end">
-                        <a href="{{ piece.fichier.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye"></i> Ouvrir
-                        </a>
-                        <a href="{{ piece.fichier.url }}" download class="btn btn-sm btn-outline-secondary">
-                            <i class="bi bi-download"></i> Télécharger
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="text-muted">Aucun document disponible.</p>
-        {% endif %}
+    <h3 class="mb-4" style="color: #003366;"><i class="bi bi-folder2-open"></i> Mes documents</h3>
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            {% if pieces %}
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Dossier</th>
+                            <th>Fichier</th>
+                            <th>Ajouté le</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for piece in pieces %}
+                            <tr>
+                                <td><strong>{{ piece.sinistre.numero_sinistre }}</strong></td>
+                                <td>{{ piece.fichier.name|cut:"sinistres/documents/" }}</td>
+                                <td>{{ piece.date_ajout|date:"d/m/Y H:i" }}</td>
+                                <td class="text-end">
+                                    <a href="{{ piece.fichier.url }}"
+                                       target="_blank"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Ouvrir
+                                    </a>
+                                    <a href="{{ piece.fichier.url }}"
+                                       download
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-download"></i> Télécharger
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="text-muted">Aucun document disponible.</p>
+            {% endif %}
+        </div>
     </div>
-</div>
 {% endblock %}

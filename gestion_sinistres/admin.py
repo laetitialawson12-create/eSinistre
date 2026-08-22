@@ -10,8 +10,8 @@ class SinistreAdmin(admin.ModelAdmin):
 
 @admin.register(Vehicule)
 class VehiculeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'immatriculation', 'marque', 'modele', 'annee', 'proprietaire')
-    search_fields = ('immatriculation', 'marque', 'modele', 'proprietaire__username')
+    list_display = ('id', 'immatriculation', 'marque', 'categorie', 'annee', 'proprietaire')
+    search_fields = ('immatriculation', 'marque', 'categorie', 'proprietaire__username')
     
 
 @admin.register(PieceJointe)

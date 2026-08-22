@@ -1,13 +1,25 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr" ^data-bs-theme="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Espace Agent{% endblock %} - Fidélia</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}Espace Agent{% endblock %} - Fidélia</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+              rel="stylesheet">
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+        <style>
+        @font-face {
+            font-family: 'ScriptBold';
+            src: url("{% static 'fonts/SCRIPTBL.TTF' %}") format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+        .login-header h4 {
+            font-family: 'ScriptBold', sans-serif;
+        }
         :root { 
             --fidelia-blue: #003366;
             --body-bg: #f4f7f9;
@@ -61,45 +73,69 @@
             .main-content { margin-left: 0; }
             .sidebar-toggle { display: inline-block; }
         }
-    </style>
-</head>
-<body>
-    <nav class="sidebar">
-        <div class="d-flex align-items-center justify-content-between py-4 px-3 border-bottom border-light border-opacity-25">
-            <div>
-                <img src="{% static 'Logo2.jpeg' %}" alt="Logo2" style="height: 60px; width: auto; padding: 4px; border-radius: 6px;">
-            </div>
-            <h5 class="mb-0">Fidélia eSinistre</h5>
-            <button class="sidebar-toggle d-lg-none" id="sidebarClose" style="color: white;"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <div class="py-3">
-            <a href="{% url 'accueil_agent' %}" class="{% if request.resolver_match.url_name == 'accueil_agent' %}active{% endif %}"><i class="bi bi-house-door me-2"></i> Accueil</a>
-            <a href="{% url 'dossiers_a_valider_agent' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_valider_agent' or request.resolver_match.url_name == 'detail_sinistre_agent' %}active{% endif %}"><i class="bi bi-inbox me-2"></i> À valider</a>
-            <a href="{% url 'dossiers_en_cours' %}" class="{% if request.resolver_match.url_name == 'dossiers_en_cours' %}active{% endif %}"><i class="bi bi-arrow-repeat me-2"></i> En cours</a>
-            <a href="{% url 'dossiers_a_corriger_agent' %}" class="{% if request.resolver_match.url_name == 'dossiers_a_corriger_agent' %}active{% endif %}"><i class="bi bi-exclamation-triangle-fill"></i>  À corriger</a>
-            <a href="{% url 'dossiers_clotures' %}" class="{% if request.resolver_match.url_name == 'dossiers_clotures' %}active{% endif %}"><i class="bi bi-folder2 me-2"></i> Clôturés</a>
-            <a href="{% url 'tous_sinistres_agent' %}" class="{% if request.resolver_match.url_name == 'tous_sinistres_agent' %}active{% endif %}"><i class="bi bi-collection me-2"></i>Sinistres</a>
-            <a href="{% url 'profil_agent' %}" class="{% if request.resolver_match.url_name == 'profil_agent' or request.resolver_match.url_name == 'modifier_profil_agent' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Profil</a>
-        </div>
-        <div class="py-3 mt-auto">
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-link" style="color: rgba(255,255,255,0.85); padding: 12px 20px;"><i class="bi bi-box-arrow-right me-2"></i> Déconnexion</button>
-            </form>
-        </div>
-    </nav>
-    <main class="main-content">
-        <div class="header-user d-flex align-items-center justify-content-between shadow-sm">
-            <div class="d-flex align-items-center">
-                <button class="sidebar-toggle me-3" id="sidebarToggle" style="color: #003366;"><i class="bi bi-list"></i></button>
-                <h5 class="mb-0"> Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
-            </div>
-            <div class="d-flex align-items-center">
-                <button class="btn btn-sm btn-outline-secondary me-3" id="themeToggle">
-                    <i class="bi bi-moon-stars"></i>
+        </style>
+    </head>
+    <body>
+        <nav class="sidebar">
+            <div class="d-flex align-items-center justify-content-between py-4 px-3 border-bottom border-light border-opacity-25">
+                <div>
+                    <img src="{% static 'Logo2.jpeg' %}"
+                         alt="Logo2"
+                         style="height: 60px;
+                                width: auto;
+                                padding: 4px;
+                                border-radius: 6px">
+                </div>
+                <h4 class="mb-0">Fidélia eSinistre</h4>
+                <button class="sidebar-toggle d-lg-none"
+                        id="sidebarClose"
+                        style="color: white">
+                    <i class="bi bi-x-lg"></i>
                 </button>
-                <div class="vr me-3" style="height: 32px;"></div>
-                    <a href="{% url 'profil_agent' %}" class="user-badge text-decoration-none me-2">
+            </div>
+            <div class="py-3">
+                <a href="{% url 'accueil_agent' %}"
+                   class="{% if request.resolver_match.url_name == 'accueil_agent' %}active{% endif %}"><i class="bi bi-house-door me-2"></i> Accueil</a>
+                <a href="{% url 'dossiers_a_valider_agent' %}"
+                   class="{% if request.resolver_match.url_name == 'dossiers_a_valider_agent' or request.resolver_match.url_name == 'detail_sinistre_agent' %}active{% endif %}"><i class="bi bi-inbox me-2"></i> À valider</a>
+                <a href="{% url 'dossiers_en_cours' %}"
+                   class="{% if request.resolver_match.url_name == 'dossiers_en_cours' %}active{% endif %}"><i class="bi bi-arrow-repeat me-2"></i> En cours</a>
+                <a href="{% url 'dossiers_a_corriger_agent' %}"
+                   class="{% if request.resolver_match.url_name == 'dossiers_a_corriger_agent' %}active{% endif %}"><i class="bi bi-exclamation-triangle-fill"></i>  À corriger</a>
+                <a href="{% url 'dossiers_clotures' %}"
+                   class="{% if request.resolver_match.url_name == 'dossiers_clotures' %}active{% endif %}"><i class="bi bi-folder2 me-2"></i> Clôturés</a>
+                <a href="{% url 'tous_sinistres_agent' %}"
+                   class="{% if request.resolver_match.url_name == 'tous_sinistres_agent' %}active{% endif %}"><i class="bi bi-collection me-2"></i>Sinistres</a>
+                <a href="{% url 'profil_agent' %}"
+                   class="{% if request.resolver_match.url_name == 'profil_agent' or request.resolver_match.url_name == 'modifier_profil_agent' %}active{% endif %}"><i class="bi bi-person-circle me-2"></i> Profil</a>
+            </div>
+            <div class="py-3 mt-auto">
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-link"
+                            style="color: rgba(255,255,255,0.85);
+                                   padding: 12px 20px"><i class="bi bi-box-arrow-right me-2"></i> Déconnexion</button>
+                </form>
+            </div>
+        </nav>
+        <main class="main-content">
+            <div class="header-user d-flex align-items-center justify-content-between shadow-sm">
+                <div class="d-flex align-items-center">
+                    <button class="sidebar-toggle me-3"
+                            id="sidebarToggle"
+                            style="color: #003366">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <h5 class="mb-0">Bonjour, {{ request.user.get_full_name|default:request.user.username }}</h5>
+                </div>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-sm btn-outline-secondary me-3" id="themeToggle">
+                        <i class="bi bi-moon-stars"></i>
+                    </button>
+                    <div class="vr me-3" style="height: 32px;"></div>
+                    <a href="{% url 'profil_agent' %}"
+                       class="user-badge text-decoration-none me-2">
                         {{ request.user.first_name|first|default:"A" }}{{ request.user.last_name|first|default:"G" }}
                     </a>
                     <div class="d-flex flex-column lh-sm">
@@ -108,11 +144,11 @@
                     </div>
                 </div>
             </div>
-        <div class="p-4">
-            {% block content %}{% endblock %}
-        </div>
-    </main>
-    <script>
+            <div class="p-4">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+        <script>
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebar = document.querySelector('.sidebar');
         if (sidebarToggle && sidebar) sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
@@ -140,6 +176,6 @@
                 applyTheme(next);
             });
         }
-    </script>
-</body>
+        </script>
+    </body>
 </html>

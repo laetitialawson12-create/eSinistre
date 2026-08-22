@@ -1,97 +1,91 @@
 {% extends 'base_assure.html' %}
-
 {% block title %}Confirmation de déclaration{% endblock %}
-
 {% block content %}
-<div class="container">
-    <div class="card shadow-sm border-0 mx-auto p-4" style="max-width: 600px; border-top: 5px solid var(--fidelia-blue); border-radius: 0;">
-        <h3 class="mb-4 fw-bold" style="color: var(--fidelia-blue) !important;">
-            <i class="bi bi-check2-circle"></i> Résumé de votre déclaration
-        </h3>
-        <p class="text-muted">Veuillez vérifier les informations ci-dessous avant de valider.</p>
-
-        <hr>
-
-        <div class="mb-3">
-            <h6 class="text-uppercase text-secondary small">Assuré</h6>
-            <p><strong>Nom :</strong> {{ request.user.get_full_name|default:request.user.username }}</p>
-            <p><strong>N° de Police :</strong> {{ request.user.assure.numero_police }}</p>
-            <p><strong>Contact : </strong>{{ sinistre.contact_declarant }}</p>
-        </div>
-
-        <div class="mb-3">
-            <h6 class="text-uppercase text-secondary small">Localisation</h6>
-            <p><strong>Quartier : </strong> {{ sinistre.quartier }}</p>
-            <p><strong>Ville : </strong> {{ sinistre.ville }}</p>
-            <p><strong>Commune : </strong> {{ sinistre.commune }}</p>
-            <p><strong>Région : </strong> {{ sinistre.region }}</p>
-        </div>
-
-        <div class="mb-3">
-            <h6 class="text-uppercase text-secondary small">Détails de l'accident</h6>
-            <p><strong>Date de survenance : </strong> {{ sinistre.date_survenance|date:"d/m/Y" }}</p>
-            <p><strong>Heure approximative : </strong>{{ sinistre.heure_approximative|time:"H:i" }}</p>
-            <p><strong>Véhicule :</strong> {{ sinistre.vehicule }}</p>
-            <p><strong>Conducteur : </strong> {{ sinistre.nom_conducteur }}</p>
-        </div>
-
-        <div class="mb-3">
-            <h6 class="text-uppercase text-secondary small">Victimes</h6>
-            <p><strong>Nombre de blessés : </strong> {{ sinistre.nombre_blesses }}</p>
-            <p><strong>Nombre de morts : </strong> {{ sinistre.nombre_morts }}</p>
-        </div>
-
-        {% if sinistre.autre_vehicule_implique %}
-        <div class="mb-3">
-            <h6 class="text-uppercase text-secondary small">Véhicule adverse</h6>
-            <p><strong>Immatriculation : </strong> {{ sinistre.vehicule_adverse_immatriculation|default:"—" }}</p>
-            <p><strong>Marque : </strong> {{ sinistre.vehicule_adverse_marque|default:"—" }}</p>
-            <p><strong>Modèle : </strong> {{ sinistre.vehicule_adverse_modele|default:"—" }}</p>
-            <p><strong>Compagnie d'assurance : </strong> {{ sinistre.vehicule_adverse_compagnie|default:"—" }}</p>
-        </div>
-        {% endif %}
-
-        <div class="mb-3">
-            <h6 class="text-uppercase text-secondary small">Circonstances</h6>
-            <p class="bg-light p-2 border">{{ sinistre.circonstances }}</p>
-        </div>
-
-        <div class="mb-3">
-            <h6 class="text-uppercase text-secondary small">Dommages</h6>
-            <p class="bg-light p-2 border">{{ sinistre.dommage }}</p>
-        </div>
-
-        <div class="mb-3">
-            <h6 class="text-uppercase text-secondary small">Pièces jointes</h6>
-            {% if pieces %}
-                <ul class="list-unstyled">
-                    {% for piece in pieces %}
-                    <li class="mb-1">
-                        <i class="bi bi-paperclip"></i>
-                        <a href="{{ piece.fichier.url }}" target="_blank">{{ piece.fichier.name|slice:"-40:" }}</a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p class="text-muted fst-italic">Aucune pièce jointe fournie.</p>
-            {% endif %}
-
-            {% if sinistre.lettre_derogation %}
-            <p class="mb-0">
-                <i class="bi bi-file-earmark-text"></i>
-                <strong>Lettre de dérogation :</strong>
-                <a href="{{ sinistre.lettre_derogation.url }}" target="_blank">{{ sinistre.lettre_derogation.name|slice:"-40:" }}</a>
-            </p>
-            {% endif %}
-        </div>
-
-        <form method="post" action="{% url 'finaliser_envoi' %}">
-            {% csrf_token %}
-            <div class="d-flex gap-3 mt-4">
-                <button type="submit" class="btn w-50" style="background-color: #28a745; color: white;">Confirmer l'envoi</button>
-                <a href="{% url 'declarer_sinistre' %}" class="btn btn-outline-secondary w-50">Modifier</a>
+    <div class="container">
+        <div class="card shadow-sm border-0 mx-auto p-4"
+             style="max-width: 600px;
+                    border-top: 5px solid var(--fidelia-blue);
+                    border-radius: 0">
+            <h3 class="mb-4 fw-bold" style="color: var(--fidelia-blue) !important;">
+                <i class="bi bi-check2-circle"></i> Résumé de votre déclaration
+            </h3>
+            <p class="text-muted">Veuillez vérifier les informations ci-dessous avant de valider.</p>
+            <hr>
+            <div class="mb-3">
+                <h6 class="text-uppercase text-secondary small">Assuré</h6>
+                <p><strong>Nom :</strong> {{ request.user.get_full_name|default:request.user.username }}</p>
+                <p><strong>N° de Police :</strong> {{ request.user.assure.numero_police }}</p>
+                <p><strong>Contact : </strong>{{ sinistre.contact_declarant }}</p>
             </div>
-        </form>
+            <div class="mb-3">
+                <h6 class="text-uppercase text-secondary small">Localisation</h6>
+                <p><strong>Quartier :</strong> {{ sinistre.quartier }}</p>
+                <p><strong>Ville :</strong> {{ sinistre.ville }}</p>
+                <p><strong>Commune :</strong> {{ sinistre.commune }}</p>
+                <p><strong>Région :</strong> {{ sinistre.region }}</p>
+            </div>
+            <div class="mb-3">
+                <h6 class="text-uppercase text-secondary small">Détails de l'accident</h6>
+                <p><strong>Date de survenance :</strong> {{ sinistre.date_survenance|date:"d/m/Y" }}</p>
+                <p><strong>Heure approximative : </strong>{{ sinistre.heure_approximative|time:"H:i" }}</p>
+                <p><strong>Véhicule :</strong> {{ sinistre.vehicule }}</p>
+                <p><strong>Conducteur :</strong> {{ sinistre.nom_conducteur }}</p>
+            </div>
+            <div class="mb-3">
+                <h6 class="text-uppercase text-secondary small">Victimes</h6>
+                <p><strong>Nombre de blessés :</strong> {{ sinistre.nombre_blesses }}</p>
+                <p><strong>Nombre de morts :</strong> {{ sinistre.nombre_morts }}</p>
+            </div>
+            {% if sinistre.autre_vehicule_implique %}
+                <div class="mb-3">
+                    <h6 class="text-uppercase text-secondary small">Véhicule adverse</h6>
+                    <p><strong>Immatriculation :</strong> {{ sinistre.vehicule_adverse_immatriculation|default:"—" }}</p>
+                    <p><strong>Marque :</strong> {{ sinistre.vehicule_adverse_marque|default:"—" }}</p>
+                    <p><strong>Modèle :</strong> {{ sinistre.vehicule_adverse_categorie|default:"—" }}</p>
+                    <p><strong>Compagnie d'assurance :</strong> {{ sinistre.vehicule_adverse_compagnie|default:"—" }}</p>
+                </div>
+            {% endif %}
+            <div class="mb-3">
+                <h6 class="text-uppercase text-secondary small">Circonstances</h6>
+                <p class="bg-light p-2 border">{{ sinistre.circonstances }}</p>
+            </div>
+            <div class="mb-3">
+                <h6 class="text-uppercase text-secondary small">Dommages</h6>
+                <p class="bg-light p-2 border">{{ sinistre.dommage }}</p>
+            </div>
+            <div class="mb-3">
+                <h6 class="text-uppercase text-secondary small">Pièces jointes</h6>
+                {% if pieces %}
+                    <ul class="list-unstyled">
+                        {% for piece in pieces %}
+                            <li class="mb-1">
+                                <i class="bi bi-paperclip"></i>
+                                <a href="{{ piece.fichier.url }}" target="_blank">{{ piece.fichier.name|slice:"-40:" }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted fst-italic">Aucune pièce jointe fournie.</p>
+                {% endif %}
+                {% if sinistre.lettre_derogation %}
+                    <p class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i>
+                        <strong>Lettre de dérogation :</strong>
+                        <a href="{{ sinistre.lettre_derogation.url }}" target="_blank">{{ sinistre.lettre_derogation.name|slice:"-40:" }}</a>
+                    </p>
+                {% endif %}
+            </div>
+            <form method="post" action="{% url 'finaliser_envoi' %}">
+                {% csrf_token %}
+                <div class="d-flex gap-3 mt-4">
+                    <button type="submit"
+                            class="btn w-50"
+                            style="background-color: #28a745;
+                                   color: white">Confirmer l'envoi</button>
+                    <a href="{% url 'declarer_sinistre' %}"
+                       class="btn btn-outline-secondary w-50">Modifier</a>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 {% endblock %}

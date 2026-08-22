@@ -1,36 +1,38 @@
 {% extends "base_assure.html" %}
-
 {% block extra_head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 {% endblock %}
-
 {% block content %}
     <div class="container mt-4">
         <h3 class="mb-4">Déclaration de sinistre</h3>
-
-        <form method="post" enctype="multipart/form-data" class="shadow-sm p-4 bg-white rounded">
+        <form method="post"
+              enctype="multipart/form-data"
+              class="shadow-sm p-4 bg-white rounded">
             {% csrf_token %}
-
             {% if form.errors %}
-            <div class="alert alert-danger">
-                <ul class="mb-0">
-                    {% for field in form%}
-                        {% for error in field.errors %}
-                            <li><strong>{{ field.label }}</strong> : {{ error }}</li>
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}</strong> : {{ error }}</li>
+                            {% endfor %}
                         {% endfor %}
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
             {% endif %}
-
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label class="form-label">N° de Police</label>
-                    <input type="text" class="form-control" value="{{ request.user.assure.numero_police }}" disabled readonly>
+                    <input type="text"
+                           class="form-control"
+                           value="{{ request.user.assure.numero_police }}"
+                           disabled
+                           readonly>
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Nom du conducteur</label>
@@ -41,57 +43,48 @@
                     {{ form.vehicule }}
                 </div>
             </div>
-
             <div class="row mb-3">
                 <div class="col-md-4">{{ form.date_survenance.label_tag }} {{ form.date_survenance }}</div>
                 <div class="col-md-4">{{ form.heure_approximative.label_tag }} {{ form.heure_approximative }}</div>
                 <div class="col-md-4">{{ form.contact_declarant.label_tag }} {{ form.contact_declarant }}</div>
             </div>
-
             <div class="row mb-3">
                 <div class="col-md-6">{{ form.nombre_blesses.label_tag }} {{ form.nombre_blesses }}</div>
                 <div class="col-md-6">{{ form.nombre_morts.label_tag }} {{ form.nombre_morts }}</div>
             </div>
-
             <div class="row mb-3">
                 <div class="col-md-3">{{ form.region.label_tag }} {{ form.region }}</div>
                 <div class="col-md-3">{{ form.commune.label_tag }} {{ form.commune }}</div>
                 <div class="col-md-3">{{ form.ville.label_tag }} {{ form.ville }}</div>
                 <div class="col-md-3">{{ form.quartier.label_tag }} {{ form.quartier }}</div>
             </div>
-
             <div class="mb-3">
                 <label class="form-label">Circonstances</label>
                 {{ form.circonstances }}
             </div>
-
             <div class="mb-3">
                 <label class="form-label">Dommages</label>
                 {{ form.dommage }}
             </div>
-
             <div class="mb-3 form-check">
                 {{ form.autre_vehicule_implique }}
-                <label class="form-check-label" for="id_autre_vehicule"> Un autre véhicule est-il impliqué ?</label>
+                <label class="form-check-label" for="id_autre_vehicule">Un autre véhicule est-il impliqué ?</label>
             </div>
-
             <div id="vehicule-adverse-container" style="display: none;">
                 <div class="row mb-3">
                     <div class="col-md-6">{{ form.vehicule_adverse_immatriculation.label_tag }} {{ form.vehicule_adverse_immatriculation }}</div>
                     <div class="col-md-6">{{ form.vehicule_adverse_marque.label_tag }} {{ form.vehicule_adverse_marque }}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-6">{{ form.vehicule_adverse_modele.label_tag }} {{ form.vehicule_adverse_modele }}</div>
+                    <div class="col-md-6">{{ form.vehicule_adverse_categorie.label_tag }} {{ form.vehicule_adverse_categorie }}</div>
                     <div class="col-md-6">{{ form.vehicule_adverse_compagnie.label_tag }} {{ form.vehicule_adverse_compagnie }}</div>
                 </div>
             </div>
-
             <div class="mb-3" id="derogation-container" style="display: none;">
                 {{ form.lettre_derogation.label_tag }}
                 {{ form.lettre_derogation }}
                 <small class="text-muted">À fournir car le sinistre date de plus de 5 jours.</small>
             </div>
-
             <div class="mb-4" id="pieces-container">
                 <h5 class="mt-4">Pièces justificatives</h5>
                 <div class="card-body p-0">
@@ -99,15 +92,13 @@
                     <small class="text-muted mt-2 d-block">Vous pouvez sélectionner plusieurs fichiers.</small>
                 </div>
             </div>
-
             <div class="d-flex gap-3">
                 <button type="submit" class="btn btn-primary flex-grow-1">Soumettre la déclaration</button>
-                <a href="{% url 'annuler_declaration' %}" class="btn btn-outline-secondary flex-grow-1 text-center">Annuler</a>
+                <a href="{% url 'annuler_declaration' %}"
+                   class="btn btn-outline-secondary flex-grow-1 text-center">Annuler</a>
             </div>
         </form>
     </div>
-
-
     <script>
         document.addEventListener('DOMContentLoaded', function(){
             const dateField = document.querySelector('input[name="date_survenance"]');
@@ -163,4 +154,4 @@
             });
         });
     </script>
-{% endblock  %}
+{% endblock %}

@@ -1,137 +1,177 @@
 {% extends 'base_admin.html' %}
-
 {% block title %}Gestion des rédacteurs{% endblock %}
-
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Gestion des rédacteurs</h3>
-    <a href="{% url 'creer_agent' %}" class="btn btn-primary" style="background: var(--fidelia-blue); border: none;">
-        <i class="bi bi-person-plus me-1"></i> Nouveau rédacteur
-    </a>
-</div>
-
-<div class="card border-0 shadow-sm p-3 mb-4">
-    <form method="get" class="row g-2 align-items-end">
-        <div class="col-md-4">
-            <label class="form-label small text-secondary text-uppercase">Recherche</label>
-            <input type="text" name="q" class="form-control" value="{{ recherche }}" placeholder="Nom, matricule ou email">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small text-secondary text-uppercase">Point de vente</label>
-            <select name="agence" class="form-select">
-                <option value="">Tous</option>
-                {% for a in agences %}
-                <option value="{{ a.id }}" {% if a.id|stringformat:"s" == agence_selectionnee %}selected{% endif %}>{{ a.nom }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small text-secondary text-uppercase">Statut</label>
-            <select name="statut" class="form-select">
-                <option value="">Tous</option>
-                <option value="actif" {% if statut_selectionne == 'actif' %}selected{% endif %}>Actif</option>
-                <option value="inactif" {% if statut_selectionne == 'inactif' %}selected{% endif %}>Désactivé</option>
-            </select>
-        </div>
-        <div class="col-md-2 d-flex gap-2">
-            <button type="submit" class="btn w-100" style="background: var(--fidelia-blue); color: white;">Filtrer</button>
-        </div>
-    </form>
-    {% if recherche or statut_selectionne or agence_selectionnee %}
-    <div class="mt-2">
-       <a href="{% url 'liste_agents' %}" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0" style="color: var(--fidelia-blue);">Gestion des rédacteurs</h3>
+        <a href="{% url 'creer_agent' %}"
+           class="btn btn-primary"
+           style="background: var(--fidelia-blue);
+                  border: none">
+            <i class="bi bi-person-plus me-1"></i> Nouveau rédacteur
         </a>
     </div>
-    {% endif %}
-</div>
-
-<div class="card border-0 shadow-sm p-3">
-    <div class="mb-2 text-secondary small">{{ agents|length }} rédacteur{{ agents|length|pluralize }}</div>
-
-    <form method="post" action="{% url 'action_lot_agents' %}" id="form-lot-agents">
-        {% csrf_token %}
-        {% if agents %}
-        <div class="d-flex align-items-center gap-2 p-3 border-top">
-            <span class="small text-secondary"><span id="count-selection-agents">0</span> sélectionné(s)</span>
-            <select name="action" class="form-select form-select-sm w-auto">
-                <option value="activer">Activer</option>
-                <option value="desactiver">Désactiver</option>
-                <option value="supprimer">Supprimer</option>
-            </select>
-            <button type="submit" class="btn btn-sm" style="background: var(--fidelia-blue); color: white;" onclick="return confirm('Appliquer cette action aux rédacteurs sélectionnés ?');">
-                Appliquer à la sélection
-            </button>
-        </div>
+    <div class="card border-0 shadow-sm p-3 mb-4">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-secondary text-uppercase">Recherche</label>
+                <input type="text"
+                       name="q"
+                       class="form-control"
+                       value="{{ recherche }}"
+                       placeholder="Nom, matricule ou email">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-secondary text-uppercase">Point de vente</label>
+                <select name="agence" class="form-select">
+                    <option value="">Tous</option>
+                    {% for a in agences %}
+                        <option value="{{ a.id }}"
+                                {% if a.id|stringformat:"s" == agence_selectionnee %}selected{% endif %}>{{ a.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-secondary text-uppercase">Statut</label>
+                <select name="statut" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="actif"
+                            {% if statut_selectionne == 'actif' %}selected{% endif %}>Actif</option>
+                    <option value="inactif"
+                            {% if statut_selectionne == 'inactif' %}selected{% endif %}>Désactivé</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit"
+                        class="btn w-100"
+                        style="background: var(--fidelia-blue);
+                               color: white">Filtrer</button>
+            </div>
+        </form>
+        {% if recherche or statut_selectionne or agence_selectionnee %}
+            <div class="mt-2">
+                <a href="{% url 'liste_agents' %}"
+                   class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Réinitialiser les filtres
+                </a>
+            </div>
         {% endif %}
-        <table class="table table-hover align-middle mb-0">
-            <thead>
-                <tr>
-                    <th style="width: 30px;"><input type="checkbox" id="select-all-agents"></th>
-                    <th>Nom</th>
-                    <th>Matricule</th>
-                    <th>Agence</th>
-                    <th>Email</th>
-                    <th>Téléphone</th>
-                    <th>Statut</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for agent in agents %}
-                <tr>
-                    <td><input type="checkbox" name="selection" value="{{ agent.id }}" class="check-agent"></td>
-                    <td>{{ agent.user.get_full_name|default:agent.user.username }}</td>
-                    <td>{{ agent.matricule }}</td>
-                    <td>{{ agent.agence|default:"—" }}</td>
-                    <td>{{ agent.user.email|default:"—" }}</td>
-                    <td>{{ agent.telephone|default:"—" }}</td>
-                    <td>
-                        {% if agent.user.is_active %}
-                            <span class="badge bg-success">Actif</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Désactivé</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-end">
-                        <div class="d-flex gap-2 justify-content-end flex-wrap">
-                            <a href="{% url 'modifier_agent_admin' agent.id %}" class="btn btn-sm btn-outline-primary" title="Modifier">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-
-                            <button type="submit" form="reset-mdp-{{ agent.id }}" class="btn btn-sm btn-outline-warning" title="Réinitialiser le mot de passe">
-                                <i class="bi bi-key"></i>
-                            </button>
-
-                            <button type="submit" form="toggle-{{ agent.id }}" class="btn btn-sm {% if agent.user.is_active %}btn-outline-secondary{% else %}btn-outline-success{% endif %}" title="{% if agent.user.is_active %}Désactiver{% else %}Réactiver{% endif %}">
-                                {% if agent.user.is_active %}<i class="bi bi-slash-circle"></i>{% else %}<i class="bi bi-check-circle"></i>{% endif %}
-                            </button>
-
-                            <a href="{% url 'supprimer_agent' agent.id %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="8" class="text-muted fst-italic">Aucun rédacteur enregistré pour le moment.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </form>
-
-    <!-- Formulaires individuels (hors du form de sélection, référencés via l'attribut form="") -->
-    {% for agent in agents %}
-        <form method="post" action="{% url 'reinitialiser_mdp_agent' agent.id %}" id="reset-mdp-{{ agent.id }}" class="d-none" onsubmit="return confirm('Réinitialiser le mot de passe de {{ agent.user.get_full_name|default:agent.user.username }} à 0000 ?');">
+    </div>
+    <div class="card border-0 shadow-sm p-3">
+        <div class="mb-2 text-secondary small">{{ agents|length }} rédacteur{{ agents|length|pluralize }}</div>
+        <form method="post"
+              action="{% url 'action_lot_agents' %}"
+              id="form-lot-agents">
             {% csrf_token %}
+            {% if agents %}
+                <div class="d-flex align-items-center gap-2 p-3 border-top">
+                    <span class="small text-secondary"><span id="count-selection-agents">0</span> sélectionné(s)</span>
+                    <select name="action" class="form-select form-select-sm w-auto">
+                        <option value="activer">Activer</option>
+                        <option value="desactiver">Désactiver</option>
+                        <option value="supprimer">Supprimer</option>
+                    </select>
+                    <button type="submit"
+                            class="btn btn-sm"
+                            style="background: var(--fidelia-blue);
+                                   color: white"
+                            onclick="return confirm('Appliquer cette action aux rédacteurs sélectionnés ?');">
+                        Appliquer à la sélection
+                    </button>
+                </div>
+            {% endif %}
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;">
+                            <input type="checkbox" id="select-all-agents">
+                        </th>
+                        <th>Nom</th>
+                        <th>Matricule</th>
+                        <th>Agence</th>
+                        <th>Email</th>
+                        <th>Téléphone</th>
+                        <th>Statut</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for agent in agents %}
+                        <tr>
+                            <td>
+                                <input type="checkbox"
+                                       name="selection"
+                                       value="{{ agent.id }}"
+                                       class="check-agent">
+                            </td>
+                            <td>{{ agent.user.get_full_name|default:agent.user.username }}</td>
+                            <td>{{ agent.matricule }}</td>
+                            <td>{{ agent.agence|default:"—" }}</td>
+                            <td>{{ agent.user.email|default:"—" }}</td>
+                            <td>{{ agent.telephone|default:"—" }}</td>
+                            <td>
+                                {% if agent.user.is_active %}
+                                    <span class="badge bg-success">Actif</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Désactivé</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                    <a href="{% url 'modifier_agent_admin' agent.id %}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Modifier">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="submit"
+                                            form="reset-mdp-{{ agent.id }}"
+                                            class="btn btn-sm btn-outline-warning"
+                                            title="Réinitialiser le mot de passe">
+                                        <i class="bi bi-key"></i>
+                                    </button>
+                                    <button type="submit"
+                                            form="toggle-{{ agent.id }}"
+                                            class="btn btn-sm {% if agent.user.is_active %}btn-outline-secondary{% else %}btn-outline-success{% endif %}"
+                                            title="{% if agent.user.is_active %}Désactiver{% else %}Réactiver{% endif %}">
+                                        {% if agent.user.is_active %}
+                                            <i class="bi bi-slash-circle"></i>
+                                        {% else %}
+                                            <i class="bi bi-check-circle"></i>
+                                        {% endif %}
+                                    </button>
+                                    <a href="{% url 'supprimer_agent' agent.id %}"
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-muted fst-italic">Aucun rédacteur enregistré pour le moment.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </form>
-        <form method="post" action="{% url 'toggle_agent_actif' agent.id %}" id="toggle-{{ agent.id }}" class="d-none">
-            {% csrf_token %}
-        </form>
-    {% endfor %}
-</div>
-
-<script>
+        <!-- Formulaires individuels (hors du form de sélection, référencés via l'attribut form="") -->
+        {% for agent in agents %}
+            <form method="post"
+                  action="{% url 'reinitialiser_mdp_agent' agent.id %}"
+                  id="reset-mdp-{{ agent.id }}"
+                  class="d-none"
+                  onsubmit="return confirm('Réinitialiser le mot de passe de {{ agent.user.get_full_name|default:agent.user.username }} à 0000 ?');">
+                {% csrf_token %}
+            </form>
+            <form method="post"
+                  action="{% url 'toggle_agent_actif' agent.id %}"
+                  id="toggle-{{ agent.id }}"
+                  class="d-none">
+                {% csrf_token %}
+            </form>
+        {% endfor %}
+    </div>
+    <script>
 document.addEventListener('DOMContentLoaded', function () {
     const selectAll = document.getElementById('select-all-agents');
     const checks = document.querySelectorAll('.check-agent');
@@ -148,5 +188,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     checks.forEach(c => c.addEventListener('change', updateCounter));
 });
-</script>
+    </script>
 {% endblock %}

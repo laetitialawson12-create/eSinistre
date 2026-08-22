@@ -1,14 +1,16 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Déclarer un sinistre - Fidélia</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Déclarer un sinistre - Fidélia</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+              rel="stylesheet">
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+        <style>
         body {
             background: url("{% static 'Fidelia.jpeg' %}") no-repeat center center fixed;
             background-size: cover;
@@ -17,134 +19,123 @@
             align-items: center;
             font-family: 'Segoe UI', sans-serif;
         }
-    </style>
-</head>
-<body class="bg-light">
-<div class="container py-5">
-    <div class="card shadow-sm mx-auto" style="max-width: 700px;">
-        <div class="card-header text-white" style="background-color: #003366;">
-            <h4 class="mb-0">Déclarer un sinistre</h4>
+        </style>
+    </head>
+    <body class="bg-light">
+        <div class="container py-5">
+            <div class="card shadow-sm mx-auto" style="max-width: 700px;">
+                <div class="card-header text-white" style="background-color: #003366;">
+                    <h4 class="mb-0">Déclarer un sinistre</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% for error in form.non_field_errors %}
+                            <div class="alert alert-danger">{{ error }}</div>
+                        {% endfor %}
+                        <div class="mb-3">
+                            {{ form.numero_police.label_tag }}
+                            {{ form.numero_police }}
+                            {% for error in form.numero_police.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.immatriculation_recherche.label_tag }}
+                            {{ form.immatriculation_recherche }}
+                            {% for error in form.immatriculation_recherche.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.nom_declarant.label_tag }}
+                            {{ form.nom_declarant }}
+                            {% for error in form.nom_declarant.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.contact_declarant.label_tag }}
+                            {{ form.contact_declarant }}
+                            {% for error in form.contact_declarant.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                            <small class="text-muted">L'attestation vous sera envoyée à ce numéro si la déclaration est retenue.</small>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.email_declarant.label_tag }}
+                            {{ form.email_declarant }}
+                            {% for error in form.email_declarant.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.nom_conducteur.label_tag }}
+                            {{ form.nom_conducteur }}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.date_survenance.label_tag }}
+                                {{ form.date_survenance }}
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.heure_approximative.label_tag }}
+                                {{ form.heure_approximative }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-4">{{ form.region.label_tag }} {{ form.region }}</div>
+                            <div class="col-md-4">{{ form.commune.label_tag }} {{ form.commune }}</div>
+                            <div class="col-md-4">{{ form.ville.label_tag }} {{ form.ville }}</div>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.quartier.label_tag }}
+                            {{ form.quartier }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.circonstances.label_tag }}
+                            {{ form.circonstances }}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.dommage.label_tag }}
+                            {{ form.dommage }}
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">{{ form.nombre_blesses.label_tag }} {{ form.nombre_blesses }}</div>
+                            <div class="col-md-6">{{ form.nombre_morts.label_tag }} {{ form.nombre_morts }}</div>
+                        </div>
+                        <div class="mb-3 form-check">
+                            {{ form.autre_vehicule_implique }}
+                            <label class="form-check-label" for="id_autre_vehicule_implique">Un autre véhicule est-il impliqué ?</label>
+                        </div>
+                        <div id="vehicule-adverse-container" style="display: none;">
+                            <div class="row mb-3">
+                                <div class="col-md-6">{{ form.vehicule_adverse_immatriculation.label_tag }} {{ form.vehicule_adverse_immatriculation }}</div>
+                                <div class="col-md-6">{{ form.vehicule_adverse_marque.label_tag }} {{ form.vehicule_adverse_marque }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">{{ form.vehicule_adverse_categorie.label_tag }} {{ form.vehicule_adverse_categorie }}</div>
+                                <div class="col-md-6">{{ form.vehicule_adverse_compagnie.label_tag }} {{ form.vehicule_adverse_compagnie }}</div>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="derogation-container" style="display: none;">
+                            {{ form.lettre_derogation.label_tag }}
+                            {{ form.lettre_derogation }}
+                            <small class="text-muted d-block">À fournir si le sinistre date de plus de 5 jours.</small>
+                        </div>
+                        <div class="mb-4">
+                            {{ form.fichiers_justificatifs.label_tag }}
+                            {{ form.fichiers_justificatifs }}
+                            <small class="text-muted d-block">Vous pouvez sélectionner plusieurs fichiers.</small>
+                        </div>
+                        <div class="d-flex gap-3">
+                            <button type="submit"
+                                    class="btn btn-primary flex-grow-1"
+                                    style="background-color: #003366">Envoyer la déclaration</button>
+                            <a href="{% url 'annuler_declaration' %}"
+                               class="btn btn-outline-secondary flex-grow-1 text-center">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-
-                {% for error in form.non_field_errors %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
-
-                <div class="mb-3">
-                    {{ form.numero_police.label_tag }}
-                    {{ form.numero_police }}
-                    {% for error in form.numero_police.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-                <div class="mb-3">
-                    {{ form.immatriculation_recherche.label_tag }}
-                    {{ form.immatriculation_recherche }}
-                    {% for error in form.immatriculation_recherche.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-                
-
-                <div class="mb-3">
-                    {{ form.nom_declarant.label_tag }}
-                    {{ form.nom_declarant }}
-                    {% for error in form.nom_declarant.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-                <div class="mb-3">
-                    {{ form.contact_declarant.label_tag }}
-                    {{ form.contact_declarant }}
-                    {% for error in form.contact_declarant.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                    <small class="text-muted">L'attestation vous sera envoyée à ce numéro si la déclaration est retenue.</small>
-                </div>
-                <div class="mb-3">
-                    {{ form.email_declarant.label_tag }}
-                    {{ form.email_declarant }}
-                    {% for error in form.email_declarant.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                </div>
-
-                <div class="mb-3">
-                    {{ form.nom_conducteur.label_tag }}
-                    {{ form.nom_conducteur }}
-                </div>
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        {{ form.date_survenance.label_tag }}
-                        {{ form.date_survenance }}
-                    </div>
-                    <div class="col-md-6">
-                        {{ form.heure_approximative.label_tag }}
-                        {{ form.heure_approximative }}
-                    </div>
-                </div>
-            
-                <div class="row mb-3">
-                    <div class="col-md-4">{{ form.region.label_tag }} {{ form.region }}</div>
-                    <div class="col-md-4">{{ form.commune.label_tag }} {{ form.commune }}</div>
-                    <div class="col-md-4">{{ form.ville.label_tag }} {{ form.ville }}</div>
-                </div>
-                <div class="mb-3">
-                    {{ form.quartier.label_tag }}
-                    {{ form.quartier }}
-                </div>
-
-                <div class="mb-3">
-                    {{ form.circonstances.label_tag }}
-                    {{ form.circonstances }}
-                </div>
-                <div class="mb-3">
-                    {{ form.dommage.label_tag }}
-                    {{ form.dommage }}
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">{{ form.nombre_blesses.label_tag }} {{ form.nombre_blesses }}</div>
-                    <div class="col-md-6">{{ form.nombre_morts.label_tag }} {{ form.nombre_morts }}</div>
-                </div>
-
-                <div class="mb-3 form-check">
-                    {{ form.autre_vehicule_implique }}
-                    <label class="form-check-label" for="id_autre_vehicule_implique"> Un autre véhicule est-il impliqué ?</label>
-                </div>
-                <div id="vehicule-adverse-container" style="display: none;">
-                    <div class="row mb-3">
-                        <div class="col-md-6">{{ form.vehicule_adverse_immatriculation.label_tag }} {{ form.vehicule_adverse_immatriculation }}</div>
-                        <div class="col-md-6">{{ form.vehicule_adverse_marque.label_tag }} {{ form.vehicule_adverse_marque }}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">{{ form.vehicule_adverse_modele.label_tag }} {{ form.vehicule_adverse_modele }}</div>
-                        <div class="col-md-6">{{ form.vehicule_adverse_compagnie.label_tag }} {{ form.vehicule_adverse_compagnie }}</div>
-                    </div>
-                </div>
-
-                <div class="mb-3" id="derogation-container" style="display: none;">
-                    {{ form.lettre_derogation.label_tag }}
-                    {{ form.lettre_derogation }}
-                    <small class="text-muted d-block">À fournir si le sinistre date de plus de 5 jours.</small>
-                </div>
-
-                <div class="mb-4">
-                    {{ form.fichiers_justificatifs.label_tag }}
-                    {{ form.fichiers_justificatifs }}
-                    <small class="text-muted d-block">Vous pouvez sélectionner plusieurs fichiers.</small>
-                </div>
-
-                <div class="d-flex gap-3">
-                    <button type="submit" class="btn btn-primary flex-grow-1" style="background-color: #003366;">Envoyer la déclaration</button>
-                    <a href="{% url 'annuler_declaration' %}" class="btn btn-outline-secondary flex-grow-1 text-center">Annuler</a>
-                </div>
-                
-            </form>
-        </div>
-    </div>
-</div>
-</body>
-<script>
+    </body>
+    <script>
         document.addEventListener('DOMContentLoaded', function(){
             const dateField = document.querySelector('input[name="date_survenance"]');
             const derogationContainer = document.getElementById('derogation-container');

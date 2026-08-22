@@ -1,90 +1,89 @@
 {% extends 'base_admin.html' %}
-
 {% block title %}Tableau de bord{% endblock %}
-
 {% block content %}
-<h3 class="mb-4 fw-bold" style="color: var(--fidelia-blue);">Tableau de bord</h3>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="text-secondary small text-uppercase">Sinistres au total</div>
-            <div class="fs-2 fw-bold" text-primary">{{ nb_sinistres_total }}</div>
+    <h3 class="mb-4 fw-bold" style="color: var(--fidelia-blue);">Tableau de bord</h3>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="text-secondary small text-uppercase">Sinistres au total</div>
+                <div class="fs-2 fw-bold" text-primary">{{ nb_sinistres_total }}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="text-secondary small text-uppercase">En cours de traitement</div>
+                <div class="fs-2 fw-bold text-warning">{{ nb_sinistres_en_cours }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="text-secondary small text-uppercase">Clôturés</div>
+                <div class="fs-2 fw-bold text-success">{{ nb_sinistres_clotures }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="text-secondary small text-uppercase">Déclarés ce mois-ci</div>
+                <div class="fs-2 fw-bold text-info" style="color: var(--fidelia-blue);">{{ nb_sinistres_mois }}</div>
+            </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="text-secondary small text-uppercase">En cours de traitement</div>
-            <div class="fs-2 fw-bold text-warning">{{ nb_sinistres_en_cours }}</div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="text-secondary small text-uppercase">Agences</div>
+                <div class="fs-4 fw-bold">{{ nb_agences }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="text-secondary small text-uppercase">Agents</div>
+                <div class="fs-4 fw-bold">{{ nb_agents }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="text-secondary small text-uppercase">Chefs de service</div>
+                <div class="fs-4 fw-bold">{{ nb_chefs }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm p-3">
+                <div class="text-secondary small text-uppercase">Assurés</div>
+                <div class="fs-4 fw-bold">{{ nb_assures }}</div>
+            </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="text-secondary small text-uppercase">Clôturés</div>
-            <div class="fs-2 fw-bold text-success">{{ nb_sinistres_clotures }}</div>
-        </div>
+    <div class="card border-0 shadow-sm p-3">
+        <h6 class="text-uppercase text-secondary small mb-3">📥 Sinistres du jour</h6>
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>N° Sinistre</th>
+                    <th>Assuré</th>
+                    <th>Statut</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in derniers_sinistres %}
+                    <tr>
+                        <td>{{ s.numero_sinistre }}</td>
+                        <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
+                        <td><span class="badge bg-secondary">{{ s.get_statut_display }}</span></td>
+                        <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
+                        <td>
+                            <a href="{% url 'detail_sinistre_admin' s.id %}"
+                               class="btn btn-sm btn-outline-secondary">Voir</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-muted fst-italic">Aucun sinistre déclaré aujourd'hui.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="text-secondary small text-uppercase">Déclarés ce mois-ci</div>
-            <div class="fs-2 fw-bold text-info" style="color: var(--fidelia-blue);">{{ nb_sinistres_mois }}</div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="text-secondary small text-uppercase">Agences</div>
-            <div class="fs-4 fw-bold">{{ nb_agences }}</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="text-secondary small text-uppercase">Agents</div>
-            <div class="fs-4 fw-bold">{{ nb_agents }}</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="text-secondary small text-uppercase">Chefs de service</div>
-            <div class="fs-4 fw-bold">{{ nb_chefs }}</div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm p-3">
-            <div class="text-secondary small text-uppercase">Assurés</div>
-            <div class="fs-4 fw-bold">{{ nb_assures }}</div>
-        </div>
-    </div>
-</div>
-
-<div class="card border-0 shadow-sm p-3">
-    <h6 class="text-uppercase text-secondary small mb-3">📥 Sinistres du jour</h6>
-    <table class="table table-hover align-middle mb-0">
-        <thead>
-            <tr>
-                <th>N° Sinistre</th>
-                <th>Assuré</th>
-                <th>Statut</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for s in derniers_sinistres %}
-            <tr>
-                <td>{{ s.numero_sinistre }}</td>
-                <td>{{ s.assure.get_full_name|default:s.assure.username }}</td>
-                <td><span class="badge bg-secondary">{{ s.get_statut_display }}</span></td>
-                <td>{{ s.date_declaration|date:"d/m/Y" }}</td>
-                <td>
-                    <a href="{% url 'detail_sinistre_admin' s.id %}" class="btn btn-sm btn-outline-secondary">Voir</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4" class="text-muted fst-italic">Aucun sinistre déclaré aujourd'hui.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
 {% endblock %}

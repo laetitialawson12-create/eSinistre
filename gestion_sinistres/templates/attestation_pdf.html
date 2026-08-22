@@ -1,9 +1,9 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-<meta charset="UTF-8">
-<style>
+    <head>
+        <meta charset="UTF-8">
+        <style>
     @page {
         size: A4;
         margin: 15mm 18mm 50mm 18mm;
@@ -29,15 +29,6 @@
     .header-table { width: 100%; border-bottom: 2px solid #002D62; padding-bottom: 6px; margin-bottom: 15px; }
     .header-table td { vertical-align: middle; }
     
-    /* Ajustement de la marque (taille et interligne réduit) */
-    .brand { 
-        color: #002D62; 
-        font-size: 18px; 
-        font-style: italic; 
-        font-weight: bold; 
-        line-height: 0.95; 
-    }
-    
     .title { text-align: center; font-weight: bold; text-decoration: underline; font-size: 15px; color: #002D62; margin: 0 0 15px 0; }
     
     /* Sections standard */
@@ -56,129 +47,129 @@
     .footer-legal { font-size: 9px; text-align: justify; line-height: 1.3; font-weight: bold; font-style: italic; color: #6c757d; margin-bottom: 10px; }
     .signature { text-align: right; font-weight: bold; font-size: 11px; }
     .signature .pour { font-size: 10px; color: #6c757d; text-decoration: underline; margin-top: 4px; font-weight: normal; }
-</style>
-</head>
-<body>
-
-    <!-- En-tête avec logo agrandi -->
-    <table class="header-table">
-        <tr>
-            <td style="width: 55px;"><img src="{{ logo_path }}" style="height: 52px; width: auto;" /></td>
-            <td>
-                <div class="brand">Fidélia</div>
-                <div class="brand">assurances</div>
-            </td>
-        </tr>
-    </table>
-
-    <div class="title">ATTESTATION DE DÉCLARATION DE SINISTRE</div>
-
-    <!-- Références -->
-    <div class="section-box">
-        <div class="section-header">Références de la Déclaration & de la Police</div>
-        <table class="table-custom">
+        </style>
+    </head>
+    <body>
+        <!-- En-tête avec logo agrandi -->
+        <table class="header-table">
             <tr>
-                <td class="label">N° de Sinistre :</td><td>{{ sinistre.numero_sinistre }}</td>
-                <td class="label">N° de Police :</td><td>{{ sinistre.assure.assure.numero_police|default:"—" }}</td>
-            </tr>
-            <tr>
-                <td class="label">Assuré :</td><td>{{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</td>
-                <td class="label">Effet :</td><td>{{ date_effet|date:"d/m/Y"|default:"-" }}</td>
-            </tr>
-            <tr>
-                <td class="label">Contact :</td><td>{{ sinistre.contact_declarant }}</td>
-                <td class="label">Echéance :</td><td>{{ date_echeance|date:"d/m/Y"|default:"-" }}</td>
-            </tr>
-            <tr>
-                <td class="label">Conducteur :</td><td>{{ sinistre.nom_conducteur }}</td>
-                <td class="label">Date de Déclaration :</td><td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
-            </tr>
-            <tr>
-                <td class="label">Date de Survenance :</td><td colspan="3">{{ sinistre.date_survenance|date:"d/m/Y" }} à {{ sinistre.heure_approximative|time:"H:i" }}</td>
+                <td style="width: 55px;">
+                    <img src="{{ logo_path }}" style="height: 52px; width: auto;" />
+                </td>
+                <td>
+                    <img src="{{ brand_path }}" style="height: 60px; width: auto;" />
+                </td>
             </tr>
         </table>
-    </div>
-
-    <!-- Localisation & Véhicule -->
-    <div class="section-box">
-        <div class="section-header">Localisation & Véhicule Assuré</div>
-        <table class="table-custom">
-            <tr>
-                <td class="label">Véhicule(s) assuré(s) :</td>
-                <td colspan="3"><strong>{{ sinistre.vehicule }}</strong></td>
-            </tr>
-            <tr>
-                <td class="label">Nature du sinistre :</td>
-                <td colspan="3">{{ sinistre.get_nature_display }}</td>
-            </tr>
-            <tr>
-                <td class="label">Localisation :</td>
-                <td colspan="3">Quartier {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} (Région {{ sinistre.region }})</td>
-            </tr>
-        </table>
-    </div>
-
-    <!-- Bilan corporel -->
-    <div class="section-box">
-        <div class="section-header">Bilan Corporel (Victimes)</div>
-        <table class="table-custom">
-            <tr>
-                <td class="label">Nombre de blessés :</td>
-                <td>{{ sinistre.nombre_blesses|default:"0" }}</td>
-                <td class="label">Nombre de morts :</td>
-                <td>{{ sinistre.nombre_morts|default:"0" }}</td>
-            </tr>
-        </table>
-    </div>
-
-    <!-- Véhicule adverse -->
-    {% if sinistre.autre_vehicule_implique %}
-    <div class="section-box">
-        <div class="section-header">Véhicule Adverse / Tiers (Contre)</div>
-        <table class="table-custom">
-            <tr>
-                <td class="label">Immatriculation :</td>
-                <td>{{ sinistre.vehicule_adverse_immatriculation|default:"—" }}</td>
-                <td class="label">Compagnie d'assurance :</td>
-                <td>{{ sinistre.vehicule_adverse_compagnie|default:"—" }}</td>
-            </tr>
-            <tr>
-                <td class="label">Marque :</td>
-                <td>{{ sinistre.vehicule_adverse_marque|default:"—" }}</td>
-                <td class="label">Modèle :</td>
-                <td>{{ sinistre.vehicule_adverse_modele|default:"—" }}</td>
-            </tr>
-        </table>
-    </div>
-    {% endif %}
-
-    <!-- Blocs Unifiés -->
-    <div class="content-box">
-        <div class="content-box-header">Circonstances déclarées :</div>
-        <div class="content-box-body">{{ sinistre.circonstances }}</div>
-    </div>
-
-    <div class="content-box">
-        <div class="content-box-header">Dommages causés :</div>
-        <div class="content-box-body">{{ sinistre.dommage }}</div>
-    </div>
-
-    <!-- Pied de page -->
-    <div id="footer_content">
-        <hr>
-        <div class="footer-legal">
-            <p>Cette attestation ne présente qu'un caractère administratif et ne constitue en rien une quelconque reconnaissance de responsabilité totale ou partielle de la compagnie FIDELIA ASSURANCES SA.</p>
-            <p>Cette prise de déclaration de sinistre vaut demande de rapport d'accident avec croquis et du procès verbal de constat.</p>
+        <div class="title">ATTESTATION DE DÉCLARATION DE SINISTRE</div>
+        <!-- Références -->
+        <div class="section-box">
+            <div class="section-header">Références de la Déclaration & de la Police</div>
+            <table class="table-custom">
+                <tr>
+                    <td class="label">N° de Sinistre :</td>
+                    <td>{{ sinistre.numero_sinistre }}</td>
+                    <td class="label">N° de Police :</td>
+                    <td>{{ sinistre.assure.assure.numero_police|default:"—" }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Assuré :</td>
+                    <td>{{ sinistre.assure.get_full_name|default:sinistre.assure.username }}</td>
+                    <td class="label">Effet :</td>
+                    <td>{{ date_effet|date:"d/m/Y"|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Contact :</td>
+                    <td>{{ sinistre.contact_declarant }}</td>
+                    <td class="label">Echéance :</td>
+                    <td>{{ date_echeance|date:"d/m/Y"|default:"-" }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Conducteur :</td>
+                    <td>{{ sinistre.nom_conducteur }}</td>
+                    <td class="label">Date de Déclaration :</td>
+                    <td>{{ sinistre.date_declaration|date:"d/m/Y" }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Date de Survenance :</td>
+                    <td colspan="3">{{ sinistre.date_survenance|date:"d/m/Y" }} à {{ sinistre.heure_approximative|time:"H:i" }}</td>
+                </tr>
+            </table>
         </div>
-
-        <div class="signature">
-            Fait à LOME, le {{ sinistre.date_attestation|date:"d/m/Y" }}
-            <div class="pour">Pour la Compagnie</div>
-            {% if signature_path %}
-            <br><img src="{{ signature_path }}" style="height: 45px; margin-top: 5px;" />
-            {% endif %}
+        <!-- Localisation & Véhicule -->
+        <div class="section-box">
+            <div class="section-header">Localisation & Véhicule Assuré</div>
+            <table class="table-custom">
+                <tr>
+                    <td class="label">Véhicule(s) assuré(s) :</td>
+                    <td colspan="3"><strong>{{ sinistre.vehicule }}</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Nature du sinistre :</td>
+                    <td colspan="3">{{ sinistre.get_nature_display }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Localisation :</td>
+                    <td colspan="3">Quartier {{ sinistre.quartier }}, {{ sinistre.ville }}, {{ sinistre.commune }} (Région {{ sinistre.region }})</td>
+                </tr>
+            </table>
         </div>
-    </div>
-
-</body>
+        <!-- Bilan corporel -->
+        <div class="section-box">
+            <div class="section-header">Bilan Corporel (Victimes)</div>
+            <table class="table-custom">
+                <tr>
+                    <td class="label">Nombre de blessés :</td>
+                    <td>{{ sinistre.nombre_blesses|default:"0" }}</td>
+                    <td class="label">Nombre de morts :</td>
+                    <td>{{ sinistre.nombre_morts|default:"0" }}</td>
+                </tr>
+            </table>
+        </div>
+        <!-- Véhicule adverse -->
+        {% if sinistre.autre_vehicule_implique %}
+            <div class="section-box">
+                <div class="section-header">Véhicule Adverse / Tiers (Contre)</div>
+                <table class="table-custom">
+                    <tr>
+                        <td class="label">Immatriculation :</td>
+                        <td>{{ sinistre.vehicule_adverse_immatriculation|default:"—" }}</td>
+                        <td class="label">Compagnie d'assurance :</td>
+                        <td>{{ sinistre.vehicule_adverse_compagnie|default:"—" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Marque :</td>
+                        <td>{{ sinistre.vehicule_adverse_marque|default:"—" }}</td>
+                        <td class="label">Modèle :</td>
+                        <td>{{ sinistre.vehicule_adverse_categorie|default:"—" }}</td>
+                    </tr>
+                </table>
+            </div>
+        {% endif %}
+        <!-- Blocs Unifiés -->
+        <div class="content-box">
+            <div class="content-box-header">Circonstances déclarées :</div>
+            <div class="content-box-body">{{ sinistre.circonstances }}</div>
+        </div>
+        <div class="content-box">
+            <div class="content-box-header">Dommages causés :</div>
+            <div class="content-box-body">{{ sinistre.dommage }}</div>
+        </div>
+        <!-- Pied de page -->
+        <div id="footer_content">
+            <hr>
+            <div class="footer-legal">
+                <p>Cette attestation ne présente qu'un caractère administratif et ne constitue en rien une quelconque reconnaissance de responsabilité totale ou partielle de la compagnie FIDELIA ASSURANCES SA.</p>
+                <p>Cette prise de déclaration de sinistre vaut demande de rapport d'accident avec croquis et du procès verbal de constat.</p>
+            </div>
+            <div class="signature">
+                Fait à LOME, le {{ sinistre.date_attestation|date:"d/m/Y" }}
+                <div class="pour">Pour la Compagnie</div>
+                {% if signature_path %}
+                    <br>
+                    <img src="{{ signature_path }}" style="height: 45px; margin-top: 5px;" />
+                {% endif %}
+            </div>
+        </div>
+    </body>
 </html>

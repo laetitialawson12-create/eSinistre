@@ -1,60 +1,68 @@
 {% extends 'base_agent.html' %} <!-- Assurez-vous d'utiliser votre template de base pour agent -->
-
 {% block title %}Mon profil{% endblock %}
-
 {% block content %}
-<h3 class="mb-4" style="color: #003366;"><i class="bi bi-person-circle"></i> Mon profil</h3>
-
-<div class="card shadow-sm border-0">
-    <div class="card-body p-4">
-        <!-- En-tête du profil -->
-        <div class="d-flex align-items-center mb-4">
-            <div class="avatar-circle me-3" style="width: 80px; height: 80px; border-radius: 50%; background: #003366; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold;">
-                {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+    <h3 class="mb-4" style="color: #003366;"><i class="bi bi-person-circle"></i> Mon profil</h3>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <!-- En-tête du profil -->
+            <div class="d-flex align-items-center mb-4">
+                <div class="avatar-circle me-3"
+                     style="width: 80px;
+                            height: 80px;
+                            border-radius: 50%;
+                            background: #003366;
+                            color: white;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 2rem;
+                            font-weight: bold">{{ user.first_name|first|upper }}{{ user.last_name|first|upper }}</div>
+                <div>
+                    <h5 class="mb-0">{{ user.get_full_name|default:user.username }}</h5>
+                    <small class="text-muted"><i class="bi bi-shield-check"></i> Agent Fidélia</small>
+                </div>
             </div>
-            <div>
-                <h5 class="mb-0">{{ user.get_full_name|default:user.username }}</h5>
-                <small class="text-muted"><i class="bi bi-shield-check"></i> Agent Fidélia</small>
+            <hr>
+            <!-- Informations détaillées Agent -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="text-uppercase text-secondary small fw-bold">Matricule</label>
+                    <p class="fs-6 fw-medium">{{ user.agent.matricule|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-uppercase text-secondary small fw-bold">Email</label>
+                    <p class="fs-6 fw-medium">{{ user.email|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-uppercase text-secondary small fw-bold">Nom</label>
+                    <p class="fs-6 fw-medium">{{ user.last_name|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-uppercase text-secondary small fw-bold">Prénom</label>
+                    <p class="fs-6 fw-medium">{{ user.first_name|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-uppercase text-secondary small fw-bold">Téléphone</label>
+                    <p class="fs-6 fw-medium">{{ user.agent.telephone|default:"Non renseigné" }}</p>
+                </div>
+                <div class="col-md-6">
+                    <label class="text-uppercase text-secondary small fw-bold">Agence</label>
+                    <p class="fs-6 fw-medium">{{ user.agent.agence.nom|default:"Non renseigné" }}</p>
+                </div>
             </div>
-        </div>
-        
-        <hr>
-        
-        <!-- Informations détaillées Agent -->
-        <div class="row g-4">
-            <div class="col-md-6">
-                <label class="text-uppercase text-secondary small fw-bold">Matricule</label>
-                <p class="fs-6 fw-medium">{{ user.agent.matricule|default:"Non renseigné" }}</p>
+            <!-- Action -->
+            <div class="mt-4">
+                <a href="{% url 'modifier_profil_agent' %}"
+                   class="btn"
+                   style="background: var(--fidelia-blue);
+                          color: white">
+                    <i class="bi bi-pencil-square"></i> Modifier mes informations
+                </a>
+                <a href="{% url 'changer_mot_de_passe_en_cours_agent' %}"
+                   class="btn"
+                   style="background: var(--fidelia-blue);
+                          color: white">Changer mon mot de passe</a>
             </div>
-            <div class="col-md-6">
-                <label class="text-uppercase text-secondary small fw-bold">Email</label>
-                <p class="fs-6 fw-medium">{{ user.email|default:"Non renseigné" }}</p>
-            </div>
-            <div class="col-md-6">
-                <label class="text-uppercase text-secondary small fw-bold">Nom</label>
-                <p class="fs-6 fw-medium">{{ user.last_name|default:"Non renseigné" }}</p>
-            </div>
-            <div class="col-md-6">
-                <label class="text-uppercase text-secondary small fw-bold">Prénom</label>
-                <p class="fs-6 fw-medium">{{ user.first_name|default:"Non renseigné" }}</p>
-            </div>
-            <div class="col-md-6">
-                <label class="text-uppercase text-secondary small fw-bold">Téléphone</label>
-                <p class="fs-6 fw-medium">{{ user.agent.telephone|default:"Non renseigné" }}</p>
-            </div>
-            <div class="col-md-6">
-                <label class="text-uppercase text-secondary small fw-bold">Agence</label>
-                <p class="fs-6 fw-medium">{{ user.agent.agence.nom|default:"Non renseigné" }}</p>
-            </div>
-        </div>
-
-        <!-- Action -->
-        <div class="mt-4">
-            <a href="{% url 'modifier_profil_agent' %}" class="btn" style="background: var(--fidelia-blue); color: white;">
-                <i class="bi bi-pencil-square"></i> Modifier mes informations
-            </a>
-            <a href="{% url 'changer_mot_de_passe_en_cours_agent' %}" class="btn" style="background: var(--fidelia-blue); color: white;">Changer mon mot de passe</a>
         </div>
     </div>
-</div>
 {% endblock %}
