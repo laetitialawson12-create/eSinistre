@@ -2,7 +2,7 @@
 
 eSinistre est une application web développée en Django pour Fidelia Assurances (Togo), dans le but de dématérialiser la gestion des sinistres automobiles. Elle prend en charge tout le parcours d'un dossier : la déclaration par l'assuré (ou par un tiers), l'instruction par un rédacteur, la validation et l'indemnisation par le chef de département, jusqu'à la supervision globale assurée par l'administrateur.
 
-## Sommaire
+# Sommaire
 
 - [Fonctionnalités](#fonctionnalités)
 - [Espaces utilisateurs](#espaces-utilisateurs)
@@ -14,7 +14,7 @@ eSinistre est une application web développée en Django pour Fidelia Assurances
 - [Structure du projet](#structure-du-projet)
 - [Sécurité](#sécurité)
 
-## Fonctionnalités
+# Fonctionnalités
 
 L'assuré peut déclarer un sinistre en ligne, pièces justificatives à l'appui. Une personne non assurée (un tiers) peut aussi faire une déclaration, sans compte, simplement en retrouvant le contrat par le numéro de police et l'immatriculation du véhicule.
 
@@ -28,7 +28,7 @@ L'application gère aussi l'import et l'export en masse via Excel : import d'un 
 
 Enfin, l'administration couvre la gestion des rédacteurs, des chefs de département, des assurés, des contrats, des agences, ainsi que la base géographique (régions, communes, villes). Côté sécurité applicative, on trouve le verrouillage de compte après plusieurs tentatives échouées, la déconnexion automatique par inactivité, le changement de mot de passe forcé à la première connexion et l'acceptation obligatoire de la politique de confidentialité.
 
-## Espaces utilisateurs
+# Espaces utilisateurs
 
 L'application distingue quatre espaces, chacun avec son propre tableau de bord et ses propres templates de base.
 
@@ -45,7 +45,7 @@ L'authentification se fait de deux façons : par identifiant technique pour les 
 **Note sur la terminologie.** L'espace historiquement appelé "Agent" a été renommé "Rédacteur" dans l'interface, pour coller au vocabulaire métier utilisé chez Fidelia Assurances. Ce renommage ne concerne que ce qui est visible par l'utilisateur (templates, labels, sidebar) : au niveau du code, le modèle reste `Agent` et les vues/URLs gardent leurs noms d'origine (`detail_sinistre_agent`, `tous_sinistres_agent`, etc.). Ce choix est volontaire : renommer aussi le modèle en base aurait nécessité une migration Django et un risque de casser des fonctionnalités déjà stables en fin de stage, pour un gain purement cosmétique.
 
 
-## Stack technique
+# Stack technique
 
 - Python 3 / Django 6.0
 - Base de données : MySQL en production (configuré par défaut), SQLite disponible en alternative pour le développement
@@ -53,7 +53,7 @@ L'authentification se fait de deux façons : par identifiant technique pour les 
 - Frontend : templates Django avec Bootstrap 5 (Bootstrap Icons et Font Awesome pour les icônes)
 - Fuseau horaire Africa/Lome, interface en français
 
-## Modèle de données
+# Modèle de données
 
 Les entités principales se trouvent dans `gestion_sinistres/models.py` :
 
@@ -64,15 +64,15 @@ Les entités principales se trouvent dans `gestion_sinistres/models.py` :
 - **Assure**, **Rédacteur**, **ChefDepartement**, **Admin** : les profils métier, liés à `django.contrib.auth.User`
 - **Agence**, **Region**, **Commune**, **Ville** : le référentiel géographique et le réseau d'agences
 
-## Installation
+# Installation
 
-### Prérequis
+# Prérequis
 
 - Python 3.11 ou plus récent
 - MySQL (ou, à défaut, adapter `DATABASES` dans `config/settings.py` pour passer sur SQLite)
 - pip / virtualenv
 
-### Étapes
+# Étapes
 
 ```bash
 git clone <url-du-repo>
@@ -85,7 +85,7 @@ pip install django pandas openpyxl mysqlclient
 ```
 
 
-## Configuration
+# Configuration
 
 La connexion à la base de données est actuellement codée en dur dans `config/settings.py` :
 
@@ -111,7 +111,7 @@ CREATE DATABASE fidelia_esinistre CHARACTER SET utf8mb4;
 
 Avant tout déploiement en production, il faudra penser à déplacer `SECRET_KEY` et les identifiants de base de données vers des variables d'environnement, et à passer `DEBUG` à `False` en renseignant `ALLOWED_HOSTS`.
 
-## Lancer le projet
+# Lancer le projet
 
 ```bash
 python manage.py migrate
@@ -122,7 +122,7 @@ python manage.py runserver
 
 L'application est accessible sous le préfixe `/sinistres/` (par exemple `http://127.0.0.1:8000/sinistres/login/`), et l'administration Django native reste disponible sous `/admin/`.
 
-## Structure du projet
+# Structure du projet
 
 ```
 eSinistre-main/
@@ -147,6 +147,6 @@ eSinistre-main/
 └── manage.py
 ```
 
-## Sécurité
+# Sécurité
 
 Le compte se bloque après un certain nombre de tentatives de connexion échouées, géré via `auth_utils.py` et le signal `user_login_failed`. La déconnexion se fait automatiquement après 30 minutes d'inactivité, grâce à `InactiviteMiddleware`. Les rédacteurs et les chefs de département doivent changer leur mot de passe dès leur première connexion (`MotDePasseTemporaireMiddleware`), et les assurés doivent accepter la politique de confidentialité avant tout accès (`PolitiqueConfidentialiteMiddleware`). La protection CSRF est activée sur l'ensemble des formulaires.
