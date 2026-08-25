@@ -136,42 +136,42 @@ class SinistreForm(forms.ModelForm):
 
         self.fields['contact_declarant'].required = True
         
-def clean(self):
-    cleaned_data = super().clean()
-    date_survenance = cleaned_data.get('date_survenance')
-    assure_profile = getattr(self.user, 'assure', None) if self.user else None
+    def clean(self):
+        cleaned_data = super().clean()
+        date_survenance = cleaned_data.get('date_survenance')
+        assure_profile = getattr(self.user, 'assure', None) if self.user else None
     
-    if date_survenance:
-        date_only = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
-        if date_only > timezone.now().date():
-            self.add_error('date_survenance', "La date de survenance ne peut pas être dans le futur.")
+        if date_survenance:
+            date_only = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
+            if date_only > timezone.now().date():
+                self.add_error('date_survenance', "La date de survenance ne peut pas être dans le futur.")
             
-    if date_survenance and assure_profile:
-        quittance_valide_existe = Quittance.objects.filter(
-            contrat=assure_profile,
-            date_debut__lte=date_survenance,
-            date_fin__lte=date_survenance,
-        ).exists()
+        if date_survenance and assure_profile:
+            quittance_valide_existe = Quittance.objects.filter(
+                contrat=assure_profile,
+                date_debut__lte=date_survenance,
+                date_fin__lte=date_survenance,
+            ).exists()
         
-        if not quittance_valide_existe:
-            raise forms.ValidationError(
-                "Aucun contrat actif n'a été trouvé pour cette date de survenance."
-                "Veuillez vérifier la date, ou contacter votre point mde vente si vous pensez qu'il s'agit d'une erreur."
-            )
+            if not quittance_valide_existe:
+                raise forms.ValidationError(
+                    "Aucun contrat actif n'a été trouvé pour cette date de survenance."
+                    "Veuillez vérifier la date, ou contacter votre point mde vente si vous pensez qu'il s'agit d'une erreur."
+                )
             
-    if date_survenance:
-        date_only = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
-        delai = (timezone.now().date() - date_only).days
-        lettre_derogation = cleaned_data.get('lettre_derogation')
-        a_deja_une_lettre = self.instance and self.instance.pk and self.instance.lettre_derogation
+        if date_survenance:
+            date_only = date_survenance.date() if hasattr(date_survenance, 'date') else date_survenance
+            delai = (timezone.now().date() - date_only).days
+            lettre_derogation = cleaned_data.get('lettre_derogation')
+            a_deja_une_lettre = self.instance and self.instance.pk and self.instance.lettre_derogation
         
-        if delai > 5 and not lettre_derogation and not a_deja_une_lettre:
-            self.add_error(
-                'lettre_derogation',
-                "La lettre de dérogation est obligatoire lorsque le sinistre date de plus de 5 jours."
-            )
+            if delai > 5 and not lettre_derogation and not a_deja_une_lettre:
+                self.add_error(
+                    'lettre_derogation',
+                    "La lettre de dérogation est obligatoire lorsque le sinistre date de plus de 5 jours."
+                )
             
-    return cleaned_data
+        return cleaned_data
 
 
 class DeclarationTiersForm(forms.ModelForm):

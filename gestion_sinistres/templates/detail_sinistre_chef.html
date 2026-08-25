@@ -264,6 +264,23 @@
                     </div>
                 {% endif %}
             {% endif %}
+            {# --- Émission de chèque (Reste à payer après validation) --- #}
+            {% if sinistre.statut == 'EN_COURS' and sinistre.indemnisation_validee and sinistre.reste_a_payer > 0 %}
+                <div class="mt-3">
+                    <a href="{% url 'emettre_cheque' sinistre.id %}"
+                       class="btn btn-success btn-sm">
+                        <i class="bi bi-cash-stack me-1"></i> Émettre un chèque (Reste : {{ sinistre.reste_a_payer }} FCFA)
+                    </a>
+                </div>
+            {% endif %}
+            {% if sinistre.statut == 'CLOTURE' and sinistre.indemnisation_validee and sinistre.reste_a_payer > 0 %}
+                <div class="mt-3">
+                    <a href="{% url 'emettre_cheque' sinistre.id %}"
+                        class="btn btn-success btn-sm mt-3">
+                        <i class="bi bi-cash-stack me-1"></i> Émettre un chèque (Reste : {{ sinistre.reste_a_payer }} FCFA)
+                    </a>
+                </div>
+            {% endif %}
             {# --- CAS 3 : Dossier Clôturé ou Sans suite --- #}
             {% if sinistre.statut == 'CLOTURE' or sinistre.statut == 'SANS_SUITE' %}
                 <form method="post"

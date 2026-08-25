@@ -3409,7 +3409,12 @@ def indemniser_sinistre(request, sinistre_id):
 # Fonction permettant l'émission d'un chèque
 @login_required
 def emettre_cheque(request, sinistre_id):
+    operateur = get_profil_operateur(request.user)
+    if not operateur:
+        return redirect('accueil_assure')
+    
     sinistre = get_object_or_404(Sinistre, pk=sinistre_id)
+    detail_url_name = get_url_detail_dossier(request.user)
     
     if request.method == 'POST':
         numero_cheque = request.POST.get('numero_cheque', '').strip()
@@ -3485,7 +3490,7 @@ def emettre_cheque(request, sinistre_id):
         
         return redirect('detail_sinistre_agent', sinistre_id=sinistre.pk)
 
-    return render(request, 'emettre_cheque.html', {'sinistre': sinistre})
+    return render(request, 'emettre_cheque.html', {'sinistre': sinistre, 'detail_url_name': detail_url_name})
 
 
 # Fonction permettant la modification du statut d'un chèque
