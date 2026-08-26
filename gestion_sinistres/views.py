@@ -175,6 +175,9 @@ def ma_vue_de_connexion(request):
 # Tableau de bord principal de l'assuré
 @login_required
 def accueil_assure(request):
+    if not hasattr(request.user, 'assure'):
+        return redirect('redirection_login')
+    
     all_sinistres = Sinistre.objects.filter(assure=request.user)
     
     context = {
@@ -216,6 +219,8 @@ def declarer_sinistre(request):
                 
                 # Attribution automatique de toutes les quittances valides (relation M2M, donc après le save())
                 assure_profile = getattr(sinistre.assure, 'assure', None)
+                quittances_valides = Quittance.objects.none()
+                
                 if assure_profile and sinistre.date_survenance:
                     quittances_valides = Quittance.objects.filter(
                         contrat=assure_profile,
@@ -231,7 +236,7 @@ def declarer_sinistre(request):
                         request,
                         "Aucune quittance valide ne couvre la date de survenance déclarée. "
                         "Votre déclaration ne peut pas être enregistrée. Vérifiez la date renseignée "
-                        "ou contactez votre agence si vous pensez qu'il s'agit d'une erreur."
+                        "ou contactez votre point de vente si vous pensez qu'il s'agit d'une erreur."
                     )
                     return render(request, 'declaration.html', {'form': form, 'title': 'Déclarer un sinistre'})
                 
@@ -322,7 +327,16 @@ def declarer_sinistre_tiers(request):
                 sinistre.nom_declarant = form.cleaned_data['nom_declarant']
                 sinistre.save()
 
+                HistoriqueSinistre.objects.create(
+                    sinistre=sinistre,
+                    statut='SOUMIS',
+                    commentaires=f"Déclaration initiale faite par un tiers ({sinistre.nom_declarant}).",
+                    auteur=None,
+                )
+                
                 assure_profile = getattr(user_assure, 'assure', None)
+                quittances_valides = Quittance.objects.none()
+                
                 if assure_profile and sinistre.date_survenance:
                     quittances_valides = Quittance.objects.filter(
                         contrat=assure_profile,
@@ -331,19 +345,25 @@ def declarer_sinistre_tiers(request):
                     )
                     sinistre.quittances.set(quittances_valides)
 
-                for f in request.FILES.getlist('fichiers_justificatifs'):
-                    PieceJointe.objects.create(sinistre=sinistre, fichier=f)
-
-                HistoriqueSinistre.objects.create(
-                    sinistre=sinistre,
-                    statut='SOUMIS',
-                    commentaires=f"Déclaration initiale faite par un tiers ({sinistre.nom_declarant}).",
-                    auteur=None,
-                )
-
+                if quittances_valides.exists():
+                    sinistre.quittances.set(quittances_valides)
+                    
+                    for f in request.FILES.getlist('fichiers_justificatifs'):
+                        PieceJointe.objects.create(sinistre=sinistre, fichier=f)
+                else:
+                    sinistre.statut = 'SANS_SUITE'
+                    sinistre.save(update_fields=['statut'])
+                    
+                    HistoriqueSinistre.objects.create(
+                        sinistre=sinistre,
+                        statut='SANS_SUITE',
+                        commentaires="Dossier classé sans suite car aucune quittance valide.",
+                        auteur=None,
+                    )
+                    
                 messages.success(
                     request,
-                    "Votre déclaration a été enregistrée. L'attestation vous sera envoyée au numéro fourni."
+                    "Votre déclaration a été enregistrée. L'attestation vous sera envoyée au numéro fourni si la déclaration est retenue."
                 )
                 return redirect('declarer_sinistre_tiers')
 

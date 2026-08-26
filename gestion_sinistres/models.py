@@ -226,7 +226,7 @@ class HistoriqueSinistre(models.Model):
     statut = models.CharField(max_length=50)
     date_changement = models.DateTimeField(auto_now_add=True)
     commentaires = models.TextField(blank=True)
-    auteur = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    auteur = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class EtapeSinistre(models.Model):

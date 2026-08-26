@@ -150,13 +150,13 @@ class SinistreForm(forms.ModelForm):
             quittance_valide_existe = Quittance.objects.filter(
                 contrat=assure_profile,
                 date_debut__lte=date_survenance,
-                date_fin__lte=date_survenance,
+                date_fin__gte=date_survenance,
             ).exists()
         
             if not quittance_valide_existe:
                 raise forms.ValidationError(
                     "Aucun contrat actif n'a été trouvé pour cette date de survenance."
-                    "Veuillez vérifier la date, ou contacter votre point mde vente si vous pensez qu'il s'agit d'une erreur."
+                    "Veuillez vérifier la date, ou contacter votre point de vente si vous pensez qu'il s'agit d'une erreur."
                 )
             
         if date_survenance:
